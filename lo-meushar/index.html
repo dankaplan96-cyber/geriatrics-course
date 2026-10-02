@@ -8214,6 +8214,8 @@ function triggerMoment(id){
     || !document.getElementById("dialog-layer").classList.contains("hidden")
     || !document.getElementById("menu-screen").classList.contains("hidden")
     || !document.getElementById("map-screen").classList.contains("hidden")
+    || !document.getElementById("canvas-screen").classList.contains("hidden")
+    || !document.getElementById("party-select-screen").classList.contains("hidden")
     || document.body.classList.contains("lm-cinematic-active");
   if(busy){ const state=G; setTimeout(()=>{ if(G===state) triggerMoment(id); }, 1500); return; }
   G.momentsSeen[id]=true;
@@ -26796,6 +26798,8 @@ var CombatFullscreen=(function(){
    post-battle moments) must sit above #combat-screen, which shares z-index 40
    and comes later in the DOM. Stays under the map (65), menu (70) and modal (110). */
 #app #dialog-layer:not(.hidden){z-index:55!important;}
+/* a line that opens during a mini-game (z 95) must not hide behind it */
+body:has(#canvas-screen:not(.hidden)) #app #dialog-layer:not(.hidden){z-index:97!important;}
 /* Mini-games (eye/mirror/final canvas) draw on a translucent screen: the world HUD,
    objective pill and "what now" button showed through and covered the mini-game title
    and instructions. The mini-game owns the foreground while it is open. */
