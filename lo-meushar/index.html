@@ -27579,56 +27579,8 @@ body:is(:has(#canvas-screen:not(.hidden)),:has(#party-select-screen:not(.hidden)
 #app #party-select-screen:not(.hidden){position:fixed!important;inset:0!important;z-index:75!important;background:radial-gradient(1200px 700px at 70% -10%,#3a2b1c 0%,var(--ink) 55%)!important;overflow-y:auto!important;}
 </style>
 <script id="lm-31-fixes-js">
-/* 0.31 fixes. See lo-meushar/CHANGES.md. */
-(function(){
-  'use strict';
-
-  /* ---- camera clearance --------------------------------------------------
-     The explore camera orbits at camDist behind the player and never checked
-     walls. In the narrow districts (alley: buildings at x=±9, 11 units apart)
-     rotating the camera, or the tap-to-walk auto-yaw swinging it round, puts
-     the camera inside a building box. From inside, back faces are culled, so
-     the wall in front of the player "disappears".
-     After the normal update, cast the player→camera segment against the same
-     building footprints the player collides with (W3.colliders) and stop the
-     camera in front of the first one. 2D slab test: no scene traversal, no
-     raycaster, cost is one loop over a handful of boxes per frame. */
-  var CAM_MARGIN=0.35;   // < player collision margin (0.5), so the player is never inside an expanded box
-  var MIN_BOOM=0.18;     // never collapse the camera onto the hero
-  function segmentEntry(px,pz,dx,dz,c){
-    var minx=c.x-c.hw-CAM_MARGIN,maxx=c.x+c.hw+CAM_MARGIN,minz=c.z-c.hd-CAM_MARGIN,maxz=c.z+c.hd+CAM_MARGIN;
-    if(px>minx&&px<maxx&&pz>minz&&pz<maxz)return 1; // started inside: leave it to the collider
-    var t0=0,t1=1,inv,a,b,tmp;
-    if(Math.abs(dx)<1e-6){if(px<minx||px>maxx)return 1;}
-    else{inv=1/dx;a=(minx-px)*inv;b=(maxx-px)*inv;if(a>b){tmp=a;a=b;b=tmp;}t0=Math.max(t0,a);t1=Math.min(t1,b);if(t0>t1)return 1;}
-    if(Math.abs(dz)<1e-6){if(pz<minz||pz>maxz)return 1;}
-    else{inv=1/dz;a=(minz-pz)*inv;b=(maxz-pz)*inv;if(a>b){tmp=a;a=b;b=tmp;}t0=Math.max(t0,a);t1=Math.min(t1,b);if(t0>t1)return 1;}
-    return t0;
-  }
-  function lmCameraClearance(){
-    if(typeof W3==='undefined'||!W3.player||!W3.camera||W3.mode!=='explore'||!W3.colliders||!W3.colliders.length)return 1;
-    var cam=W3.camera.position,px=W3.player.position.x,pz=W3.player.position.z;
-    var dx=cam.x-px,dz=cam.z-pz,t=1;
-    for(var i=0;i<W3.colliders.length;i++){var e=segmentEntry(px,pz,dx,dz,W3.colliders[i]);if(e<t)t=e;}
-    if(t>=1)return 1;
-    t=Math.max(MIN_BOOM,t);
-    var yaw=W3.camYaw||0,eyeY=1.6;
-    cam.x=px+dx*t;cam.z=pz+dz*t;
-    // A shortened boom keeps a lower, more over-the-shoulder angle instead of looking straight down.
-    cam.y=eyeY+(cam.y-eyeY)*Math.max(.45,t);
-    W3.camera.lookAt(px-Math.sin(yaw)*4,1.4,pz-Math.cos(yaw)*4);
-    return t;
-  }
-  window.lmCameraClearance=lmCameraClearance;
-  if(typeof updateCamera==='function'){
-    var rawUpdateCamera=updateCamera;
-    updateCamera=function(dt){
-      var r=rawUpdateCamera.apply(this,arguments);
-      try{lmCameraClearance();}catch(e){}
-      return r;
-    };
-  }
-})();
+/* 0.31 fixes (ported). Camera wall clearance is not needed here: this build already has
+   its own lmCameraClearance inside updateCamera. See lo-meushar/CHANGES.md. */
 </script>
 <style id="lm-32-ff7">
 /* 0.32 — "FF7 pass": window skin, battle transition, limit gauge, field polish, mini-games.
