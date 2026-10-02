@@ -9204,12 +9204,13 @@ function showPartySelect(bossName, onConfirm){
   }
   render();
   scr.classList.remove("hidden");
-  const startBtn=$("#ps-start");
+  // tapBtn עוטף את ה-handler, ולכן removeEventListener לא הסיר אותו: כל פתיחה הוסיפה מאזין,
+  // ובפתיחה השנייה "התחל קרב" הפעיל גם את הקרב הקודם. מחליפים את הכפתור בעותק נקי.
+  const oldBtn=$("#ps-start"), startBtn=oldBtn.cloneNode(true); oldBtn.replaceWith(startBtn);
   const handler=()=>{
     G.activeParty=picked.length?picked:(G.activeParty||[]).slice(0,3);
     G.supportParty=(G.party||[]).filter(id=>!G.activeParty.includes(id));
     scr.classList.add("hidden");
-    startBtn.removeEventListener("click",handler);
     autosave();
     onConfirm();
   };
@@ -26794,7 +26795,7 @@ var CombatFullscreen=(function(){
 /* Mini-games (eye/mirror/final canvas) draw on a translucent screen: the world HUD,
    objective pill and "what now" button showed through and covered the mini-game title
    and instructions. The mini-game owns the foreground while it is open. */
-body:has(#canvas-screen:not(.hidden)) :is(#toasts,#hud3d,#objective-banner,#move-hint,#scene-caption3d,#act-cluster,#world-layout28,.lm-whatnow-fab,#lm-context-card,#lm-world-cue){visibility:hidden!important;pointer-events:none!important;}
+body:is(:has(#canvas-screen:not(.hidden)),:has(#party-select-screen:not(.hidden))) :is(#toasts,#hud3d,#objective-banner,#move-hint,#scene-caption3d,#act-cluster,#world-layout28,.lm-whatnow-fab,#lm-context-card,#lm-world-cue){visibility:hidden!important;pointer-events:none!important;}
 /* The eye mini-game switches the screen to a dark theme whose centre was see-through,
    while the title/description kept the dark ink of the light paper theme (unreadable). */
 #app #canvas-screen.lm-eye-upgrade:not(.hidden){background:radial-gradient(900px 560px at 50% 30%,rgba(255,79,163,.16),transparent 65%),rgba(22,18,14,.94)!important;-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);}
@@ -26803,6 +26804,10 @@ body:has(#canvas-screen:not(.hidden)) :is(#toasts,#hud3d,#objective-banner,#move
 /* The approved combat layout hides #battle-objective, but setBattleObjective() writes an
    inline display:block, so it leaked out as half-clipped text along the top edge. */
 #combat-screen #battle-objective{display:none!important;}
+/* Boss party picker is position:absolute with no z-index, so it opened underneath the
+   3D world (fixed, z-index 1) and the menu: tapping a boss with 4+ party members did
+   nothing visible. Lift it above the world, map and menu, under modals and toasts. */
+#app #party-select-screen:not(.hidden){position:fixed!important;inset:0!important;z-index:75!important;background:radial-gradient(1200px 700px at 70% -10%,#3a2b1c 0%,var(--ink) 55%)!important;overflow-y:auto!important;}
 </style>
 <script id="lm-31-fixes-js">
 /* 0.31 fixes. See lo-meushar/CHANGES.md. */
