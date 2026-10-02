@@ -8205,6 +8205,14 @@ function triggerMoment(id){
   if(G.momentsSeen[id]) return; // פעם אחת בלבד
   // אל תפתח רגע בזמן קרב פעיל
   if(typeof CB!=="undefined" && CB && CB.foes && CB.foes.some(f=>f.alive)) return;
+  // רגע שנפתח מעל מסך הניצחון/דיאלוג/תפריט נתקע מאחורי מסך הקרב — מחכים שהשחקן יחזור לעיר
+  const busy=document.body.classList.contains("in-combat")
+    || !document.getElementById("modal").classList.contains("hidden")
+    || !document.getElementById("dialog-layer").classList.contains("hidden")
+    || !document.getElementById("menu-screen").classList.contains("hidden")
+    || !document.getElementById("map-screen").classList.contains("hidden")
+    || document.body.classList.contains("lm-cinematic-active");
+  if(busy){ const state=G; setTimeout(()=>{ if(G===state) triggerMoment(id); }, 1500); return; }
   G.momentsSeen[id]=true;
   const m=EILAM_MOMENTS[id];
   if(typeof say==="function") say(m.lines);
@@ -8748,7 +8756,7 @@ function showSaveIndicator(auto, persisted=true){
 function exportSave(){
   const blob = new Blob([JSON.stringify({meta:saveMeta(),state:G},null,1)],{type:"application/json"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
-  a.download="orologia-save.json"; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  a.download="lo-meushar-save.json"; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
   toast("📤","קובץ שמירה יוצא");
 }
 function importSave(file){
@@ -10037,9 +10045,9 @@ function boot(){
   });
   tapBtn($("#btn-load-title"), ()=>{ SFX.click(); G=G||freshState(); openMenu("saves", true); });
   tapBtn($("#btn-settings-title"), ()=>{ SFX.click(); G=G||freshState(); openMenu("set", true); });
-  tapBtn($("#btn-credits"), ()=>modal("🎨 אורולוג'יה",
-    `<p><b>Orologia — עיר של פליז וצבע.</b></p>
-     <p>הרפתקת Point & Click פתוחה עם קרבות בתורות, על אמן רחוב אחד, שני חתולים, רובוט משורר — והקול האפור שאומר "אל תתחיל".</p>
+  tapBtn($("#btn-credits"), ()=>modal("🎨 לא מאושר",
+    `<p><b>לא מאושר — סיפור על עילם, אמנות רחוב, ועיר שמנסה למחוק כל דבר שמסתכל בחזרה.</b></p>
+     <p>הרפתקת חקירה עם קרבות בתורות, על אמן רחוב אחד, דן, שני חתולים (פאבלו ולטיפה), רובוט משורר — והקול האפור שאומר "אל תתחיל".</p>
      <p style="color:var(--paper-dim)">נבנה באהבה עבור עילם. כל הבוסים במשחק מובסים הכי טוב כשמבינים אותם.</p>`,
     [{t:"❤️"}]));
   tapBtn($("#hud-menu"), ()=>{SFX.click(); openMenu();});
@@ -10075,7 +10083,14 @@ function boot(){
   $("#import-file").addEventListener("change",e=>{ if(e.target.files[0]) importSave(e.target.files[0]); e.target.value=""; });
 
   document.addEventListener("keydown",e=>{
-    if(!G||!G.started) return;
+    if(!G||!G.started){
+      // גם ממסך הפתיחה: Escape סוגר הגדרות/חלון, כמו בתוך המשחק
+      if(e.key==="Escape"){
+        if(!$("#modal").classList.contains("hidden")){ if($("#modal").dataset.requiresAction!=='true') $("#modal").classList.add("hidden"); }
+        else if(!$("#menu-screen").classList.contains("hidden")){ closeMenu(); }
+      }
+      return;
+    }
     if(e.key==="h"||e.key==="H") document.body.classList.add("show-hs");
     if(e.key==="Escape"){
       if(!$("#modal").classList.contains("hidden")){ if($("#modal").dataset.requiresAction!=='true') $("#modal").classList.add("hidden"); }
@@ -16325,7 +16340,8 @@ body.in-combat .lm-whatnow-fab:not(:where(#combat-screen,#combat-screen *)),body
     }
     next.addEventListener('click', advance);
     skip.addEventListener('click', finish);
-    root.addEventListener('click', (ev)=>{ if(ev.target===root) advance(); });
+    // הרמז אומר "אפשר ללחוץ על המסך" — לחיצה בכל מקום (חוץ מכפתורים) מקדמת, לא רק על הרקע.
+    root.addEventListener('click', (ev)=>{ if(!(ev.target.closest&&ev.target.closest('button'))) advance(); });
     document.addEventListener('keydown', onKey, true);
     document.body.classList.add('lm-cinematic-active');
     root.classList.add('on');
@@ -26768,6 +26784,76 @@ var CombatFullscreen=(function(){
 
   if(doc.readyState==='loading')doc.addEventListener('DOMContentLoaded',addButton,{once:true});
   else addButton();
+})();
+</script>
+<style id="lm-31-fixes">
+/* 0.31: a dialogue opened while the battle screen is up (final boss lines,
+   post-battle moments) must sit above #combat-screen, which shares z-index 40
+   and comes later in the DOM. Stays under the map (65), menu (70) and modal (110). */
+#app #dialog-layer:not(.hidden){z-index:55!important;}
+/* Mini-games (eye/mirror/final canvas) draw on a translucent screen: the world HUD,
+   objective pill and "what now" button showed through and covered the mini-game title
+   and instructions. The mini-game owns the foreground while it is open. */
+body:has(#canvas-screen:not(.hidden)) :is(#toasts,#hud3d,#objective-banner,#move-hint,#scene-caption3d,#act-cluster,#world-layout28,.lm-whatnow-fab,#lm-context-card,#lm-world-cue){visibility:hidden!important;pointer-events:none!important;}
+/* The eye mini-game switches the screen to a dark theme whose centre was see-through,
+   while the title/description kept the dark ink of the light paper theme (unreadable). */
+#app #canvas-screen.lm-eye-upgrade:not(.hidden){background:radial-gradient(900px 560px at 50% 30%,rgba(255,79,163,.16),transparent 65%),rgba(22,18,14,.94)!important;-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);}
+#app #canvas-screen.lm-eye-upgrade #canvas-title{color:var(--gold)!important;}
+#app #canvas-screen.lm-eye-upgrade p{color:var(--paper-dim)!important;}
+/* The approved combat layout hides #battle-objective, but setBattleObjective() writes an
+   inline display:block, so it leaked out as half-clipped text along the top edge. */
+#combat-screen #battle-objective{display:none!important;}
+</style>
+<script id="lm-31-fixes-js">
+/* 0.31 fixes. See lo-meushar/CHANGES.md. */
+(function(){
+  'use strict';
+
+  /* ---- camera clearance --------------------------------------------------
+     The explore camera orbits at camDist behind the player and never checked
+     walls. In the narrow districts (alley: buildings at x=±9, 11 units apart)
+     rotating the camera, or the tap-to-walk auto-yaw swinging it round, puts
+     the camera inside a building box. From inside, back faces are culled, so
+     the wall in front of the player "disappears".
+     After the normal update, cast the player→camera segment against the same
+     building footprints the player collides with (W3.colliders) and stop the
+     camera in front of the first one. 2D slab test: no scene traversal, no
+     raycaster, cost is one loop over a handful of boxes per frame. */
+  var CAM_MARGIN=0.35;   // < player collision margin (0.5), so the player is never inside an expanded box
+  var MIN_BOOM=0.18;     // never collapse the camera onto the hero
+  function segmentEntry(px,pz,dx,dz,c){
+    var minx=c.x-c.hw-CAM_MARGIN,maxx=c.x+c.hw+CAM_MARGIN,minz=c.z-c.hd-CAM_MARGIN,maxz=c.z+c.hd+CAM_MARGIN;
+    if(px>minx&&px<maxx&&pz>minz&&pz<maxz)return 1; // started inside: leave it to the collider
+    var t0=0,t1=1,inv,a,b,tmp;
+    if(Math.abs(dx)<1e-6){if(px<minx||px>maxx)return 1;}
+    else{inv=1/dx;a=(minx-px)*inv;b=(maxx-px)*inv;if(a>b){tmp=a;a=b;b=tmp;}t0=Math.max(t0,a);t1=Math.min(t1,b);if(t0>t1)return 1;}
+    if(Math.abs(dz)<1e-6){if(pz<minz||pz>maxz)return 1;}
+    else{inv=1/dz;a=(minz-pz)*inv;b=(maxz-pz)*inv;if(a>b){tmp=a;a=b;b=tmp;}t0=Math.max(t0,a);t1=Math.min(t1,b);if(t0>t1)return 1;}
+    return t0;
+  }
+  function lmCameraClearance(){
+    if(typeof W3==='undefined'||!W3.player||!W3.camera||W3.mode!=='explore'||!W3.colliders||!W3.colliders.length)return 1;
+    var cam=W3.camera.position,px=W3.player.position.x,pz=W3.player.position.z;
+    var dx=cam.x-px,dz=cam.z-pz,t=1;
+    for(var i=0;i<W3.colliders.length;i++){var e=segmentEntry(px,pz,dx,dz,W3.colliders[i]);if(e<t)t=e;}
+    if(t>=1)return 1;
+    t=Math.max(MIN_BOOM,t);
+    var yaw=W3.camYaw||0,eyeY=1.6;
+    cam.x=px+dx*t;cam.z=pz+dz*t;
+    // A shortened boom keeps a lower, more over-the-shoulder angle instead of looking straight down.
+    cam.y=eyeY+(cam.y-eyeY)*Math.max(.45,t);
+    W3.camera.lookAt(px-Math.sin(yaw)*4,1.4,pz-Math.cos(yaw)*4);
+    return t;
+  }
+  window.lmCameraClearance=lmCameraClearance;
+  if(typeof updateCamera==='function'){
+    var rawUpdateCamera=updateCamera;
+    updateCamera=function(dt){
+      var r=rawUpdateCamera.apply(this,arguments);
+      try{lmCameraClearance();}catch(e){}
+      return r;
+    };
+  }
 })();
 </script>
 </body>
