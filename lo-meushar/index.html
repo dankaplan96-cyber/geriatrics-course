@@ -12997,11 +12997,11 @@ function bindControls(){
     // קרקע
     if(W3.ground){
       const g=W3.ray.intersectObject(W3.ground);
-      if(g.length){ const p=g[0].point; walkTo(clamp(p.x,-34,34), clamp(p.z,-34,34), null); return; }
+      if(g.length){ const p=g[0].point; walkTo(clamp(p.x,-60,60), clamp(p.z,-60,60), null); return; }
     }
     // גיבוי: אם ה-ray לא פגע בקרקע, חשב הטלה למישור y=0
     const ro=W3.ray.ray;
-    if(ro.direction.y!==0){ const t=-ro.origin.y/ro.direction.y; if(t>0){ const px=ro.origin.x+ro.direction.x*t, pz=ro.origin.z+ro.direction.z*t; walkTo(clamp(px,-34,34), clamp(pz,-34,34), null); } }
+    if(ro.direction.y!==0){ const t=-ro.origin.y/ro.direction.y; if(t>0){ const px=ro.origin.x+ro.direction.x*t, pz=ro.origin.z+ro.direction.z*t; walkTo(clamp(px,-60,60), clamp(pz,-60,60), null); } }
   }
   // גם click רגיל (הכי אמין) וגם pointer לניידים
   let downX=0,downY=0,downT=0,moved=false;
@@ -13172,8 +13172,8 @@ function updatePlayer(dt){
     // תנועה עם בדיקת התנגשות בכל ציר בנפרד (מאפשר החלקה לאורך קיר)
     const nx=W3.player.position.x+wx*speed*dt;
     const nz=W3.player.position.z+wz*speed*dt;
-    if(!blocked(nx, W3.player.position.z)) W3.player.position.x=clamp(nx,-34,34);
-    if(!blocked(W3.player.position.x, nz)) W3.player.position.z=clamp(nz,-34,34);
+    if(!blocked(nx, W3.player.position.z)) W3.player.position.x=clamp(nx,-60,60);
+    if(!blocked(W3.player.position.x, nz)) W3.player.position.z=clamp(nz,-60,60);
     // כיוון פנים לכיוון התנועה
     const targetRot=Math.atan2(wx,wz);
     let d=targetRot-W3.player.rotation.y; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI;
@@ -28443,8 +28443,8 @@ body:is(:has(#canvas-screen:not(.hidden)),:has(#party-select-screen:not(.hidden)
   /* ---------- touch: tap where to go (no joystick) ----------
      The original handler raycasts the tapped pixel; small objects are easy to miss with a
      finger. After it runs, a tap within ~56px of a hotspot's on-screen position selects that
-     hotspot instead (walk there and act). A one-finger horizontal drag turns the camera;
-     it never moves the hero, so movement stays tap-only. */
+     hotspot instead (walk there and act). Drag-to-turn is handled by the build's own
+     touch handler; movement stays tap-only. */
   function installTouchControls(){
     const canvas=$id('game3d'); if(!canvas||canvas.__lm33) return; canvas.__lm33=true;
     const ok=()=>typeof W3!=='undefined'&&W3.mode==='explore'&&typeof canControl==='function'&&canControl();
@@ -28473,7 +28473,7 @@ body:is(:has(#canvas-screen:not(.hidden)),:has(#party-select-screen:not(.hidden)
     canvas.addEventListener('pointermove',e=>{
       if(!touch||e.pointerId!==touch.id) return;
       if(!touch.drag&&Math.hypot(e.clientX-touch.x,e.clientY-touch.y)>12) touch.drag=true;
-      if(touch.drag&&ok()){ const dx=e.clientX-touch.last; W3.camYaw=(W3.camYaw||0)-dx*.009; W3.autoCameraHoldUntil=Date.now()+2500; }
+      // camera turning by horizontal drag is already built into bindTouchDestination27 (turnTouchCamera) in this build
       touch.last=e.clientX;
     });
     const end=e=>{
@@ -28541,6 +28541,289 @@ body:is(:has(#canvas-screen:not(.hidden)),:has(#party-select-screen:not(.hidden)
     const coachTimer=setInterval(()=>{ if(store.get('lm33_coach')){ clearInterval(coachTimer); return; } try{ coach(); }catch(e){} },1500);
   }
   window.LM33={install,coach,decorateMenu};
+  const later=()=>setTimeout(install,0);
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',later,{once:true}); else later();
+})();
+</script>
+<script id="lm-34-bigworld-js">
+/* 0.34 — a bigger open world.
+   Every district keeps its story plaza untouched and gains an outer city around it:
+   avenues lined with buildings, lamps, little plazas, pedestrians and birds, paint drops to
+   collect, and a gate at the end of each avenue that walks you into the neighbouring district
+   (the one that lies in that direction on the map). Cheap by design: outer buildings,
+   windows, lamps and birds are a handful of instanced meshes per district, no extra lights. */
+(function(){
+  'use strict';
+  const BOUNDS={alley:{x:44,z:42}};            // the alley was boxed in at 20×18
+  const DEFAULT_B={x:50,z:50};
+  const AVENUE=4.5;                             // half-width of the two crossing avenues
+  const $id=id=>document.getElementById(id);
+  const reduced=()=>{try{return (typeof LivingFX!=='undefined'&&LivingFX.reduced())||!!(G&&G.settings&&G.settings.reduceMotion);}catch(e){return false;}};
+  const hx=s=>String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  let seed=1; const rand=()=>{ seed=(seed*1664525+1013904223)>>>0; return seed/4294967296; };
+  const BW={peds:[],birds:null,drops:[],arrive:null,scene:null,t:0};
+  window.LM_BIGWORLD=BW;
+
+  function boundsFor(id){ return BOUNDS[id]||DEFAULT_B; }
+  function sceneName(id){ return (typeof SCENES!=='undefined'&&SCENES[id]&&SCENES[id].name)||''; }
+
+  /* ---------- where the story content already sits ---------- */
+  function innerExtent(id){
+    let r=16;
+    (W3.colliders||[]).forEach(c=>{ r=Math.max(r,Math.abs(c.x)+c.hw,Math.abs(c.z)+c.hd); });
+    const spots=typeof HOT3D!=='undefined'?Object.values(HOT3D[id]||{}):[];
+    spots.forEach(p=>{ if(Array.isArray(p)) r=Math.max(r,Math.abs(p[0])+2,Math.abs(p[1])+2); });
+    return r;
+  }
+  function freeAt(x,z,hw,hd,id,margin){
+    if((W3.colliders||[]).some(c=>Math.abs(c.x-x)<c.hw+hw+margin&&Math.abs(c.z-z)<c.hd+hd+margin)) return false;
+    const spots=typeof HOT3D!=='undefined'?Object.values(HOT3D[id]||{}):[];
+    if(spots.some(p=>Array.isArray(p)&&Math.abs(p[0]-x)<hw+3&&Math.abs(p[1]-z)<hd+3)) return false;
+    return true;
+  }
+
+  /* ---------- outer city ---------- */
+  function buildOuterCity(id){
+    const B=boundsFor(id), cfg=(typeof ENV3D!=='undefined'&&ENV3D[id])||{};
+    const inner=Math.min(Math.max(innerExtent(id)+3,18),Math.min(B.x,B.z)-12);
+    const root=new THREE.Group(); root.name='Outer city (0.34)';
+    const bodies=[], windows=[], roofs=[], lamps=[], benches=[], trees=[], plazas=[];
+    const o=new THREE.Object3D();
+    function mat4(x,y,z,sx,sy,sz,ry){ o.position.set(x,y,z); o.rotation.set(0,ry||0,0); o.scale.set(sx,sy,sz); o.updateMatrix(); return o.matrix.clone(); }
+    function addBuilding(x,z,w,d,h,solid){
+      bodies.push(mat4(x,h/2,z,w,h,d)); roofs.push(mat4(x,h+.2,z,w+.4,.4,d+.4));
+      // window grid on the four faces
+      for(let y=2.2;y<h-1;y+=2.6){
+        for(let k=-w/2+1.2;k<=w/2-1.2;k+=2){ if(rand()<.7){ windows.push(mat4(x+k,y,z+d/2+.03,.8,1.1,.05)); } if(rand()<.7){ windows.push(mat4(x+k,y,z-d/2-.03,.8,1.1,.05)); } }
+        for(let k=-d/2+1.2;k<=d/2-1.2;k+=2){ if(rand()<.7){ windows.push(mat4(x+w/2+.03,y,z+k,.05,1.1,.8)); } if(rand()<.7){ windows.push(mat4(x-w/2-.03,y,z+k,.05,1.1,.8)); } }
+      }
+      if(solid) W3.colliders.push({x,z,hw:w/2,hd:d/2,outer34:true});
+    }
+    // blocks on a 10-unit grid between the plaza and the edge, avenues kept clear
+    const step=10;
+    for(let gx=-B.x+5;gx<=B.x-5;gx+=step) for(let gz=-B.z+5;gz<=B.z-5;gz+=step){
+      if(Math.max(Math.abs(gx),Math.abs(gz))<inner+4) continue;
+      if(Math.abs(gx)<AVENUE+4||Math.abs(gz)<AVENUE+4) continue;
+      const w=5+rand()*2.6, d=5+rand()*2.6, h=6+rand()*10;
+      if(!freeAt(gx,gz,w/2,d/2,id,1.5)) continue;
+      if(rand()<.22){ plazas.push([gx,gz]); continue; }        // leave a small square here
+      addBuilding(gx,gz,w,d,h,true);
+    }
+    // closing ring just outside the walkable edge (visual only), with the avenue mouths open
+    for(let k=-B.x-6;k<=B.x+6;k+=8){ if(Math.abs(k)<AVENUE+3) continue; [-1,1].forEach(s=>addBuilding(k,s*(B.z+6),7,7,8+rand()*12,false)); }
+    for(let k=-B.z+2;k<=B.z-2;k+=8){ if(Math.abs(k)<AVENUE+3) continue; [-1,1].forEach(s=>addBuilding(s*(B.x+6),k,7,7,8+rand()*12,false)); }
+    // lamps down both avenues
+    for(let k=inner;k<=Math.max(B.x,B.z)-4;k+=9){
+      [[AVENUE+.6,k],[-AVENUE-.6,-k],[k,AVENUE+.6],[-k,-AVENUE-.6]].forEach(([x,z])=>{ if(Math.abs(x)<=B.x&&Math.abs(z)<=B.z) lamps.push([x,z]); });
+    }
+    // plazas: benches and a tree
+    plazas.forEach(([x,z])=>{ benches.push(mat4(x-1.6,.45,z,2.4,.25,.7)); benches.push(mat4(x+1.6,.45,z,2.4,.25,.7)); trees.push([x,z]); W3.colliders.push({x,z,hw:.6,hd:.6,outer34:true}); });
+
+    const geo=new THREE.BoxGeometry(1,1,1);
+    function inst(list,material,shadow){
+      if(!list.length) return null; const m=new THREE.InstancedMesh(geo,material,list.length);
+      list.forEach((mx,i)=>m.setMatrixAt(i,mx)); m.instanceMatrix.needsUpdate=true; m.castShadow=!!shadow; m.receiveShadow=true; root.add(m); return m;
+    }
+    const base=new THREE.Color(cfg.ground||0x6b5a4a).lerp(new THREE.Color(0xb8a184),.45);
+    const wallMat=new THREE.MeshStandardMaterial({color:base,roughness:.95});
+    try{ if(typeof stoneTexture16==='function'){ const t=stoneTexture16('wall'); if(t){ const c=t.clone(); c.needsUpdate=true; c.repeat.set(1.8,3.6); wallMat.map=c; } } }catch(e){}
+    inst(bodies,wallMat,false);
+    inst(roofs,new THREE.MeshStandardMaterial({color:0x2a2226,roughness:.9}),false);
+    const win=inst(windows,new THREE.MeshBasicMaterial({color:0xffffff}),false);
+    if(win&&win.setColorAt){ const lit=new THREE.Color(0xffc77a), warm=new THREE.Color(0xf2a65a), dark=new THREE.Color(0x27303b);
+      for(let i=0;i<windows.length;i++){ const r=rand(); win.setColorAt(i,r<.28?lit:r<.4?warm:dark); } if(win.instanceColor) win.instanceColor.needsUpdate=true; }
+    inst(benches,new THREE.MeshStandardMaterial({color:0x876047,roughness:.9}),false);
+    if(lamps.length){
+      const pole=new THREE.InstancedMesh(new THREE.CylinderGeometry(.08,.11,4.2,6),new THREE.MeshStandardMaterial({color:0x2a3438,metalness:.4,roughness:.6}),lamps.length);
+      const bulb=new THREE.InstancedMesh(new THREE.SphereGeometry(.28,10,8),new THREE.MeshBasicMaterial({color:0xffe2a8}),lamps.length);
+      lamps.forEach(([x,z],i)=>{ pole.setMatrixAt(i,mat4(x,2.1,z,1,1,1)); bulb.setMatrixAt(i,mat4(x,4.3,z,1,1,1)); });
+      root.add(pole,bulb);
+    }
+    if(trees.length){
+      const trunk=new THREE.InstancedMesh(new THREE.CylinderGeometry(.18,.26,2.2,7),new THREE.MeshStandardMaterial({color:0x5a3d28,roughness:1}),trees.length);
+      const crown=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1.5,0),new THREE.MeshStandardMaterial({color:new THREE.Color(0x4f7a4a).lerp(new THREE.Color(cfg.accent||0xff4fa3),.12),roughness:1,flatShading:true}),trees.length);
+      trees.forEach(([x,z],i)=>{ trunk.setMatrixAt(i,mat4(x,1.1,z,1,1,1)); crown.setMatrixAt(i,mat4(x,3,z,1,1.15,1,rand()*3)); });
+      root.add(trunk,crown);
+    }
+    W3.scene.add(root);
+    return {inner,plazas};
+  }
+
+  /* ---------- far horizon: bigger ground, fog, skyline, sky ---------- */
+  function widenHorizon(id){
+    const B=boundsFor(id), span=Math.max(B.x,B.z)*2+70;
+    if(W3.ground){
+      const old=W3.ground.geometry; const g=new THREE.PlaneGeometry(span,span,40,40);
+      const pos=g.attributes.position; for(let i=0;i<pos.count;i++) pos.setZ(i,(Math.sin(pos.getX(i)*.35)+Math.cos(pos.getY(i)*.35))*.1);
+      g.computeVertexNormals(); W3.ground.geometry=g; try{ old.dispose(); }catch(e){}
+      const map=W3.ground.material&&W3.ground.material.map; if(map){ map.repeat.set(22*span/90,22*span/90); map.needsUpdate=true; }
+    }
+    const reach=Math.max(B.x,B.z);
+    W3.scene.children.forEach(o=>{
+      if(o.geometry&&o.geometry.type==='RingGeometry'&&o.geometry.parameters&&o.geometry.parameters.innerRadius===30) o.scale.setScalar((reach+22)/30);
+      if(o.material&&o.material.uniforms&&o.material.uniforms.top&&o.material.uniforms.bot) o.scale.setScalar(2.4);
+      if(o.name==='Distant city skyline'){ const k=(reach*2+22)/46; o.scale.set(k,1.7,k); }
+    });
+    const fog=W3.scene.fog; if(fog){ fog.near=Math.max(fog.near,34); fog.far=reach*2.4+40; }
+    if(W3.camera&&W3.camera.far<420){ W3.camera.far=420; W3.camera.updateProjectionMatrix(); }
+  }
+
+  /* ---------- life: pedestrians and birds ---------- */
+  const PED_SPECS=['adi','ariela','rafi','hanan','shirley','inspector','chen','shosh'];
+  function addPedestrians(id,inner){
+    const B=boundsFor(id); BW.peds=[];
+    if(typeof buildChar!=='function'||typeof CHAR_SPECS==='undefined') return;
+    const lanes=[[AVENUE-1.6,1],[-AVENUE+1.6,1],[AVENUE-1.6,0],[-AVENUE+1.6,0]];
+    for(let i=0;i<3;i++){
+      const key=PED_SPECS[(i+id.length)%PED_SPECS.length]; const base=CHAR_SPECS[key]; if(!base) continue;
+      const spec=Object.assign({},base,{shirt:new THREE.Color().setHSL(rand(),.35,.42).getHex()});
+      const m=buildChar(spec); m.scale.setScalar(.95);
+      const [lane,vertical]=lanes[i%lanes.length], sign=rand()<.5?-1:1;
+      const a=inner+2, b=(vertical?B.z:B.x)-3;
+      const p={mesh:m,vertical,lane,sign,a,b,u:rand(),dir:rand()<.5?1:-1,speed:.045+rand()*.03};
+      place(p); W3.scene.add(m); W3.npcs.push(m); BW.peds.push(p);
+    }
+  }
+  function place(p){
+    const k=p.a+(p.b-p.a)*p.u, x=p.vertical?p.lane:p.sign*k, z=p.vertical?p.sign*k:p.lane;
+    const dx=x-p.mesh.position.x, dz=z-p.mesh.position.z;
+    p.mesh.position.set(x,0,z);
+    if(Math.abs(dx)+Math.abs(dz)>1e-4) p.mesh.rotation.y=Math.atan2(dx,dz);
+  }
+  function addBirds(id){
+    const n=9, geo=new THREE.ConeGeometry(.25,.9,3); geo.rotateX(Math.PI/2);
+    const m=new THREE.InstancedMesh(geo,new THREE.MeshBasicMaterial({color:0x1a1622}),n);
+    m.frustumCulled=false; W3.scene.add(m);
+    BW.birds={mesh:m,n,phase:rand()*10,r:22+rand()*10,o:new THREE.Object3D()};
+  }
+
+  /* ---------- paint drops ---------- */
+  const DROPS_PER_DISTRICT=5;
+  function dropFlag(id,i){ return 'lm34_drop_'+id+'_'+i; }
+  function addDrops(id,plazas,inner){
+    BW.drops=[]; const B=boundsFor(id);
+    const spots=plazas.slice(0,DROPS_PER_DISTRICT);
+    // top up along the avenues if there were few plazas
+    const extra=[[0,-(inner+(B.z-inner)*.7)],[(inner+(B.x-inner)*.6),0],[0,inner+(B.z-inner)*.55],[-(inner+(B.x-inner)*.8),0],[0,-(B.z-6)]];
+    for(let i=0;spots.length<DROPS_PER_DISTRICT&&i<extra.length;i++) spots.push(extra[i]);
+    spots.forEach(([x,z],i)=>{
+      if(G.flags&&G.flags[dropFlag(id,i)]) return;
+      const g=new THREE.Group();
+      const gem=new THREE.Mesh(new THREE.OctahedronGeometry(.38,0),new THREE.MeshStandardMaterial({color:0xff4fa3,emissive:0xff4fa3,emissiveIntensity:1.1,roughness:.3}));
+      gem.position.y=1.2;
+      const beam=new THREE.Mesh(new THREE.CylinderGeometry(.05,.3,3.2,8,1,true),new THREE.MeshBasicMaterial({color:0xff8fc8,transparent:true,opacity:.18,depthWrite:false,side:THREE.DoubleSide}));
+      beam.position.y=1.6;
+      g.add(gem,beam); g.position.set(x+(plazas.includes(spots[i])?0:1.8),0,z); W3.scene.add(g);
+      BW.drops.push({id,i,g,gem});
+    });
+  }
+  function collectDrops(){
+    if(!BW.drops.length||!W3.player||typeof canControl!=='function'||!canControl()) return;
+    const p=W3.player.position;
+    for(let k=BW.drops.length-1;k>=0;k--){
+      const d=BW.drops[k]; if(Math.hypot(d.g.position.x-p.x,d.g.position.z-p.z)>1.5) continue;
+      BW.drops.splice(k,1); G.flags=G.flags||{}; G.flags[dropFlag(d.id,d.i)]=true;
+      try{ if(typeof burst3D==='function') burst3D(d.g.position.x,1.2,d.g.position.z,0xff4fa3,20); }catch(e){}
+      if(d.g.parent) d.g.parent.remove(d.g);
+      let got=0; for(let i=0;i<DROPS_PER_DISTRICT;i++) if(G.flags[dropFlag(d.id,i)]) got++;
+      try{ if(typeof crystals==='function') crystals(1); if(typeof G.pigMax==='number') G.pigment=Math.min(G.pigMax,(G.pigment||0)+1); if(typeof refreshHUD==='function') refreshHUD(); }catch(e){}
+      try{ window.LM_FF7_STING&&LM_FF7_STING.rate(got===DROPS_PER_DISTRICT?'perfect':'great'); }catch(e){}
+      if(got===DROPS_PER_DISTRICT){ try{ crystals(3); }catch(e){} if(typeof toast==='function') toast('🎨','כל טיפות הצבע ב'+sceneName(d.id)+'! +3 גבישים'); }
+      else if(typeof toast==='function') toast('🎨','טיפת צבע '+got+'/'+DROPS_PER_DISTRICT+' · '+sceneName(d.id));
+      try{ if(typeof autosave==='function') autosave(); }catch(e){}
+    }
+  }
+
+  /* ---------- gates to neighbouring districts ---------- */
+  const DIRS={N:{x:0,z:-1,ry:0},S:{x:0,z:1,ry:Math.PI},E:{x:1,z:0,ry:-Math.PI/2},W:{x:-1,z:0,ry:Math.PI/2}};
+  const OPP={N:'S',S:'N',E:'W',W:'E'};
+  function districtOfScene(id){ for(const k in DISTRICTS) if(DISTRICTS[k].scene===id) return k; return null; }
+  function gateTargets(id){
+    const here=DISTRICTS[districtOfScene(id)]||{x:50,y:50};
+    const open=Object.keys(DISTRICTS).filter(k=>DISTRICTS[k].scene!==id&&!DISTRICTS[k].final&&(()=>{try{return districtUnlocked(k);}catch(e){return false;}})());
+    const out={}; const used=new Set();
+    // the map is drawn right-to-left: a larger map x lies further west
+    const vec=k=>{ const d=DISTRICTS[k]; if(typeof d.x!=='number') return null; return {x:-(d.x-here.x),y:d.y-here.y}; };
+    const order=['N','E','S','W'];
+    order.forEach(dir=>{
+      let best=null,bs=-1e9; const D=DIRS[dir];
+      open.forEach(k=>{ if(used.has(k)) return; const v=vec(k); if(!v) return; const len=Math.hypot(v.x,v.y)||1;
+        const dot=(v.x*D.x+v.y*D.z)/len; if(dot>.35&&dot-len/200>bs){ bs=dot-len/200; best=k; } });
+      if(best){ out[dir]=best; used.add(best); }
+    });
+    open.filter(k=>!used.has(k)).forEach(k=>{ const free=order.find(d=>!out[d]); if(free){ out[free]=k; used.add(k); } });
+    return out;
+  }
+  function addGates(id){
+    if(typeof addInteractable!=='function'||typeof DISTRICTS==='undefined') return;
+    const B=boundsFor(id), targets=gateTargets(id);
+    Object.keys(DIRS).forEach(dir=>{
+      const D=DIRS[dir], x=D.x*(B.x-2), z=D.z*(B.z-2), key=targets[dir];
+      const mesh=typeof buildCityGate==='function'?buildCityGate():new THREE.Group(); mesh.rotation.y=D.ry;
+      mesh.traverse(o=>{ if(o.isLight) o.visible=false; });
+      const label=key?('אל '+DISTRICTS[key].name):'הדרך נמשכת';
+      const run=()=>{
+        if(!key){ if(typeof toast==='function') toast('🔒','הרחוב הזה יוביל למקום חדש בהמשך הסיפור.'); return; }
+        BW.arrive={from:dir,to:DISTRICTS[key].scene};
+        try{ SFX.click(); }catch(e){}
+        if(typeof hasFlag==='function'&&hasFlag('res_train')&&G.party) G.party.forEach(p=>G.hp[p]=maxHP(p));
+        enterScene(DISTRICTS[key].scene);
+      };
+      addInteractable(W3.scene,x,z,key?DISTRICTS[key].icon:'🔒',label,key?0x6ee7ff:0x8a8a8a,run,{mesh,tall:true,dim:!key,kind:'gate',hid:'lm34_gate_'+dir,radius:3.2});
+      const it=W3.interactables[W3.interactables.length-1]; if(it&&it.light) it.light.visible=false;
+    });
+  }
+
+  /* ---------- install ---------- */
+  function expand(id){
+    if(typeof W3==='undefined'||!W3.scene||W3.mode!=='explore') return;
+    seed=0; for(const c of id) seed=(seed*31+c.charCodeAt(0))>>>0; seed=(seed^0x9e3779b9)>>>0;
+    BW.scene=id;
+    const {inner,plazas}=buildOuterCity(id);
+    widenHorizon(id);
+    if(!reduced()){ addPedestrians(id,inner); addBirds(id); } else { BW.peds=[]; BW.birds=null; }
+    addDrops(id,plazas,inner);
+    // arriving through a gate: start just inside the opposite avenue mouth, looking in
+    if(BW.arrive&&BW.arrive.to===id&&W3.player){
+      const dir=OPP[BW.arrive.from], D=DIRS[dir], B=boundsFor(id);
+      W3.player.position.set(D.x*(B.x-13),0,D.z*(B.z-13)); // camera (8 behind) stays clear of the gate's light beam
+      W3.camYaw=Math.atan2(D.x,D.z); W3.walkTarget=null;
+      if(W3.camera){ W3.camera.position.set(W3.player.position.x+Math.sin(W3.camYaw)*8,6,W3.player.position.z+Math.cos(W3.camYaw)*8); }
+    }
+    BW.arrive=null;
+  }
+  function tick(dt){
+    if(typeof W3==='undefined'||W3.mode!=='explore'||BW.scene!==W3.current) return;
+    BW.t+=dt||0;
+    if(!(typeof canControl==='function')||document.body.classList.contains('dialog-open')===false){
+      BW.peds.forEach(p=>{ p.u+=p.dir*p.speed*(dt||0); if(p.u>1){p.u=1;p.dir=-1;} if(p.u<0){p.u=0;p.dir=1;} place(p); });
+    }
+    const b=BW.birds;
+    if(b){ for(let i=0;i<b.n;i++){ const a=BW.t*.25+i*.7+b.phase, r=b.r+Math.sin(i*1.7)*4; b.o.position.set(Math.cos(a)*r,19+Math.sin(BW.t+i)*1.5+(i%3),Math.sin(a)*r);
+      b.o.rotation.set(0,-a,Math.sin(BW.t*9+i)*.5); b.o.scale.set(1,1+Math.sin(BW.t*14+i)*.35,1); b.o.updateMatrix(); b.mesh.setMatrixAt(i,b.o.matrix); } b.mesh.instanceMatrix.needsUpdate=true; }
+    BW.drops.forEach((d,i)=>{ d.gem.rotation.y+=(dt||0)*1.8; d.gem.position.y=1.2+Math.sin(BW.t*2.4+i)*.18; });
+    collectDrops();
+  }
+  function install(){
+    if(window.__LM34__) return; window.__LM34__=true;
+    // one boundary for every district (the old literal ±34 clamps become a safety net at ±60)
+    if(typeof exploreBounds16==='function'){ exploreBounds16=function(){ return (W3.mode==='explore'&&W3.current)?boundsFor(W3.current):null; }; }
+    // the alley's low perimeter rail is drawn at alleyBounds16; push it out behind the closing ring of buildings
+    if(typeof alleyBounds16==='function'){ alleyBounds16=function(){ return {x:BOUNDS.alley.x+12,z:BOUNDS.alley.z+12}; }; }
+    if(typeof loadEnv3D==='function'){
+      const raw=loadEnv3D;
+      loadEnv3D=function(id){ const r=raw.apply(this,arguments); try{ expand(id||W3.current); }catch(e){ console.warn('[LM 0.34] expand',e); } return r; };
+    }
+    if(typeof buildScene3DInteractables==='function'){
+      const rawB=window.buildScene3DInteractables||buildScene3DInteractables;
+      window.buildScene3DInteractables=function(id){ const r=rawB.apply(this,arguments); try{ addGates(id); }catch(e){ console.warn('[LM 0.34] gates',e); } return r; };
+    }
+    if(typeof animate3DBody==='function'){
+      const rawA=window.animate3DBody||animate3DBody;
+      window.animate3DBody=function(dt){ const r=rawA.apply(this,arguments); try{ tick(dt); }catch(e){} return r; };
+    }
+  }
+  window.LM_BIGWORLD.install=install;
   const later=()=>setTimeout(install,0);
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',later,{once:true}); else later();
 })();
