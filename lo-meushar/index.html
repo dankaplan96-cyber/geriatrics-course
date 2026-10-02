@@ -26795,7 +26795,7 @@ var CombatFullscreen=(function(){
 /* Mini-games (eye/mirror/final canvas) draw on a translucent screen: the world HUD,
    objective pill and "what now" button showed through and covered the mini-game title
    and instructions. The mini-game owns the foreground while it is open. */
-body:is(:has(#canvas-screen:not(.hidden)),:has(#party-select-screen:not(.hidden))) :is(#toasts,#hud3d,#objective-banner,#move-hint,#scene-caption3d,#act-cluster,#world-layout28,.lm-whatnow-fab,#lm-context-card,#lm-world-cue){visibility:hidden!important;pointer-events:none!important;}
+body:is(:has(#canvas-screen:not(.hidden)),:has(#party-select-screen:not(.hidden)),:has(#ending-screen:not(.hidden))) :is(#toasts,#hud3d,#objective-banner,#move-hint,#scene-caption3d,#act-cluster,#world-layout28,.lm-whatnow-fab,#lm-context-card,#lm-world-cue){visibility:hidden!important;pointer-events:none!important;}
 /* The eye mini-game switches the screen to a dark theme whose centre was see-through,
    while the title/description kept the dark ink of the light paper theme (unreadable). */
 #app #canvas-screen.lm-eye-upgrade:not(.hidden){background:radial-gradient(900px 560px at 50% 30%,rgba(255,79,163,.16),transparent 65%),rgba(22,18,14,.94)!important;-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);}
@@ -26807,6 +26807,9 @@ body:is(:has(#canvas-screen:not(.hidden)),:has(#party-select-screen:not(.hidden)
 /* Boss party picker is position:absolute with no z-index, so it opened underneath the
    3D world (fixed, z-index 1) and the menu: tapping a boss with 4+ party members did
    nothing visible. Lift it above the world, map and menu, under modals and toasts. */
+/* Same stacking bug on the ending screen: after the final canvas the player saw the
+   3D alley again instead of their ending. */
+#app #ending-screen:not(.hidden){position:fixed!important;inset:0!important;z-index:96!important;background:linear-gradient(#081725d9,#071421f7),var(--battle-art,none) center/cover,#0b1420!important;}
 #app #party-select-screen:not(.hidden){position:fixed!important;inset:0!important;z-index:75!important;background:radial-gradient(1200px 700px at 70% -10%,#3a2b1c 0%,var(--ink) 55%)!important;overflow-y:auto!important;}
 </style>
 <script id="lm-31-fixes-js">
