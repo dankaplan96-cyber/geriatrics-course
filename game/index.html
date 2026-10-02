@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- בופי מן RPG V50 -->
+<!-- בופי מן RPG V51 -->
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -541,7 +541,7 @@ body.force-land .game-menu-grid{grid-template-columns:repeat(3,minmax(0,1fr));ga
       <button class="game-menu-card" onclick="toggleRunFromMenu()"><b id="menu-run-label">🏃 ריצה</b><small>לרוץ גם במגע קרוב לדמות</small></button>
       <button class="game-menu-card" onclick="launchGameMenu('settings')"><b>⚙️ הגדרות</b><small>צליל, קושי ונגישות</small></button>
     </div>
-    <div class="menu-footer"><span><span dir="ltr">V50</span> · ⏱️ <span id="menu-time"></span></span><span>₪<span id="ui-gold">120</span></span></div>
+    <div class="menu-footer"><span><span dir="ltr">V51</span> · ⏱️ <span id="menu-time"></span></span><span>₪<span id="ui-gold">120</span></span></div>
     <button class="close-btn menu-close" onclick="closeGameMenu()">חזרה למשחק</button>
   </div>
 
@@ -574,7 +574,7 @@ body.force-land .game-menu-grid{grid-template-columns:repeat(3,minmax(0,1fr));ga
 
 <script>
 /* =========================================================
-   בופי מן RPG V50 (Hebrew dialogue, character voices and situational humor)
+   בופי מן RPG V51 (Hebrew dialogue, character voices and situational humor)
    ========================================================= */
 const canvas = document.getElementById('gameCanvas');
 let ctx = canvas.getContext('2d'); // Temporarily redirected only while building a map layer.
@@ -725,40 +725,473 @@ function bar(x, y, w, h, pct, fill, back) {
 /* =========================================================
    SOUND
    ========================================================= */
+/* =========================================================
+   AUDIO — everything synthesized, nothing sampled.
+   One graph: every voice → its bus (music / sfx / ambience) → a master compressor.
+   A shared reverb gives the music and the bigger effects a room to live in.
+   ========================================================= */
+const AUDIO = { ctx: null, master: null, sfxBus: null, musicBus: null, ambBus: null, verb: null, noise: null };
+function audioGraph(ctx) {
+  if (!ctx || AUDIO.ctx === ctx) return;
+  AUDIO.ctx = ctx;
+  const comp = ctx.createDynamicsCompressor();
+  comp.threshold.value = -16; comp.knee.value = 10; comp.ratio.value = 4; comp.attack.value = .004; comp.release.value = .22;
+  AUDIO.master = ctx.createGain(); AUDIO.master.gain.value = .95;
+  AUDIO.master.connect(comp); comp.connect(ctx.destination);
+  AUDIO.sfxBus = ctx.createGain(); AUDIO.sfxBus.connect(AUDIO.master);
+  AUDIO.musicBus = ctx.createGain(); AUDIO.musicBus.connect(AUDIO.master);
+  AUDIO.ambBus = ctx.createGain(); AUDIO.ambBus.connect(AUDIO.master);
+  // a generated room: two seconds of decaying stereo noise is a perfectly good small hall
+  const len = Math.floor(ctx.sampleRate * 2.2), ir = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6); }
+  AUDIO.verb = ctx.createConvolver(); AUDIO.verb.buffer = ir;
+  const wet = ctx.createGain(); wet.gain.value = .32; AUDIO.verb.connect(wet); wet.connect(AUDIO.master);
+  const nb = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate), nd = nb.getChannelData(0);
+  for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+  AUDIO.noise = nb;
+  applyVolumes();
+}
+const NOTE_IDX = { C: 0, 'C#': 1, Db: 1, D: 2, 'D#': 3, Eb: 3, E: 4, F: 5, 'F#': 6, Gb: 6, G: 7, 'G#': 8, Ab: 8, A: 9, 'A#': 10, Bb: 10, B: 11 };
+function midiHz(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+function noteHz(name) {                       // "E5", "F#4", "Bb3"
+  const m = /^([A-G][#b]?)(-?\d)$/.exec(name); if (!m) return 0;
+  return midiHz(12 * (+m[2] + 1) + NOTE_IDX[m[1]]);
+}
+const CHORD_Q = { '': [0, 4, 7], m: [0, 3, 7], '7': [0, 4, 7, 10], m7: [0, 3, 7, 10], maj7: [0, 4, 7, 11], sus4: [0, 5, 7],
+  sus2: [0, 2, 7], dim: [0, 3, 6], '5': [0, 7], add9: [0, 4, 7, 14] };
+function chordNotes(sym) {                   // "Am7" -> { root: midi in octave 2, tones: midi list around octave 4 }
+  const m = /^([A-G][#b]?)(.*)$/.exec(sym); if (!m) return null;
+  const r = NOTE_IDX[m[1]], q = CHORD_Q[m[2]] || CHORD_Q[''];
+  let base = 48 + r; if (base < 52) base += 12;          // keep the pad between E3 and D#4, under the melody
+  return { root: 36 + r, third: q[1], tones: q.map(iv => base + iv) };
+}
+
+/* ---------- sound effects ---------- */
 class SoundSystem {
-  constructor() { this.ctx = null; }
-  init() { if (!this.ctx) { try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } }
-  play(freq, dur, type, vol) {
-    if (!player.soundOn || !this.ctx) return;
+  constructor() { this.ctx = null; this.last = {}; }
+  init() {
+    if (!this.ctx) { try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    if (this.ctx) audioGraph(this.ctx);
+  }
+  ok() { return player.soundOn && this.ctx && (player.sfxVol == null || player.sfxVol > 0); }
+  // one shaped oscillator voice: optional pitch slide, filter, detuned twin and reverb send
+  tone(freq, dur, o) {
+    if (!this.ok()) return; o = o || {};
     try {
-      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-      o.type = type || 'sine';
-      o.frequency.setValueAtTime(freq, this.ctx.currentTime);
-      const v = (vol == null ? .09 : vol) * (player.sfxVol == null ? 1 : player.sfxVol);
-      if (v <= .0005) return;
-      g.gain.setValueAtTime(v, this.ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(.001, this.ctx.currentTime + dur);
-      o.connect(g); g.connect(this.ctx.destination);
-      o.start(); o.stop(this.ctx.currentTime + dur);
+      const c = this.ctx, t = c.currentTime + (o.at || 0), v = (o.vol == null ? .08 : o.vol);
+      const g = c.createGain(), a = o.attack || .006;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + a);
+      g.gain.exponentialRampToValueAtTime(.0008, t + Math.max(a + .01, dur));
+      let out = g;
+      if (o.lp) { const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = o.lp; g.connect(f); out = f; }
+      out.connect(AUDIO.sfxBus);
+      if (o.verb) { const s = c.createGain(); s.gain.value = o.verb; out.connect(s); s.connect(AUDIO.verb); }
+      (o.twin ? [-o.twin, o.twin] : [0]).forEach(dt => {
+        const osc = c.createOscillator(); osc.type = o.type || 'sine';
+        osc.frequency.setValueAtTime(freq, t); osc.detune.value = dt;
+        if (o.slide) osc.frequency.exponentialRampToValueAtTime(Math.max(20, o.slide), t + dur);
+        osc.connect(g); osc.start(t); osc.stop(t + dur + .05);
+      });
     } catch (e) {}
   }
-  select() { this.play(600, .08); }
-  step() { this.play(280, .05, 'square', .028); }
-  bump() { this.play(110, .09, 'square', .05); buzz(8); }
-  hit() { this.play(180, .15, 'triangle'); buzz(18); }
-  crit() { this.play(260, .1, 'sawtooth', .07); setTimeout(() => this.play(420, .18, 'triangle', .07), 70); buzz([15, 30, 25]); }
-  heal() { this.play(520, .12); setTimeout(() => this.play(780, .18), 90); }
-  win() { [660, 880, 1100].forEach((f, i) => setTimeout(() => this.play(f, .22), i * 110)); }
-  levelUp() { [520, 660, 880, 1320].forEach((f, i) => setTimeout(() => this.play(f, .25), i * 90)); buzz([30, 40, 30]); }
-  encounter() { this.play(500, .13); setTimeout(() => this.play(680, .13), 110); setTimeout(() => this.play(900, .2), 220); buzz(60); }
+  // filtered noise: hits, whooshes, sprays, splashes, drums
+  noise(dur, o) {
+    if (!this.ok() || !AUDIO.noise) return; o = o || {};
+    try {
+      const c = this.ctx, t = c.currentTime + (o.at || 0), v = o.vol == null ? .06 : o.vol;
+      const src = c.createBufferSource(); src.buffer = AUDIO.noise; src.loop = true;
+      const f = c.createBiquadFilter(); f.type = o.ft || 'bandpass'; f.frequency.setValueAtTime(o.f || 1200, t); f.Q.value = o.q || 1;
+      if (o.fTo) f.frequency.exponentialRampToValueAtTime(o.fTo, t + dur);
+      const g = c.createGain(), a = o.attack || .003;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + a);
+      g.gain.exponentialRampToValueAtTime(.0008, t + Math.max(a + .01, dur));
+      src.connect(f); f.connect(g); g.connect(AUDIO.sfxBus);
+      if (o.verb) { const s = c.createGain(); s.gain.value = o.verb; g.connect(s); s.connect(AUDIO.verb); }
+      src.start(t, Math.random()); src.stop(t + dur + .05);
+    } catch (e) {}
+  }
+  seq(notes, step, o) { notes.forEach((n, i) => { if (n) this.tone(typeof n === 'string' ? noteHz(n) : n, (o && o.len) || step * 1.6, Object.assign({}, o, { at: i * step + ((o && o.at) || 0) })); }); }
+  // a legacy single beep, still used by a few one-off moments
+  play(freq, dur, type, vol) { this.tone(freq, dur, { type: type || 'sine', vol: vol == null ? .07 : vol }); }
+  throttle(id, ms) { const n = performance.now(); if (this.last[id] && n - this.last[id] < ms) return true; this.last[id] = n; return false; }
+
+  // --- interface ---
+  select() { if (this.throttle('sel', 40)) return; this.tone(1320, .05, { type: 'triangle', vol: .045 }); this.tone(1980, .04, { type: 'sine', vol: .02, at: .012 }); }
+  back() { this.tone(880, .06, { type: 'triangle', vol: .04, slide: 620 }); }
+  talk() { if (this.throttle('talk', 120)) return; this.tone(740, .07, { type: 'sine', vol: .045, slide: 980 }); }
+  open() { this.noise(.18, { f: 500, fTo: 2600, q: 1.4, vol: .035 }); this.tone(660, .08, { type: 'triangle', vol: .03, at: .06 }); }
+  close() { this.noise(.16, { f: 2400, fTo: 450, q: 1.4, vol: .03 }); }
+  bump() { if (this.throttle('bump', 90)) return; this.tone(140, .1, { type: 'sine', vol: .09, slide: 70 }); this.noise(.05, { ft: 'lowpass', f: 600, vol: .04 }); buzz(8); }
+  step() {
+    if (this.throttle('step', 70)) return;
+    const t = typeof tileAt === 'function' ? tileAt(currentMap, px, py) : '.', cat = (MAPS[currentMap] || {}).cat, r = .9 + Math.random() * .2;
+    if (isWaterTile(t)) this.noise(.12, { f: 900 * r, fTo: 400, q: 2, vol: .03 });
+    else if (t === 'G' || cat === 'park' || cat === 'hill') this.noise(.07, { ft: 'highpass', f: 3500 * r, vol: .022 });
+    else if (INDOOR_CATS[cat]) this.noise(.03, { f: 1800 * r, q: 3, vol: .022 });
+    else this.noise(.04, { ft: 'lowpass', f: 900 * r, vol: .03 });
+  }
+  door() { this.tone(180, .25, { type: 'sawtooth', vol: .025, slide: 240, lp: 900 }); this.noise(.12, { ft: 'lowpass', f: 400, vol: .07, at: .2 }); }
+  coin() { this.seq(['B5', 'E6'], .07, { type: 'square', vol: .035, len: .14, lp: 4000 }); }
+  // --- the world ---
+  pickup() { this.seq(['E6', 'G6', 'B6', 'E7'], .055, { type: 'triangle', vol: .045, verb: .3 }); }
+  spray() { this.noise(.55, { ft: 'highpass', f: 2600, vol: .05, attack: .04 }); this.noise(.35, { ft: 'highpass', f: 5200, vol: .03, at: .3 }); this.seq(['C6', 'E6', 'G6'], .09, { type: 'triangle', vol: .035, at: .5, verb: .3 }); }
+  paintDoor() { this.noise(.3, { f: 1400, fTo: 3000, vol: .03, attack: .05 }); this.door(); this.seq(['G5', 'C6'], .1, { type: 'triangle', vol: .04, at: .35, verb: .3 }); }
+  snip() { this.noise(.025, { ft: 'highpass', f: 5000, vol: .08 }); this.noise(.025, { ft: 'highpass', f: 6000, vol: .07, at: .09 }); }
+  thud() { this.tone(90, .3, { type: 'sine', vol: .14, slide: 40 }); this.noise(.2, { ft: 'lowpass', f: 300, vol: .08 }); }
+  solve() { this.thud(); this.seq(['C5', 'E5', 'G5', 'C6'], .08, { type: 'triangle', vol: .045, at: .25, verb: .35 }); }
+  whoosh() { this.noise(.45, { f: 400, fTo: 3200, q: .9, vol: .06, attack: .12 }); }
+  splash() { this.noise(.4, { ft: 'lowpass', f: 2200, fTo: 300, vol: .1 }); this.tone(500, .4, { type: 'sine', vol: .05, slide: 120 }); }
+  bubbles() { for (let i = 0; i < 5; i++) this.tone(400 + Math.random() * 500, .08, { type: 'sine', vol: .04, slide: 1200, at: i * .07 }); }
+  dip(f) { this.tone(f, .2, { type: 'triangle', vol: .06, verb: .2 }); this.noise(.12, { ft: 'lowpass', f: 900, vol: .04 }); }
+  tune() { this.seq(['D5', 'Eb5', 'F#5', 'G5', 'A5'], .16, { type: 'triangle', vol: .06, len: .4, lp: 2400, verb: .35 }); }
+  // --- rewards (the music steps aside for these) ---
+  questDone() { music.duck(1.6); this.seq(['C5', 'E5', 'G5', 'C6'], .1, { type: 'square', vol: .035, lp: 3000, len: .25 }); this.tone(noteHz('C6'), .8, { type: 'triangle', vol: .05, at: .4, verb: .4 }); }
+  learn() { music.duck(1.2); this.seq(['G5', 'D6', 'G6'], .11, { type: 'triangle', vol: .055, len: .5, verb: .45 }); }
+  power() {
+    music.duck(2.8);
+    this.seq(['C5', 'E5', 'G5', 'C6', 'E6', 'G6'], .09, { type: 'square', vol: .03, lp: 3200, len: .2 });
+    ['C5', 'E5', 'G5', 'C6'].forEach(n => this.tone(noteHz(n), 1.6, { type: 'triangle', vol: .035, at: .55, attack: .05, verb: .5 }));
+    this.noise(1, { ft: 'highpass', f: 6000, vol: .02, at: .55, attack: .2 });
+    buzz([30, 40, 30]);
+  }
+  levelUp() {
+    music.duck(2);
+    this.seq(['G4', 'C5', 'E5', 'G5', 'C6'], .075, { type: 'square', vol: .032, lp: 3500, len: .16 });
+    ['E5', 'G5', 'C6'].forEach(n => this.tone(noteHz(n), 1.1, { type: 'triangle', vol: .04, at: .42, attack: .02, verb: .45 }));
+    buzz([30, 40, 30]);
+  }
+  achieve() { this.seq(['G5', 'B5', 'D6', 'G6'], .07, { type: 'triangle', vol: .04, len: .3, verb: .5 }); }
+  fanfare() { music.duck(3.5); this.seq(['C5', 'C5', 'C5', 'G5', 'E5', 'G5', 'C6'], .13, { type: 'square', vol: .035, lp: 3000, len: .22 });
+    ['C4', 'G4', 'C5', 'E5'].forEach(n => this.tone(noteHz(n), 2, { type: 'sawtooth', vol: .018, at: .9, attack: .1, lp: 1800, verb: .5 })); }
+  heal() { this.seq(['C6', 'E6', 'G6', 'C7'], .06, { type: 'sine', vol: .045, len: .3, verb: .5 }); this.noise(.5, { ft: 'highpass', f: 7000, vol: .015, attack: .1 }); }
+  // --- battle ---
+  encounter() {
+    music.duck(.8);
+    this.seq([660, 880, 660, 990, 1320], .055, { type: 'square', vol: .04, len: .09, lp: 4000 });
+    this.noise(.6, { f: 300, fTo: 4000, q: .8, vol: .05, attack: .5 });
+    buzz(60);
+  }
+  hit(type) {
+    if (this.throttle('hit', 30)) return;
+    type = type || (battle && battle.vfxType) || 'none';
+    this.tone(170, .16, { type: 'sine', vol: .14, slide: 50 });
+    this.noise(.1, { ft: 'lowpass', f: 1800, vol: .09 });
+    if (type === 'focus') this.tone(1400, .18, { type: 'triangle', vol: .04, slide: 700 });
+    else if (type === 'calm') this.noise(.3, { f: 700, fTo: 2500, q: .7, vol: .04, attack: .05 });
+    else if (type === 'vigor') this.tone(90, .2, { type: 'square', vol: .04, slide: 45, lp: 600 });
+    buzz(18);
+  }
+  crit() { this.hit(); this.tone(880, .25, { type: 'square', vol: .04, slide: 1760, lp: 5000, at: .03 }); this.seq(['E6', 'B6'], .05, { type: 'triangle', vol: .04, verb: .4, at: .08 }); buzz([15, 30, 25]); }
+  hurt() { this.tone(120, .22, { type: 'sawtooth', vol: .05, slide: 60, lp: 700 }); this.noise(.14, { ft: 'lowpass', f: 1200, vol: .1 }); buzz(25); }
+  guard() { this.tone(1600, .22, { type: 'square', vol: .025, lp: 4000 }); this.tone(2400, .18, { type: 'sine', vol: .03 }); this.noise(.06, { f: 3500, q: 4, vol: .05 }); }
+  status() { this.tone(300, .3, { type: 'sawtooth', vol: .04, slide: 180, lp: 1400 }); this.tone(310, .3, { type: 'sawtooth', vol: .03, slide: 175, lp: 1400 }); }
+  flow() {
+    music.duck(1.2);
+    this.tone(220, .7, { type: 'sawtooth', vol: .035, slide: 880, lp: 3000, twin: 8 });
+    this.seq(['C6', 'E6', 'G6', 'B6', 'D7'], .06, { type: 'triangle', vol: .04, at: .55, verb: .5 });
+  }
+  friend() { this.seq(['E5', 'A5', 'C#6', 'E6'], .07, { type: 'triangle', vol: .05, verb: .35 }); }
+  irk(boss) { this.tone(boss ? 260 : 420, .12, { type: 'sine', vol: .07, slide: boss ? 520 : 840 }); this.tone(boss ? 520 : 840, .16, { type: 'sine', vol: .05, slide: boss ? 300 : 500, at: .12 }); }
+  ma(k) { this.tone(380 + k * 110, .14, { type: 'square', vol: .045, slide: 520 + k * 140, lp: 3000 }); }
+  dice() { for (let i = 0; i < 6; i++) this.noise(.03, { f: 2500 + Math.random() * 1500, q: 5, vol: .06, at: i * .06 }); }
+  huff() { this.tone(320, .4, { type: 'sawtooth', vol: .04, slide: 140, lp: 1200 }); this.noise(.3, { f: 900, fTo: 400, vol: .04, at: .05 }); }
+  cash() { this.seq(['B6', 'E7'], .07, { type: 'square', vol: .035, len: .12, lp: 6000 }); this.noise(.15, { f: 4000, q: 3, vol: .03, at: .12 }); }
+  faint() { this.tone(700, .6, { type: 'square', vol: .035, slide: 90, lp: 2500 }); this.noise(.5, { ft: 'lowpass', f: 2500, fTo: 200, vol: .08, at: .15 }); }
+  heartbeat() { this.tone(70, .12, { type: 'sine', vol: .1, slide: 45 }); this.tone(66, .12, { type: 'sine', vol: .07, slide: 42, at: .18 }); }
+  win() {
+    music.duck(2.4);
+    this.seq(['G5', 'G5', 'G5', 'Eb5', 'F5', 'G5', 'F5', 'G5'], .085, { type: 'square', vol: .03, len: .12, lp: 3500 });
+    ['C5', 'E5', 'G5', 'C6'].forEach(n => this.tone(noteHz(n), 1.2, { type: 'triangle', vol: .035, at: .72, attack: .02, verb: .45 }));
+  }
+  gameover() { music.duck(3); this.seq(['E5', 'D5', 'C5', 'B4', 'A4'], .22, { type: 'triangle', vol: .05, len: .5, lp: 1800, verb: .5 }); }
 }
+
+/* ---------- music: a five-voice tracker ----------
+   A track is written as sections of bars. Each bar has a chord and eight eighth-note melody slots:
+   a note ("E5"), "-" holds the note before it, "." is a rest. From the chord the engine plays the bass
+   (in the track's style), a pad, an optional arpeggio, and the drums read a 16-step pattern.
+   Lookahead scheduling on the AudioContext clock keeps everything tight; switching tracks crossfades. */
+const MUSIC_TRACKS = {
+  title: { bpm: 84, lead: { wave: 'triangle', vol: .05, vib: 5 }, bass: 'long', pad: .016, arp: { wave: 'sine', vol: .02, rate: 2 }, lp: 2600,
+    form: ['A', 'A', 'B'], sections: {
+      A: [['C', 'G4 - C5 - E5 - - D5'], ['Am', 'C5 - - - A4 - - -'], ['F', 'A4 - C5 - F5 - E5 D5'], ['G', 'D5 - - - G4 - - -']],
+      B: [['F', 'C5 - A4 - C5 - F5 -'], ['G', 'E5 - D5 - - - B4 -'], ['Em', 'G4 - B4 - E5 - D5 -'], ['Am', 'C5 - - - - - . .'],
+          ['F', 'A4 - C5 - F5 - A5 -'], ['G', 'G5 - F5 - E5 - D5 -'], ['C', 'E5 - - - - - - -'], ['C', '. . . . . . . .']] } },
+  home: { bpm: 80, swing: .12, lead: { wave: 'triangle', vol: .045, vib: 4 }, bass: 'root', pad: .014, drums: { kit: 'soft', p: 'k.......s.......' }, lp: 2200,
+    form: ['A', 'B'], sections: {
+      A: [['Fmaj7', 'A4 - C5 - E5 - - -'], ['Em7', 'G4 - B4 - D5 - - -'], ['Dm7', 'F4 - A4 - C5 - D5 E5'], ['Cmaj7', 'E5 - - - - - . .']],
+      B: [['Fmaj7', 'C5 - A4 - F5 - E5 -'], ['Em7', 'D5 - B4 - G5 - - -'], ['Dm7', 'A5 - G5 - F5 - E5 D5'], ['Cmaj7', 'C5 - - - . . . .']] } },
+  overworld: { bpm: 112, lead: { wave: 'square', vol: .03, vib: 3 }, bass: 'pulse', pad: .01, drums: { kit: 'tight', p: 'k.h.s.h.k.hks.h.' }, lp: 3200,
+    form: ['A1', 'A2', 'B'], sections: {
+      A1: [['C', 'E5 . G5 . C6 - B5 G5'], ['Am', 'A5 - - E5 . . C5 .'], ['F', 'F5 . A5 . C6 - A5 F5'], ['G', 'G5 - - - D5 . . .']],
+      A2: [['C', 'E5 . G5 . C6 - D6 E6'], ['Am', 'C6 - A5 . E5 . A5 .'], ['F', 'F5 . E5 . D5 . C5 .'], ['G', 'D5 - - - . . G4 .']],
+      B: [['Dm', 'F5 . . F5 E5 . D5 .'], ['G', 'B4 - D5 - G5 - - .'], ['Em', 'G5 . . G5 F5 . E5 .'], ['Am', 'C5 - E5 - A5 - - .'],
+          ['Dm', 'F5 . A5 . D6 - C6 .'], ['G', 'B5 - A5 . G5 . F5 .'], ['C', 'E5 - - - G5 - - -'], ['C', 'C5 - - - . . . .']] } },
+  art: { bpm: 96, swing: .2, lead: { wave: 'triangle', vol: .05, vib: 5 }, bass: 'walk', pad: .012, drums: { kit: 'soft', p: 'k..h.hs.k.h..hs.' }, lp: 2600,
+    form: ['A', 'A', 'B', 'A'], sections: {
+      A: [['Cmaj7', 'E5 - G5 B5 - A5 G5 .'], ['Am7', 'E5 - - C5 . A4 C5 .'], ['Dm7', 'F5 - A5 C6 - B5 A5 .'], ['G7', 'G5 - F5 D5 - B4 . .']],
+      B: [['Fmaj7', 'A5 - - G5 F5 - E5 .'], ['Em7', 'G5 - - E5 D5 - B4 .'], ['Dm7', 'C5 D5 F5 A5 - G5 F5 .'], ['G7', 'D5 - - - . . . .']] } },
+  dept: { bpm: 120, lead: { wave: 'square', vol: .025 }, bass: 'pulse', arp: { wave: 'square', vol: .016, rate: 1 }, drums: { kit: 'tight', p: 'k.h.k.h.k.h.k.h.' }, lp: 2400,
+    form: ['A', 'B'], sections: {
+      A: [['Am', 'A4 - - - - - - -'], ['F', 'C5 - - - - - - -'], ['Dm', 'D5 - - - F5 - - -'], ['E', 'E5 - - - G#4 - - -']],
+      B: [['Am', 'E5 - - - D5 - C5 -'], ['G', 'B4 - - - D5 - - -'], ['F', 'C5 - - - A4 - - -'], ['E', 'B4 - - - G#4 - - -']] } },
+  night: { bpm: 70, lead: { wave: 'sine', vol: .05, vib: 5 }, bass: 'long', pad: .016, arp: { wave: 'triangle', vol: .016, rate: 2 }, lp: 2000,
+    form: ['A', 'B'], sections: {
+      A: [['Am', 'E5 - - - C5 - D5 E5'], ['F', 'F5 - - - E5 - C5 -'], ['C', 'G5 - - - E5 - - -'], ['G', 'D5 - - - - - . .']],
+      B: [['F', 'A4 - C5 - F5 - - E5'], ['G', 'D5 - - - B4 - - -'], ['Em', 'G4 - B4 - E5 - - D5'], ['Am', 'C5 - - - - - . .']] } },
+  hill: { bpm: 88, lead: { wave: 'triangle', vol: .05, vib: 4 }, bass: 'root', pad: .014, arp: { wave: 'sine', vol: .018, rate: 2 }, drums: { kit: 'soft', p: 'k.......s.......' }, lp: 2800,
+    form: ['A'], sections: {
+      A: [['D', 'F#5 - - - A5 - - -'], ['G', 'G5 - B5 - D6 - - -'], ['A', 'C#6 - - - A5 - E5 -'], ['Bm', 'F#5 - - - - - . .'],
+          ['G', 'B5 - - - A5 - G5 -'], ['A', 'A5 - - - E5 - C#5 -'], ['D', 'D5 - F#5 - A5 - D6 -'], ['D', '- - - - . . . .']] } },
+  sea: { bpm: 92, swing: .16, lead: { wave: 'triangle', vol: .05, vib: 5 }, bass: 'root', pad: .014, drums: { kit: 'soft', p: 'k.....h.k.....h.' }, lp: 2600,
+    form: ['A'], sections: {
+      A: [['G', 'B4 - D5 - G5 - - F#5'], ['Em', 'E5 - - - B4 - - -'], ['C', 'C5 - E5 - G5 - - E5'], ['D', 'F#5 - - - D5 - - -'],
+          ['C', 'E5 - G5 - C6 - B5 A5'], ['D', 'A5 - F#5 - D5 - - -'], ['G', 'G5 - - - D5 - B4 -'], ['G', 'G4 - - - . . . .']] } },
+  market: { bpm: 104, lead: { wave: 'triangle', vol: .05, vib: 7 }, bass: 'root', pad: .01, drums: { kit: 'hand', p: 'k..s.s..k.s.s...' }, lp: 2600,
+    form: ['A', 'B'], sections: {
+      A: [['D', 'D5 Eb5 F#5 - G5 - F#5 Eb5'], ['Eb', 'G5 - - F#5 Eb5 - D5 -'], ['Cm', 'C5 - Eb5 - G5 - F#5 -'], ['D', 'D5 - - - . . A4 .']],
+      B: [['Gm', 'G4 Bb4 D5 - G5 - F#5 G5'], ['D', 'A5 - F#5 - D5 - - -'], ['Eb', 'Eb5 - G5 - Bb5 - A5 G5'], ['D', 'F#5 - Eb5 - D5 - - -']] } },
+  cave: { bpm: 76, lead: { wave: 'sine', vol: .045, vib: 3 }, bass: 'long', pad: .016, arp: { wave: 'triangle', vol: .014, rate: 2 }, lp: 1500,
+    form: ['A'], sections: {
+      A: [['Em', 'B4 - - - . . G4 .'], ['C', 'E5 - - - . . . .'], ['Em', 'B4 - - - D5 - C5 B4'], ['B', 'D#5 - - - - - . .']] } },
+  tower: { bpm: 100, lead: { wave: 'sine', vol: .045, vib: 5 }, bass: 'long', pad: .014, arp: { wave: 'triangle', vol: .02, rate: 1 }, lp: 3200,
+    form: ['A'], sections: {
+      A: [['F', 'A5 - - - C6 - B5 -'], ['G', 'B5 - - - D6 - - -'], ['Em7', 'E6 - - - D6 - B5 -'], ['Am', 'C6 - - - A5 - - -'],
+          ['F', 'F5 - A5 - C6 - E6 -'], ['G', 'D6 - - - B5 - G5 -'], ['Am', 'A5 - - - E5 - - -'], ['Am', 'A5 - - - . . . .']] } },
+  battle: { bpm: 152, lead: { wave: 'sawtooth', vol: .028 }, bass: 'octave', pad: .008, drums: { kit: 'tight', p: 'k.h.s.h.k.k.s.hh' }, lp: 3000,
+    form: ['A1', 'A2', 'B'], sections: {
+      A1: [['Am', 'A4 . C5 . E5 . A5 .'], ['F', 'G5 - F5 . E5 . C5 .'], ['G', 'D5 . G5 . B5 - A5 G5'], ['E', 'G#5 - - - E5 . . .']],
+      A2: [['Am', 'A5 . G5 . E5 . C5 .'], ['F', 'F5 - A5 . C6 . A5 .'], ['Dm', 'D6 - C6 . A5 . F5 .'], ['E', 'E5 - G#5 - B5 - - .']],
+      B: [['F', 'C6 - - A5 F5 . A5 .'], ['G', 'B5 - - G5 D5 . G5 .'], ['Am', 'A5 - C6 - E6 - D6 C6'], ['Am', 'B5 - A5 - E5 - - .'],
+          ['Dm', 'F5 . A5 . D6 - C6 .'], ['E', 'B5 . G#5 . E5 - D5 .'], ['Am', 'C5 . E5 . A5 - G5 .'], ['E', 'G#5 - - - B5 - - -']] } },
+  boss: { bpm: 138, lead: { wave: 'square', vol: .03 }, bass: 'octave', pad: .01, drums: { kit: 'tight', p: 'k.k.s..kk.k.s.h.' }, lp: 2400,
+    form: ['A', 'B'], sections: {
+      A: [['Em', 'E5 - - G5 - F5 E5 .'], ['F', 'F5 - - A5 - G5 F5 .'], ['Em', 'E5 . B4 . E5 . G5 .'], ['D', 'F#5 - - - D5 - - .']],
+      B: [['Em', 'B5 - - - G5 - E5 .'], ['F', 'C6 - - - A5 - F5 .'], ['G', 'B5 - D6 - B5 - G5 .'], ['F', 'A5 - - - F5 - E5 F5']] } },
+  finale: { bpm: 144, lead: { wave: 'sawtooth', vol: .03, vib: 3 }, bass: 'octave', pad: .012, arp: { wave: 'triangle', vol: .014, rate: 1 }, drums: { kit: 'tight', p: 'k.h.s.h.k.hks.hh' }, lp: 3400,
+    form: ['A'], sections: {
+      A: [['Em', 'E5 . G5 . B5 - A5 G5'], ['C', 'E5 - - - C6 - B5 .'], ['G', 'D5 . G5 . B5 - D6 .'], ['D', 'F#5 - - - A5 - - .'],
+          ['Em', 'G5 - B5 - E6 - D6 .'], ['C', 'C6 - B5 - A5 - G5 .'], ['D', 'F#5 - A5 - D6 - - -'], ['B', 'D#6 - - - B5 - - .']] } }
+};
+// compile each track once into a flat list of bars: { chord, melody: [{slot, hz, len}] }
+function compileTrack(tr) {
+  if (tr.bars) return tr.bars;
+  tr.bars = [];
+  tr.form.forEach(sec => (tr.sections[sec] || []).forEach(([sym, mel]) => {
+    const slots = mel.split(/\s+/), notes = [];
+    slots.forEach((tok, i) => {
+      if (tok === '-' || tok === '.') return;
+      let len = 1; while (slots[i + len] === '-') len++;
+      notes.push({ slot: i, hz: noteHz(tok), len });
+    });
+    tr.bars.push({ chord: chordNotes(sym), notes });
+  }));
+  return tr.bars;
+}
+class MusicSystem {
+  constructor() {
+    this.ctx = null; this.gain = null; this.timer = null; this.out = null;
+    this.track = null; this.bar = 0; this.tick16 = 0; this.nextTime = 0;
+    this.lookaheadMs = 25; this.scheduleAheadSec = .14; this.duckUntil = 0;
+  }
+  init(ctx) {
+    if (!ctx || this.ctx === ctx) return;
+    this.ctx = ctx; audioGraph(ctx);
+    this.gain = AUDIO.musicBus;                         // applyVolumes() sets its level
+    this.duckNode = ctx.createGain(); this.duckNode.connect(this.gain);
+    applyVolumes();
+  }
+  // the music steps back for a jingle, then returns
+  duck(sec) {
+    if (!this.duckNode) return;
+    const t = this.ctx.currentTime, g = this.duckNode.gain;
+    g.cancelScheduledValues(t); g.setValueAtTime(g.value, t);
+    g.linearRampToValueAtTime(.18, t + .06); g.setValueAtTime(.18, t + sec); g.linearRampToValueAtTime(1, t + sec + .6);
+  }
+  voice(hz, t, dur, o) {
+    if (!hz) return;
+    const c = this.ctx;
+    try {
+      const g = c.createGain(), a = o.attack || .012, rel = o.release || .08, v = o.vol;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + a);
+      if (o.sustain != null) { g.gain.setTargetAtTime(v * o.sustain, t + a, dur * .3); }
+      g.gain.setValueAtTime(o.sustain != null ? v * o.sustain : v, t + Math.max(a, dur - rel));
+      g.gain.exponentialRampToValueAtTime(.0001, t + dur + rel);
+      let node = g;
+      if (o.lp) { const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = o.lp; f.Q.value = .7; g.connect(f); node = f; }
+      node.connect(this.out);
+      if (o.verb) { const s = c.createGain(); s.gain.value = o.verb; node.connect(s); s.connect(AUDIO.verb); }
+      (o.twin ? [-o.twin, o.twin] : [0]).forEach(dt => {
+        const osc = c.createOscillator(); osc.type = o.wave; osc.frequency.setValueAtTime(hz, t); osc.detune.value = dt;
+        if (o.vib && dur > .3) {                          // a little vibrato on held notes
+          const l = c.createOscillator(), lg = c.createGain(); l.frequency.value = 5.2; lg.gain.setValueAtTime(0, t);
+          lg.gain.linearRampToValueAtTime(o.vib, t + Math.min(.35, dur * .6)); l.connect(lg); lg.connect(osc.detune);
+          l.start(t); l.stop(t + dur + rel + .05);
+        }
+        osc.connect(g); osc.start(t); osc.stop(t + dur + rel + .05);
+      });
+    } catch (e) {}
+  }
+  drum(ch, t, kit) {
+    const c = this.ctx, k = kit === 'soft' ? .55 : kit === 'hand' ? .8 : 1;
+    try {
+      if (ch === 'k') {
+        const o = c.createOscillator(), g = c.createGain();
+        o.frequency.setValueAtTime(kit === 'hand' ? 120 : 150, t); o.frequency.exponentialRampToValueAtTime(kit === 'hand' ? 70 : 42, t + .18);
+        g.gain.setValueAtTime(.22 * k, t); g.gain.exponentialRampToValueAtTime(.001, t + (kit === 'hand' ? .32 : .26));
+        o.connect(g); g.connect(this.out); o.start(t); o.stop(t + .35);
+        return;
+      }
+      const n = c.createBufferSource(); n.buffer = AUDIO.noise;
+      const f = c.createBiquadFilter(), g = c.createGain();
+      let dur, vol;
+      if (ch === 's') {
+        if (kit === 'hand') { f.type = 'bandpass'; f.frequency.value = 2600; f.Q.value = 2; dur = .07; vol = .1; }
+        else if (kit === 'soft') { f.type = 'bandpass'; f.frequency.value = 3000; f.Q.value = .6; dur = .22; vol = .05; }
+        else { f.type = 'highpass'; f.frequency.value = 1400; dur = .14; vol = .09;
+          const o = c.createOscillator(), og = c.createGain(); o.frequency.value = 190; og.gain.setValueAtTime(.06, t);
+          og.gain.exponentialRampToValueAtTime(.001, t + .08); o.connect(og); og.connect(this.out); o.start(t); o.stop(t + .1); }
+      } else if (ch === 'o') { f.type = 'highpass'; f.frequency.value = 7000; dur = .22; vol = .03 * k; }
+      else { f.type = 'highpass'; f.frequency.value = 8000; dur = .035; vol = .03 * k; }
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+      n.connect(f); f.connect(g); g.connect(this.out); n.start(t, Math.random()); n.stop(t + dur + .02);
+    } catch (e) {}
+  }
+  scheduleTick(tr, bars, t, s16) {
+    const bar = bars[this.bar % bars.length], ch = bar.chord, lowP = player.lowPower;
+    const q = s16 * 4;                                       // a beat
+    if (tr.drums) {                                          // on battery saver only kick and snare play
+      const c = tr.drums.p[this.tick16 % tr.drums.p.length]; if (c && c !== '.' && (!lowP || c === 'k' || c === 's')) this.drum(c, t, tr.drums.kit);
+    }
+    if (ch) {
+      const root = midiHz(ch.root), b = tr.bass, i = this.tick16;
+      const bassO = { wave: tr.bassWave || 'triangle', vol: .07, lp: 700, attack: .008, release: .06 };
+      if (b === 'pulse' && i % 2 === 0) this.voice(root, t, s16 * 1.7, bassO);
+      else if (b === 'octave' && i % 2 === 0) this.voice(i % 4 === 0 ? root : root * 2, t, s16 * 1.6, Object.assign({}, bassO, { wave: 'square', vol: .045, lp: 900 }));
+      else if (b === 'root' && (i === 0 || i === 8)) this.voice(root, t, q * 1.9, bassO);
+      else if (b === 'long' && i === 0) this.voice(root, t, q * 3.9, Object.assign({}, bassO, { wave: 'sine', vol: .08 }));
+      else if (b === 'walk' && i % 4 === 0) {                // root, third, fifth, then a step into the next chord
+        const nextRoot = (bars[(this.bar + 1) % bars.length].chord || ch).root;
+        const m = [ch.root, ch.root + ch.third, ch.root + 7, nextRoot - 1][i / 4];
+        this.voice(midiHz(m), t, q * .9, bassO);
+      }
+      if (tr.pad && i === 0) ch.tones.forEach(m => this.voice(midiHz(m), t, q * 4, { wave: lowP ? 'triangle' : 'sawtooth', vol: tr.pad, lp: 1100, attack: .35, release: .5, twin: lowP ? 0 : 7, verb: .25 }));
+      if (tr.arp && !lowP && i % tr.arp.rate === 0) {
+        const tones = ch.tones.concat(ch.tones.map(m => m + 12)), k = (i / tr.arp.rate) % tones.length;
+        this.voice(midiHz(tones[k] + 12), t, s16 * tr.arp.rate * .9, { wave: tr.arp.wave, vol: tr.arp.vol, lp: 3500, attack: .004, release: .12, verb: .3 });
+      }
+    }
+    if (this.tick16 % 2 === 0) {
+      const slot = this.tick16 / 2, n = bar.notes.find(x => x.slot === slot);
+      if (n) { const L = tr.lead; this.voice(n.hz, t, s16 * 2 * n.len * .92, { wave: L.wave, vol: L.vol, vib: L.vib || 0, lp: tr.lp || 3000, attack: .01, release: .1, sustain: .75, twin: L.wave === 'triangle' || L.wave === 'sine' ? 0 : 5, verb: .22 }); }
+    }
+  }
+  tick() {
+    if (!this.ctx || !this.track || !this.out) return;
+    const tr = MUSIC_TRACKS[this.track], bars = compileTrack(tr), s16 = 60 / tr.bpm / 4;
+    while (this.nextTime < this.ctx.currentTime + this.scheduleAheadSec) {
+      const swing = this.tick16 % 4 === 2 ? (tr.swing || 0) * s16 * 2 : 0;
+      if (player.soundOn && player.musicVol !== 0) this.scheduleTick(tr, bars, this.nextTime + swing, s16);
+      this.nextTime += s16;
+      if (++this.tick16 >= 16) { this.tick16 = 0; this.bar = (this.bar + 1) % bars.length; }
+    }
+  }
+  setTrack(id) {
+    if (!MUSIC_TRACKS[id] || this.track === id) return;
+    this.track = id; this.bar = 0; this.tick16 = 0;
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    if (this.out) { const old = this.out; old.gain.cancelScheduledValues(t); old.gain.setValueAtTime(old.gain.value, t);
+      old.gain.linearRampToValueAtTime(0, t + .7); setTimeout(() => { try { old.disconnect(); } catch (e) {} }, 1500); }
+    this.out = this.ctx.createGain(); this.out.gain.setValueAtTime(0, t); this.out.gain.linearRampToValueAtTime(1, t + .45);
+    this.out.connect(this.duckNode);
+    this.nextTime = t + .06;
+  }
+  start() {
+    if (this.timer || !this.ctx) return;
+    if (!this.out && this.track) { const id = this.track; this.track = null; this.setTrack(id); }
+    this.timer = setInterval(() => this.tick(), this.lookaheadMs);
+  }
+  stop() { if (this.timer) { clearInterval(this.timer); this.timer = null; } }
+}
+
+/* ---------- ambience: a bed of sound for each place ----------
+   Rain on rainy days, wind on the heights, waves at the harbor, a city hum on the streets,
+   crickets at night, drips in the tunnel, bubbles at the reef. Beds crossfade as you move. */
+const AMB = { beds: {}, want: '', chirpT: null };
+function ambBed(id) {
+  if (AMB.beds[id] || !AUDIO.ctx) return AMB.beds[id];
+  const c = AUDIO.ctx, src = c.createBufferSource(); src.buffer = AUDIO.noise; src.loop = true;
+  const f = c.createBiquadFilter(), g = c.createGain(); g.gain.value = 0;
+  const lfo = c.createOscillator(), lg = c.createGain();
+  const P = { rain: ['bandpass', 1800, .5, .05, .3, 60], wind: ['lowpass', 500, 1, .07, .09, 260], waves: ['lowpass', 700, .7, .08, .1, 0],
+    city: ['lowpass', 220, .8, .07, .05, 40], hum: ['bandpass', 120, 6, .03, .2, 0], rumble: ['lowpass', 160, 1, .07, .07, 60], reef: ['lowpass', 380, .8, .07, .15, 80] }[id];
+  if (!P) return null;
+  f.type = P[0]; f.frequency.value = P[1]; f.Q.value = P[2];
+  lfo.frequency.value = P[4];
+  if (id === 'waves') { lg.gain.value = P[3] * .8; lfo.connect(lg); lg.connect(g.gain); }   // the swell lives in the volume
+  else { lg.gain.value = P[5]; lfo.connect(lg); lg.connect(f.frequency); }                  // the rest breathe in the filter
+  src.connect(f); f.connect(g); g.connect(AUDIO.ambBus);
+  src.start(0, Math.random() * 1.5); lfo.start();
+  return (AMB.beds[id] = { g, level: P[3] });
+}
+function ambienceFor() {
+  if (gameState === 'TITLE' || gameState === 'START') return [];
+  const m = MAPS[currentMap] || {}, cat = m.cat, out = [];
+  if (dayTheme().weather === 'rain' && !INDOOR_CATS[cat]) out.push('rain');
+  if (cat === 'harbor' || cat === 'sea') out.push('waves');
+  if (cat === 'hill' || cat === 'roof' || cat === 'sea') out.push('wind');
+  if ((cat === 'street' || cat === 'transit' || cat === 'market' || cat === 'art') && !player.evening) out.push('city');
+  if (cat === 'office' || cat === 'dept' || cat === 'gallery' || cat === 'tower' || cat === 'stairs') out.push('hum');
+  if (cat === 'subway' || cat === 'warehouse') out.push('rumble');
+  if (cat === 'reef') out.push('reef');
+  return out;
+}
+function updateAmbience() {
+  if (!AUDIO.ctx) return;
+  const list = ambienceFor(), key = list.join(',') + '|' + (gameState === 'BATTLE') + '|' + player.evening + '|' + currentMap;
+  if (key === AMB.want) return;
+  AMB.want = key;
+  const t = AUDIO.ctx.currentTime, inBattle = gameState === 'BATTLE';
+  ['rain', 'wind', 'waves', 'city', 'hum', 'rumble', 'reef'].forEach(id => {
+    const on = list.indexOf(id) >= 0, bed = on ? ambBed(id) : AMB.beds[id];
+    if (!bed) return;
+    bed.g.gain.cancelScheduledValues(t); bed.g.gain.setValueAtTime(bed.g.gain.value, t);
+    bed.g.gain.linearRampToValueAtTime(on ? bed.level * (inBattle ? .3 : 1) : 0, t + 1.2);
+  });
+}
+// little events on top of the beds: crickets, drips, distant traffic, bubbles
+function ambienceTick() {
+  if (!AUDIO.ctx || !player.soundOn || gameState === 'TITLE' || (player.ambVol || 0) <= 0 || battle || cutscene) return;
+  const cat = (MAPS[currentMap] || {}).cat, c = AUDIO.ctx, t = c.currentTime;
+  const ping = (hz, dur, vol, at, wave, slide) => {
+    try { const o = c.createOscillator(), g = c.createGain(); o.type = wave || 'sine'; o.frequency.setValueAtTime(hz, t + at);
+      if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + at + dur);
+      g.gain.setValueAtTime(0, t + at); g.gain.linearRampToValueAtTime(vol, t + at + .004); g.gain.exponentialRampToValueAtTime(.0005, t + at + dur);
+      o.connect(g); g.connect(AUDIO.ambBus); const s = c.createGain(); s.gain.value = .3; g.connect(s); s.connect(AUDIO.verb);
+      o.start(t + at); o.stop(t + at + dur + .05); } catch (e) {}
+  };
+  const outdoor = !INDOOR_CATS[cat];
+  if (player.evening && outdoor && Math.random() < .55) { const hz = 4200 + Math.random() * 600; for (let i = 0; i < 3; i++) ping(hz, .035, .012, i * .07); }
+  if ((cat === 'subway' || cat === 'warehouse') && Math.random() < .35) ping(1400 + Math.random() * 900, .18, .025, 0, 'sine', 700);
+  if (cat === 'reef' && Math.random() < .5) for (let i = 0; i < 3; i++) ping(300 + Math.random() * 300, .09, .02, i * .08, 'sine', 900);
+  if ((cat === 'harbor' || cat === 'sea') && Math.random() < .12) { ping(1800, .25, .012, 0, 'sine', 1300); ping(1700, .3, .01, .3, 'sine', 1200); }
+  if ((cat === 'park' || cat === 'hill') && !player.evening && Math.random() < .3) { const b = 2400 + Math.random() * 1200; ping(b, .08, .014, 0, 'sine', b * 1.3); ping(b * 1.1, .1, .012, .12, 'sine', b * .9); }
+}
+setInterval(ambienceTick, 1400);
+
 // a short vibration where the phone supports it (Android); silently nothing elsewhere
 function buzz(pattern) {
   if (!player || player.haptics === false) return;
   try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
 }
 function applyVolumes() {
-  if (music.gain) music.gain.gain.value = .5 * (player.musicVol == null ? .8 : player.musicVol);
+  if (!AUDIO.ctx || typeof player === 'undefined' || !player) return;
+  const on = player.soundOn ? 1 : 0;
+  AUDIO.musicBus.gain.value = on * .6 * (player.musicVol == null ? .8 : player.musicVol);
+  AUDIO.sfxBus.gain.value = on * (player.sfxVol == null ? .9 : player.sfxVol);
+  AUDIO.ambBus.gain.value = on * (player.ambVol == null ? .7 : player.ambVol);
 }
 // the phone went to another app or the screen turned off: stop the music, keep the progress
 function audioPause() {
@@ -769,160 +1202,6 @@ function audioResume() {
   try { if (sfx.ctx && sfx.ctx.state !== 'running') sfx.ctx.resume(); } catch (e) {}
   if (sfx.ctx && gameState !== 'START') { music.nextTime = sfx.ctx.currentTime + .05; music.start(); }
 }
-
-/* =========================================================
-   MUSIC — a tiny looping sequencer, not sampled audio.
-   Uses the standard Web-Audio "lookahead scheduler" pattern: a cheap
-   setInterval just checks the clock often, but every note's actual
-   start/stop time is set on the precise AudioContext clock, so timing
-   never drifts or depends on setTimeout accuracy. Lead+bass are stored
-   as one aligned step list, so the two voices can never fall out of sync.
-   ========================================================= */
-const MUSIC_TRACKS = {
-  title: { bpm: 80, leadType: 'triangle', bassType: 'sine', leadVol: .05, bassVol: .05,
-    steps: [
-      { b: 2, lead: 392.00, bass: 196.00 }, { b: 2, lead: 493.88, bass: 196.00 },
-      { b: 2, lead: 440.00, bass: 220.00 }, { b: 2, lead: 349.23, bass: 174.61 },
-      { b: 2, lead: 392.00, bass: 196.00 }, { b: 1, lead: 440.00, bass: null },
-      { b: 1, lead: 493.88, bass: null }, { b: 3, lead: 523.25, bass: 261.63 },
-      { b: 1, lead: null, bass: null }
-    ] },
-  overworld: { bpm: 116, leadType: 'square', bassType: 'triangle', leadVol: .045, bassVol: .05,
-    steps: [
-      { b: 1, lead: 261.63, bass: 130.81 }, { b: 1, lead: null, bass: null },
-      { b: 1, lead: 329.63, bass: null }, { b: 1, lead: null, bass: 130.81 },
-      { b: 1, lead: 392.00, bass: 196.00 }, { b: 1, lead: null, bass: null },
-      { b: 1, lead: 329.63, bass: null }, { b: 1, lead: null, bass: 196.00 },
-      { b: 1, lead: 349.23, bass: 174.61 }, { b: 1, lead: null, bass: null },
-      { b: 1, lead: 293.66, bass: null }, { b: 1, lead: null, bass: 174.61 },
-      { b: 1, lead: 392.00, bass: 196.00 }, { b: 1, lead: 329.63, bass: null },
-      { b: 1, lead: 293.66, bass: null }, { b: 1, lead: 261.63, bass: 130.81 }
-    ] },
-  battle: { bpm: 150, leadType: 'sawtooth', bassType: 'square', leadVol: .04, bassVol: .045,
-    steps: [
-      { b: .5, lead: 220.00, bass: 110.00 }, { b: .5, lead: null, bass: null },
-      { b: .5, lead: 220.00, bass: null }, { b: .5, lead: 261.63, bass: 110.00 },
-      { b: .5, lead: 293.66, bass: 146.83 }, { b: .5, lead: null, bass: null },
-      { b: .5, lead: 261.63, bass: null }, { b: .5, lead: 220.00, bass: 146.83 },
-      { b: .5, lead: 349.23, bass: 174.61 }, { b: .5, lead: null, bass: null },
-      { b: .5, lead: 329.63, bass: null }, { b: .5, lead: 293.66, bass: 174.61 },
-      { b: .5, lead: 415.30, bass: 207.65 }, { b: .5, lead: 349.23, bass: null },
-      { b: .5, lead: 293.66, bass: null }, { b: 1, lead: 220.00, bass: 110.00 }
-    ] },
-  // the artists' side of town: a relaxed, swung walk
-  art: { bpm: 96, leadType: 'triangle', bassType: 'sine', leadVol: .05, bassVol: .05,
-    steps: [
-      { b: 1.5, lead: 392.00, bass: 130.81 }, { b: .5, lead: 440.00, bass: null },
-      { b: 1, lead: 523.25, bass: 164.81 }, { b: 1, lead: 440.00, bass: null },
-      { b: 1.5, lead: 349.23, bass: 146.83 }, { b: .5, lead: 392.00, bass: null },
-      { b: 2, lead: 329.63, bass: 130.81 },
-      { b: 1.5, lead: 392.00, bass: 174.61 }, { b: .5, lead: 493.88, bass: null },
-      { b: 2, lead: 523.25, bass: 196.00 }
-    ] },
-  // the Department: a sterile, perfectly regular arpeggio
-  dept: { bpm: 120, leadType: 'square', bassType: 'square', leadVol: .035, bassVol: .04,
-    steps: [
-      { b: .5, lead: 440.00, bass: 110.00 }, { b: .5, lead: 523.25, bass: null },
-      { b: .5, lead: 659.25, bass: null }, { b: .5, lead: 523.25, bass: null },
-      { b: .5, lead: 440.00, bass: 110.00 }, { b: .5, lead: 523.25, bass: null },
-      { b: .5, lead: 659.25, bass: null }, { b: .5, lead: 523.25, bass: null },
-      { b: .5, lead: 415.30, bass: 103.83 }, { b: .5, lead: 493.88, bass: null },
-      { b: .5, lead: 659.25, bass: null }, { b: .5, lead: 493.88, bass: null }
-    ] },
-  // the last fight: the boss theme's minor bass under a rising, hopeful lead
-  finale: { bpm: 144, leadType: 'sawtooth', bassType: 'square', leadVol: .042, bassVol: .05,
-    steps: [
-      { b: 1, lead: 329.63, bass: 82.41 }, { b: .5, lead: 392.00, bass: null }, { b: .5, lead: 440.00, bass: null },
-      { b: 1, lead: 493.88, bass: 98.00 }, { b: 1, lead: 440.00, bass: null },
-      { b: 1, lead: 523.25, bass: 110.00 }, { b: .5, lead: 587.33, bass: null }, { b: .5, lead: 659.25, bass: null },
-      { b: 2, lead: 659.25, bass: 130.81 }
-    ] },
-  // the walk home: slow, quiet, a little hopeful
-  night: { bpm: 70, leadType: 'sine', bassType: 'triangle', leadVol: .045, bassVol: .04,
-    steps: [
-      { b: 2, lead: 329.63, bass: 110.00 }, { b: 1, lead: 392.00, bass: null }, { b: 1, lead: 440.00, bass: null },
-      { b: 2, lead: 392.00, bass: 130.81 }, { b: 2, lead: 293.66, bass: null },
-      { b: 2, lead: 329.63, bass: 98.00 }, { b: 2, lead: 261.63, bass: null }
-    ] },
-  // the hill at sunset: open fifths, a slow climb, wind in the rests
-  hill: { bpm: 88, leadType: 'triangle', bassType: 'sine', leadVol: .05, bassVol: .045,
-    steps: [
-      { b: 1, lead: 293.66, bass: 146.83 }, { b: 1, lead: 440.00, bass: null }, { b: 2, lead: 392.00, bass: 196.00 },
-      { b: 1, lead: 329.63, bass: 164.81 }, { b: 1, lead: 392.00, bass: null }, { b: 2, lead: 493.88, bass: 196.00 },
-      { b: 1, lead: 440.00, bass: 146.83 }, { b: 1, lead: 587.33, bass: null }, { b: 2, lead: 523.25, bass: 130.81 },
-      { b: 3, lead: 440.00, bass: 146.83 }, { b: 1, lead: null, bass: null }
-    ] },
-  // the old city: Hijaz on D, a drum you can almost hear under it
-  market: { bpm: 104, leadType: 'triangle', bassType: 'sine', leadVol: .05, bassVol: .05,
-    steps: [
-      { b: 1, lead: 293.66, bass: 146.83 }, { b: .5, lead: 311.13, bass: null }, { b: .5, lead: 369.99, bass: null },
-      { b: 1, lead: 392.00, bass: 146.83 }, { b: 1, lead: 369.99, bass: null },
-      { b: .5, lead: 311.13, bass: 146.83 }, { b: .5, lead: 369.99, bass: null }, { b: 1, lead: 440.00, bass: null },
-      { b: 2, lead: 293.66, bass: 110.00 }
-    ] },
-  boss: { bpm: 130, leadType: 'square', bassType: 'sawtooth', leadVol: .045, bassVol: .055,
-    steps: [
-      { b: 1, lead: 164.81, bass: 82.41 }, { b: .5, lead: null, bass: null },
-      { b: .5, lead: 174.61, bass: null }, { b: 1, lead: 196.00, bass: 98.00 },
-      { b: .5, lead: null, bass: null }, { b: .5, lead: 174.61, bass: null },
-      { b: 1, lead: 233.08, bass: 116.54 }, { b: .5, lead: null, bass: null },
-      { b: .5, lead: 246.94, bass: null }, { b: 2, lead: 164.81, bass: 82.41 }
-    ] }
-};
-
-class MusicSystem {
-  constructor() {
-    this.ctx = null; this.gain = null; this.timer = null;
-    this.track = null; this.stepIndex = 0; this.nextTime = 0;
-    this.lookaheadMs = 25; this.scheduleAheadSec = .12;
-  }
-  init(ctx) {
-    if (!ctx || this.ctx === ctx) return;
-    this.ctx = ctx;
-    this.gain = ctx.createGain();
-    this.gain.gain.value = .5 * (player.musicVol == null ? .8 : player.musicVol);
-    this.gain.connect(ctx.destination);
-  }
-  note(freq, startTime, dur, type, vol) {
-    if (!freq || !this.ctx) return;
-    try {
-      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-      o.type = type;
-      o.frequency.setValueAtTime(freq, startTime);
-      g.gain.setValueAtTime(0, startTime);
-      g.gain.linearRampToValueAtTime(vol, startTime + .015);
-      g.gain.exponentialRampToValueAtTime(.0001, startTime + dur);
-      o.connect(g); g.connect(this.gain);
-      o.start(startTime); o.stop(startTime + dur + .03);
-    } catch (e) {}
-  }
-  tick() {
-    if (!this.ctx || !this.track) return;
-    const tr = MUSIC_TRACKS[this.track];
-    const beatDur = 60 / tr.bpm;
-    while (this.nextTime < this.ctx.currentTime + this.scheduleAheadSec) {
-      const step = tr.steps[this.stepIndex % tr.steps.length];
-      const dur = beatDur * step.b;
-      if (player.soundOn && player.musicVol !== 0) {
-        this.note(step.lead, this.nextTime, dur * .9, tr.leadType, tr.leadVol);
-        this.note(step.bass, this.nextTime, dur * .95, tr.bassType, tr.bassVol);
-      }
-      this.nextTime += dur;
-      this.stepIndex++;
-    }
-  }
-  setTrack(id) {
-    if (!MUSIC_TRACKS[id] || this.track === id) return;
-    this.track = id; this.stepIndex = 0;
-    this.nextTime = this.ctx ? this.ctx.currentTime + .05 : 0;
-  }
-  start() {
-    if (this.timer || !this.ctx) return;
-    this.timer = setInterval(() => this.tick(), this.lookaheadMs);
-  }
-  stop() { if (this.timer) { clearInterval(this.timer); this.timer = null; } }
-}
-
 
 /* =========================================================
    MAPS
@@ -2261,7 +2540,7 @@ function defaultPlayer() {
     difficulty: pendingDifficulty || 'normal', reduceFx: false, grit: 0, pendingLearn: [], lastMove: 'punch',
     flow: 0, flowTurns: 0, evening: false, pp: {}, pstatus: { stress: 0, tired: 0, sleep: 0, para: 0, burn: 0, freeze: 0 },
     stats: { battles: 0, wins: 0, steps: 0, found: 0, time: 0 },
-    musicVol: .8, sfxVol: .9, haptics: true, fastBattle: false, lowPower: false };
+    musicVol: .8, sfxVol: .9, ambVol: .7, haptics: true, fastBattle: false, lowPower: false };
 }
 function normalizePlayer(s) {
   const d = defaultPlayer();
@@ -2276,6 +2555,7 @@ function normalizePlayer(s) {
   p.reduceFx = !!s.reduceFx;
   p.musicVol = clamp(s.musicVol == null ? .8 : +s.musicVol || 0, 0, 1);
   p.sfxVol = clamp(s.sfxVol == null ? .9 : +s.sfxVol || 0, 0, 1);
+  p.ambVol = clamp(s.ambVol == null ? .7 : +s.ambVol || 0, 0, 1);
   p.haptics = s.haptics !== false; p.fastBattle = !!s.fastBattle; p.lowPower = !!s.lowPower; p.autoRun = !!s.autoRun;
   p.grit = Math.max(0, Math.min(BALANCE.gritMax, s.grit | 0));
   p.flow = Math.max(0, Math.min(FLOW_MAX, s.flow | 0));
@@ -2736,7 +3016,7 @@ function handleQuestTalk(mi, key, npc) {
   const turnIn = ids.find(id => (QUESTS[id].turnIn || QUESTS[id].giver) === here && questActive(id) && QUESTS[id].ready());
   if (turnIn) {
     const q = QUESTS[turnIn];
-    flag('q_' + turnIn + '_done'); q.reward(); sfx.levelUp(); saveGame(); updateHUD();
+    flag('q_' + turnIn + '_done'); q.reward(); sfx.questDone(); saveGame(); updateHUD();
     addFloater(VW / 2, 90, '📜 משימה הושלמה!', { color: '#4ade80', size: 16, life: 1600, vy: -10, rtl: true, screen: true });
     showDialogue(name + q.thanks);
     return true;
@@ -6522,7 +6802,7 @@ function showPowerGet(id, onEnd) {
   if (!fp) { if (onEnd) onEnd(); return; }
   heldDir = null; dialogue = null;
   powerGet = { id, t: 0, onEnd, burst: false };
-  sfx.levelUp(); screenFlash('#ffffff', 380); shake = 180;
+  sfx.power(); screenFlash('#ffffff', 380); shake = 180;
 }
 function closePowerGet() {
   if (!powerGet || powerGet.t < 1100) return;
@@ -6888,16 +7168,19 @@ function updateMusicTrack() {
   const id = gameState === 'TITLE' ? 'title'
     : wantBoss ? (battle.enemy.finale ? 'finale' : 'boss')
     : gameState === 'BATTLE' ? 'battle'
+    : gameState === 'TOWER' ? 'tower'
     : player.evening ? 'night'
-    : cat === 'dept' ? 'dept'
-    : (cat === 'art' || cat === 'roof' || cat === 'gallery') ? 'art'
-    : cat === 'hill' ? 'hill'
+    : cat === 'room' ? 'home'
+    : (cat === 'dept' || cat === 'office' || cat === 'stairs' || cat === 'tower') ? 'dept'
+    : (cat === 'art' || cat === 'roof' || cat === 'gallery' || cat === 'studio') ? 'art'
+    : (cat === 'hill' || cat === 'park') ? 'hill'
     : cat === 'market' ? 'market'
-    : cat === 'tower' ? 'dept'
-    : cat === 'sea' ? 'hill'
-    : cat === 'reef' ? 'art'
+    : (cat === 'harbor' || cat === 'sea') ? 'sea'
+    : (cat === 'subway' || cat === 'warehouse') ? 'cave'
+    : cat === 'reef' ? 'tower'
     : 'overworld';
   music.setTrack(id);
+  updateAmbience();
 }
 
 /* =========================================================
@@ -6906,7 +7189,7 @@ function updateMusicTrack() {
 function showDialogue(text, onEnd) {
   autoPath = null; heldDir = null; runHeld = false;
   // long enough to actually read: about 4 seconds, more for longer lines. A tap still moves on at once.
-  dialogue = { text, timer: Math.max(4200, 2200 + 60 * String(text || '').length), fade: 0, onEnd: onEnd || null }; sfx.select();
+  dialogue = { text, timer: Math.max(4200, 2200 + 60 * String(text || '').length), fade: 0, onEnd: onEnd || null }; sfx.talk();
 }
 
 function restAtBed() {
@@ -7018,7 +7301,7 @@ function attemptMove(dx, dy) {
       if (npc && npc.joins && player.day >= (npc.joinDay || 1) && !hasFlag('joined_' + npc.joins) &&
           (!npc.joinAfter || hasFlag(trainerFlag(npc.joinAfter)))) {
         flag('joined_' + npc.joins); if (npc.journal) addJournal(npc.journal);
-        sfx.levelUp(); saveGame();
+        sfx.friend(); saveGame();
         showDialogue(npc.name + ': ' + npc.joinLine);
         return;
       }
@@ -7041,7 +7324,7 @@ function attemptMove(dx, dy) {
       if (npc && npc.teaches && !hasPower(npc.teaches) && player.day >= (npc.teachDay || 1)) {
         const fp = FIELD_POWERS[npc.teaches];
         flag(fp.flag); addJournal(npc.journal); addJournal('power_' + npc.teaches);
-        sfx.levelUp(); saveGame(); updateQuestForMap(); updateHUD();
+        sfx.learn(); saveGame(); updateQuestForMap(); updateHUD();
         showDialogue(npc.name + ': ' + (npc.teachLine || npc.lines[0]), () => showPowerGet(npc.teaches));
         return;
       }
@@ -7074,14 +7357,14 @@ function attemptMove(dx, dy) {
       bumpAnim = { t: 0, dur: 200, bx: hero.x, by: hero.y, dx: dx * .4, dy: dy * .4 };
       if (!hasPower('door')) { sfx.bump(); showDialogue("מסגרת דלת מסומנת בגיר. מישהו שכח את הדלת עצמה. צריך ללמוד לצייר אחת."); return; }
       if (pd.minDay && player.day < pd.minDay) { sfx.bump(); showDialogue(pd.wet || 'הקיר עוד לא מוכן.'); return; }
-      flag(pkey); sfx.levelUp(); saveGame();
+      flag(pkey); sfx.paintDoor(); saveGame();
       ['#f472b6', '#38bdf8', '#fde047'].forEach(c =>
         addParticles(nx * TILE + 20, ny * TILE + 20, 10, { color: c, speed: 80, life: 800, size: 3, grav: -30 }));
       showDialogue('בופי מן מצייר מסגרת, ידית, חריץ של אור... והדלת נפתחת באמת.');
       return;
     }
     if (pd.toMap != null) {                    // a painted door that leads somewhere else
-      sfx.select();
+      sfx.door();
       transition = { kind: 'fade', t: 0, dur: 420, at: .5, onMid: () => {
         currentMap = pd.toMap; px = pd.x; py = pd.y;
         hero.x = px * TILE + 20; hero.y = py * TILE + 20;
@@ -7097,7 +7380,7 @@ function attemptMove(dx, dy) {
     if (!sl) return;
     if (hasFlag(skey)) { showDialogue('הציור שלך עדיין כאן. אנשים עוצרים להסתכל.'); return; }
     if (!hasPower('graffiti')) { sfx.bump(); showDialogue("קיר אפור פנוי. מקום טוב לגרפיטי."); return; }
-    flag(skey); sfx.levelUp();
+    flag(skey); sfx.spray();
     if (sl.journal) addJournal(sl.journal);
     const got = grantPickup(sl.reward);
     ['#ff5c9d', '#fde047', '#38bdf8', '#4ade80'].forEach(c =>
@@ -7109,7 +7392,7 @@ function attemptMove(dx, dy) {
   if (tile === 'I') {
     const it = map.items && map.items[key], fkey = pickupFlag(currentMap, key, false);
     if (it && !hasFlag(fkey)) {
-      flag(fkey); sfx.heal();
+      flag(fkey); sfx.pickup();
       bumpAnim = { t: 0, dur: 200, bx: hero.x, by: hero.y, dx: dx * .4, dy: dy * .4 };
       addRing(nx * TILE + 20, ny * TILE + 20, { maxR: 30, color: '#fbbf24', life: 500 });
       showDialogue('בופי מן מצא ' + grantPickup(it) + '!');
@@ -7153,7 +7436,7 @@ function attemptMove(dx, dy) {
     bumpAnim = { t: 0, dur: 200, bx: hero.x, by: hero.y, dx: dx * .4, dy: dy * .4 };
     if (!hasPower('tune')) { sfx.bump(); showDialogue(sl.sleep || 'מישהו ישן כאן עמוק. אולי מנגינה תעיר אותו.'); return; }
     flag('woke_' + currentMap + '_' + key); saveGame();
-    [0, 1, 2, 3].forEach(i => setTimeout(() => sfx.play([392, 440, 523, 587][i], .18, 'triangle', .07), i * 140));
+    sfx.tune();
     ['♪', '♫', '♪'].forEach((n, i) => addFloater(nx * TILE + 14 + i * 8, ny * TILE, n, { color: '#5eead4', size: 16, life: 1100, vy: -30 }));
     addRing(nx * TILE + 20, ny * TILE + 20, { maxR: 44, color: '#5eead4', width: 3, life: 600 });
     showDialogue(sl.wake || 'הלחן מעיר אותו. הוא מפנה את הדרך.');
@@ -7170,7 +7453,7 @@ function attemptMove(dx, dy) {
         (PAINT[col].mix ? ' ' + cn + ' זה ' + PAINT[PAINT[col].mix[0]].name + ' ועוד ' + PAINT[PAINT[col].mix[1]].name + '.' : ''));
       return;
     }
-    flag('gate_' + currentMap + '_' + key); player.brush = null; saveGame(); sfx.levelUp();
+    flag('gate_' + currentMap + '_' + key); player.brush = null; saveGame(); sfx.paintDoor();
     addParticles(nx * TILE + 20, ny * TILE + 20, 22, { color: PAINT[col].hex, speed: 110, life: 800, size: 3 });
     addRing(nx * TILE + 20, ny * TILE + 20, { maxR: 48, color: PAINT[col].hex, width: 4, life: 600 });
     showDialogue('בופי מן מורח ' + cn + ' על הזכוכית. הצבע נספג, והדלת נפתחת. המכחול שוב נקי.');
@@ -7218,7 +7501,7 @@ function attemptMove(dx, dy) {
       const orig = st[key]; delete st[key];
       flag(boxFlag(currentMap, orig)); flag(holeFlag(currentMap, bk));
       boxAnim = { from: key, to: bk, t: 0, dur: 320, fall: true };
-      sfx.bump(); setTimeout(() => sfx.levelUp(), 260); shake = 200; saveGame();
+      sfx.solve(); shake = 200; saveGame();
       addParticles(bx * TILE + 20, by * TILE + 20, 22, { color: '#a16207', speed: 90, life: 700, size: 3, grav: 140 });
       addRing(bx * TILE + 20, by * TILE + 20, { maxR: 46, color: '#fbbf24', width: 3, life: 500 });
       showDialogue('🪨 הארגז נופל לבור וסוגר אותו. הדרך פתוחה.');
@@ -7233,7 +7516,7 @@ function attemptMove(dx, dy) {
   if (tile === 'C') {
     bumpAnim = { t: 0, dur: 200, bx: hero.x, by: hero.y, dx: dx * .4, dy: dy * .4 };
     if (!hasPower('cut')) { sfx.bump(); showDialogue("סרט אדום-לבן חוסם את המעבר. צריך מספריים כדי לגזור אותו."); return; }
-    flag(cutFlag(currentMap, key)); sfx.levelUp(); saveGame();
+    flag(cutFlag(currentMap, key)); sfx.snip(); saveGame();
     addParticles(nx * TILE + 20, ny * TILE + 20, 14, { color: '#ef4444', speed: 90, life: 700, size: 3, grav: 60 });
     showDialogue('✂️ בופי מן גוזר את הסרט. המעבר פתוח.');
     return;
@@ -7250,7 +7533,7 @@ function attemptMove(dx, dy) {
     if (blocker) { sfx.bump(); showDialogue('דלת המעלית נסגרת ברגע שאתה מתקרב. מישהו עוד לא סיים איתך היום.'); return; }
     if (elevatorDown()) { sfx.bump(); showDialogue("שלט על המעלית: \"בתחזוקה\". בעט הוסיפו: \"שוב?\" חדר המדרגות מימין."); return; }
     if (!lift) return;
-    sfx.select();
+    sfx.door();
     transition = { kind: 'fade', t: 0, dur: 420, at: .5, onMid: () => {
       currentMap = lift.toMap; px = lift.x; py = lift.y;
       hero.x = px * TILE + 20; hero.y = py * TILE + 20;
@@ -7294,7 +7577,7 @@ function attemptMove(dx, dy) {
       return;
     }
     if (d) {
-      sfx.select();
+      sfx.door();
       transition = { kind: 'fade', t: 0, dur: 420, at: .5, onMid: () => {
         currentMap = d.toMap; px = d.x; py = d.y; boxState = {}; boxAnim = null;
         hero.x = px * TILE + 20; hero.y = py * TILE + 20;
@@ -7363,7 +7646,7 @@ function attemptMove(dx, dy) {
   if (tile === 'L') {                                // chalk dust off the holds
     addParticles(nx * TILE + 20, ny * TILE + 24, 5, { color: '#f5f5f4', speed: 30, life: 420, size: 2, grav: 40 });
   } else if (tile === 'V' && tileAt(currentMap, px, py) !== 'V') {   // the wind takes the kite
-    sfx.levelUp();
+    sfx.whoosh();
     addRing(hero.x, hero.y, { maxR: 36, color: '#f9a8d4', width: 2, life: 500 });
   }
   const climbing = tile === 'L' || tileAt(currentMap, px, py) === 'L';
@@ -7400,14 +7683,14 @@ function onTileEntered() {
   if (tile === 'd') {                                   // deep, dark water: dive, if you know how
     if (!hasPower('dive')) { addFloater(hero.x, hero.y - 30, '🫧', { size: 16, life: 900, vy: -20 }); return; }
     const dv = (map.dives || {})[px + ',' + py];
-    if (dv) { heldDir = null; autoPath = null; sfx.play(220, .35, 'sine', .08);
+    if (dv) { heldDir = null; autoPath = null; sfx.splash();
       addParticles(hero.x, hero.y, 22, { color: '#bae6fd', speed: 80, life: 800, size: 3, grav: -60 });
       goToMap(dv.toMap, dv.x, dv.y, 'dive'); }
     return;
   }
   if (tile === 'u') {                                   // a shaft of light: up for air
     const sf = (map.surface || {})[px + ',' + py];
-    if (sf) { heldDir = null; autoPath = null; sfx.play(520, .25, 'sine', .07);
+    if (sf) { heldDir = null; autoPath = null; sfx.bubbles();
       addParticles(hero.x, hero.y, 18, { color: '#f0f9ff', speed: 90, life: 700, size: 3, grav: -140 });
       goToMap(sf.toMap, sf.x, sf.y, 'surface'); }
     return;
@@ -7421,7 +7704,7 @@ function onTileEntered() {
       addRing(hero.x, hero.y + 12, { maxR: 26, color: PAINT[nb].hex, width: 3, flat: true, life: 500 });
       addFloater(hero.x, hero.y - 40, (was && nb !== vc ? PAINT[was].name + ' + ' + PAINT[vc].name + ' = ' : '') + PAINT[nb].name,
         { color: PAINT[nb].hex, size: 14, rtl: true, life: 1300 });
-      sfx.play(PAINT[nb].tone, .16, 'triangle', .07);
+      sfx.dip(PAINT[nb].tone);
     }
     return;
   }
@@ -7588,7 +7871,7 @@ function afterPlayerAction(msg, dmg, big, healAmt) {
   }
   if (e.hp <= 0) {
     e.hp = 0; e.dying = { t: 0, dur: 700 };
-    fxKO(e);
+    fxKO(e); sfx.faint();
     addParticles(FOE_HOME.x, FOE_HOME.y, 30, { color: e.color, speed: 150, life: 900, size: 4 });
     battleMessage(msg, 850, winBattle);
     return;
@@ -7607,7 +7890,7 @@ function effectivenessTag(eff) {
 function enterFlow() {
   player.flow = 0;
   player.flowTurns = BALANCE.flowTurns;
-  sfx.levelUp();
+  sfx.flow();
   battle.phase = 'ANIM'; battle.msg = '';
   ['#ff5c9d', '#38bdf8', '#fde047'].forEach((c, i) =>
     schedule(i * 90, () => {
@@ -7755,7 +8038,7 @@ function callFriend() {
   battle.friendUsed = true; battle.maStreak = 0;
   player.friendTurn = (player.friendTurn || 0) + 1;
   const f = FRIENDS[id], e = battle.enemy;
-  sfx.levelUp(); battle.phase = 'ANIM'; battle.msg = '';
+  sfx.friend(); battle.phase = 'ANIM'; battle.msg = '';
   addRing(HERO_HOME.x, HERO_HOME.y - 6, { maxR: 110, color: '#fbbf24', width: 4, life: 650 });
   addFloater(HERO_HOME.x + 40 * BL.s, HERO_HOME.y - 50 * BL.s, f.name + '!', { color: '#fbbf24', size: 18, rtl: true, life: 1200 });
   if (id === 'mira') {
@@ -7785,7 +8068,7 @@ function doMa() {
   battle.maStreak = (battle.maStreak || 0) + 1;
   const k = battle.maStreak;
   addFlow(k === 3 ? 10 : 5); updateHUD();
-  sfx.play(420 + k * 90, .12, 'square', .06);
+  sfx.ma(k);
   battle.phase = 'ANIM'; battle.msg = '';
   addFloater(HERO_HOME.x + 34 * BL.s, HERO_HOME.y - 48 * BL.s, 'מא' + '?'.repeat(k + 1),
     { color: '#fde047', size: 16 + k * 3, life: 1100, vy: -16, rtl: true });
@@ -7827,14 +8110,14 @@ function enemyLeaves(result) {
   const e = battle.enemy;
   e.leaving = { t: 0, dur: 850 };
   battle.enemyLeft = true;
-  sfx.play(220, .25, 'sawtooth', .05);
+  sfx.huff();
   addJournal('ma');
   battleMessage('יצא ' + result + '! ' + e.name + ' מתעצבן לגמרי, זורק "נו באמת!" והולך מהקרב.', 1300, winBattle);
 }
 
 function doDefend() {
   if (blockedByStatus()) return;
-  sfx.select();
+  sfx.guard();
   battle.maStreak = 0;
   player.guarding = true;
   battle.heroAnim = { type: 'guard', t: 0, dur: 320 };
@@ -7863,7 +8146,7 @@ function doRun() {
     return;
   }
   if (Math.random() < .7) {
-    sfx.select();
+    sfx.whoosh();
     battleMessage(pickLine(FLEE_LINES), 700, () => {
       transition = { kind: 'fade', t: 0, dur: 420, at: .5, onMid: () => {
         battle = null; gameState = 'OVERWORLD'; updateHUD();
@@ -7959,7 +8242,7 @@ function enemyTurn() {
       if (!battle) return;
       if (!pick) { battleMessage(e.name + ' מחפש מה לקנות... ולא מוצא. בופי מן כבר נתן הכול.', 900, endEnemyTurn); return; }
       battle.sold = { id: pick.id, turns: 2 };
-      sfx.play(880, .12, 'square', .05); setTimeout(() => sfx.play(660, .16, 'square', .05), 90);
+      sfx.cash();
       addFloater(HERO_HOME.x, HERO_HOME.y - 50, '🏷️ ' + pick.name, { color: '#fbbf24', size: 16, rtl: true, life: 1300 });
       addRing(HERO_HOME.x, HERO_HOME.y - 6, { maxR: 64, color: '#fbbf24', width: 4, life: 560 });
       battleMessage(e.name + ' מדביק תג מחיר על ' + pick.icon + ' ' + pick.name + ': "נמכר!" לשני תורות היא לא של בופי מן.', 1300,
@@ -8009,7 +8292,7 @@ function enemyTurn() {
           { color: st.color, speed: sp, life: 900, size: 4 + Math.random() * 3, grav: 0, angle: ang, spread: .01 });
       }
       battle.heroFlash = 260;
-      sfx.play(300, .2, 'sawtooth', .05);
+      sfx.status();
       addRing(HERO_HOME.x, HERO_HOME.y - 6, { maxR: 60, color: st.color, width: 4, life: 520 });
       addFloater(HERO_HOME.x, HERO_HOME.y - 44, st.label, { color: st.color, size: 16, rtl: true });
       battleMessage(e.name + mvName + '! ' + st.apply, 900, endEnemyTurn);
@@ -8026,7 +8309,7 @@ function enemyTurn() {
     spawnTypeVfx(e.type, { x: FOE_HOME.x - 20, y: FOE_HOME.y }, { x: HERO_HOME.x, y: HERO_HOME.y - 8 }, dmg > player.maxHp * .2);
     shake = 200; vignette = wasGuarding ? .35 : .7;
     fxHit(dmg > player.maxHp * .2, e.color, true);
-    sfx.hit();
+    if (wasGuarding) sfx.guard(); else sfx.hurt();
     addSlash(HERO_HOME.x, HERO_HOME.y - 10, { color: '#fca5a5', rot: 2.4 });
     addParticles(HERO_HOME.x, HERO_HOME.y - 6, 14, { color: '#fca5a5', speed: 130, life: 520, size: 3, lift: 30 });
     addFloater(HERO_HOME.x, HERO_HOME.y - 34, '-' + dmg, { color: '#f87171', size: 20 });
@@ -8162,7 +8445,7 @@ function winBattle() {
         });
       }
       else if (trData && trData.prize) {
-        const got = trainerGift; sfx.levelUp(); saveGame(); updateHUD();
+        const got = trainerGift; sfx.pickup(); saveGame(); updateHUD();
         showDialogue(trData.win, () => showDialogue('בופי מן קיבל: ' + got + '!', maybeOfferLearn));
       }
       else if (trData) showDialogue(trData.win, maybeOfferLearn);
@@ -8234,6 +8517,7 @@ function loopReset() {
   return { lvBefore, lvNow: player.level, goldLost: goldBefore - player.gold, echoExp, got };
 }
 function playerDefeated() {
+  sfx.gameover();
   if (battle && battle.tower) { towerDefeat(battle.tower); return; }
   if (player.checkpoint) {
     battle = null; gameState = 'GAMEOVER';
@@ -8449,7 +8733,7 @@ function doAnnoy(act) {
   const amount = 20 * mult * (e.boss || e.finale ? .75 : 1);
   addFlow(flowGain); updateHUD();
   if (act.heal) { const h = Math.round(player.maxHp * act.heal); player.hp = Math.min(player.maxHp, player.hp + h); tag += ' (+' + h + ' חיים)'; updateHUD(); }
-  sfx.play(act.boss ? 330 : 520, .14, 'triangle', .07);
+  sfx.irk(act.boss);
   addFloater(HERO_HOME.x + 30, HERO_HOME.y - 52, act.icon, { size: 24, life: 1000, vy: -22 });
   addFloater(HERO_HOME.x - 18, HERO_HOME.y - 42, '+' + flowGain + ' 🌈', { color: '#c4b5fd', size: 11, rtl: true, life: 900, vy: -14 });
   addFloater(FOE_HOME.x, FOE_HOME.y - 50, '+' + Math.round(amount) + ' 😤', { color: '#fb923c', size: 14, rtl: true, life: 1100 });
@@ -8716,12 +9000,12 @@ function openGameMenu() {
   const d = document.getElementById('menu-day'); if (d) d.innerText = player.day;
   updateGameMenuRunLabel();
   document.getElementById('game-menu-panel').style.display = 'flex';
-  sfx.select();
+  sfx.open();
 }
 function closeGameMenu(silent) {
   const p = document.getElementById('game-menu-panel'); if (p) p.style.display = 'none';
   if (gameState === 'PAUSE_MENU') gameState = 'OVERWORLD';
-  if (!silent) sfx.select();
+  if (!silent) sfx.close();
 }
 function updateGameMenuRunLabel() {
   const el = document.getElementById('menu-run-label');
@@ -8912,6 +9196,7 @@ function openJournal(tab) {
 function closeJournal() { document.getElementById('journal-panel').style.display = 'none'; returnFromPanel(); }
 function toggleSound() {
   player.soundOn = !player.soundOn;
+  applyVolumes();
   { const sb = document.getElementById('sound-btn'); if (sb) sb.innerText = player.soundOn ? '🔊' : '🔇'; }
   saveGame();
 }
@@ -8984,7 +9269,7 @@ function renderSettingsBody() {
     '<div class="settings-desc">' + active.daySkip + '. משפיע על אויבים חדשים ומלאי החנות מהיום הבא.</div></div>' +
     '<div class="panel-item"><div>🔊 צליל</div>' +
     '<button class="system-btn" onclick="toggleSound()">' + (player.soundOn ? 'מופעל' : 'כבוי') + '</button></div>' +
-    volRow('musicVol', '🎵 מוזיקה') + volRow('sfxVol', '🔔 אפקטים') +
+    volRow('musicVol', '🎵 מוזיקה') + volRow('sfxVol', '🔔 אפקטים') + volRow('ambVol', '🌿 צלילי סביבה') +
     (navigator.vibrate ? optRow('haptics', '📳 רטט', 'רטט קצר במכות, בקרבות ובעליית רמה') : '') +
     optRow('fastBattle', '⚡ קרבות מהירים', 'ההודעות בקרב מתקדמות מהר יותר. הקשה עדיין מדלגת מיד') +
     optRow('lowPower', '🔋 חיסכון בסוללה', '30 פריימים בשנייה, פחות חלקיקים ותמונה קצת פחות חדה') +
@@ -9046,7 +9331,7 @@ function learnReplace(slot) {
   player.moves[slot] = id;
   player.pendingLearn.shift();
   if (player.lastMove === dropped) player.lastMove = id;
-  sfx.levelUp(); saveGame();
+  sfx.learn(); saveGame();
   closeLearn();
   if (!maybeOfferLearn()) updateHUD();
 }
@@ -9119,7 +9404,7 @@ function flyTo(mi) {
   menuReturn = false;
   const sp = flySpot(mi);
   document.getElementById('townmap-panel').style.display = 'none';
-  gameState = 'OVERWORLD'; heldDir = null; sfx.levelUp();
+  gameState = 'OVERWORLD'; heldDir = null; sfx.whoosh();
   ['#f472b6', '#38bdf8', '#fde047'].forEach(c => addParticles(hero.x, hero.y - 10, 8, { color: c, speed: 90, life: 800, size: 3, grav: -80 }));
   transition = { kind: 'soft', t: 0, dur: 760, at: .5, onMid: () => {
     currentMap = mi; px = sp[0]; py = sp[1]; boxState = {}; boxAnim = null;
@@ -9388,7 +9673,7 @@ function interactFacing() {
   if (hotspotAt(currentMap, nx, ny)) { interactHotspot(currentMap, nx, ny); return; }
   const hid = map.hidden && map.hidden[key], hkey = pickupFlag(currentMap, key, true);
   if (hid && !hasFlag(hkey) && !(hid.quest && !questActive(hid.quest))) {
-    flag(hkey); sfx.levelUp();
+    flag(hkey); sfx.pickup();
     addParticles(nx * TILE + 20, ny * TILE + 20, 16, { color: '#fde047', speed: 70, life: 800, size: 3, grav: -40 });
     showDialogue('משהו נוצץ שם... בופי מן מצא ' + grantPickup(hid) + '!');
     saveGame(); updateHUD();
@@ -9892,7 +10177,7 @@ function showNextAch() {
   const a = achQueue.shift(); achShowing = true;
   el.innerHTML = '<span class="ach-ico">' + a[0] + '</span><span><small>🏆 הישג חדש</small><b>' + a[1] + '</b><em>' + a[2] + '</em></span>';
   el.classList.add('show');
-  try { sfx.play(784, .09, 'triangle', .05); setTimeout(() => sfx.play(1175, .14, 'triangle', .05), 110); } catch (e) {}
+  sfx.achieve();
   buzz && buzz(30);
   setTimeout(() => { el.classList.remove('show'); setTimeout(() => { achShowing = false; showNextAch(); }, 380); }, 2800);
 }
@@ -9991,7 +10276,7 @@ function towerFloorCleared(f) {
   if (f >= TOWER_FLOORS) {
     t.run = null;
     lines.unshift('🏆 הגג של מגדל ההשראה. חמישים קומות, ומלמעלה מתברר שהעיר הייתה ציור כל הזמן.');
-    sfx.levelUp(); screenFlash('#fde68a', 400);
+    sfx.fanfare(); screenFlash('#fde68a', 400);
   } else {
     t.run = { floor: f + 1, start: t.run ? t.run.start : f };
     if (f % 5 === 0) {
@@ -10144,6 +10429,7 @@ function fxKO(e) {
 }
 function stepBattleFx(dt) {
   const b = battle;
+  if (player.hp > 0 && player.hp / player.maxHp < .25) { b.hbT = (b.hbT || 0) + dt; if (b.hbT > 1100) { b.hbT = 0; sfx.heartbeat(); } }
   if (b.punch) { b.punch.t += dt; if (b.punch.t >= b.punch.dur) b.punch = null; }
   if (b.splats) b.splats = b.splats.filter(p => (p.t += dt) < p.life);
   if (b.bmotes) b.bmotes.forEach(m => { m.x += m.vx * dt / 1000; m.y += m.vy * dt / 1000; m.ph += dt / 900;
