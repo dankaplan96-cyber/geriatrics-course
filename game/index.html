@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- בופי מן RPG V49 -->
+<!-- בופי מן RPG V50 -->
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -102,7 +102,7 @@ canvas{display:block;width:100%;height:100%;object-fit:contain;background:#0f172
 .game-menu-card b{font-size:13px;color:#fde68a}.game-menu-card small{font-size:9px;line-height:1.35;color:#94a3b8}
 .menu-footer{display:flex;justify-content:space-between;gap:12px;margin-top:10px;padding:7px 4px 2px;color:#94a3b8;font-size:9px}
 .menu-footer span:first-child{color:#fde68a;font-weight:800}.menu-close{margin-top:8px;background:#334155}
-@media(max-width:640px){.game-menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.game-menu-card{min-height:62px}.menu-footer span:last-child{display:none}}
+@media(max-width:640px){.game-menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.game-menu-card{min-height:62px}}
 .title-modal{background:linear-gradient(to bottom,rgba(6,9,20,0) 0%,rgba(6,9,20,0) 58%,rgba(6,9,20,.55) 80%,rgba(6,9,20,.85) 100%);
   justify-content:flex-end;padding:0 16px 12px}
 .title-tag{color:#94a3b8;font-size:11px;margin-top:8px;text-shadow:0 2px 6px #000;opacity:.8}
@@ -382,6 +382,21 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 .game-menu-panel{max-height:calc(100% - 16px)}
 body.force-land .game-menu-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}body.force-land .game-menu-card{min-height:50px;padding:6px}body.force-land .menu-context{padding:5px 8px;margin-bottom:7px}
 @media(prefers-reduced-motion:reduce){#ach-toast{transition:none}.tw-cell.cur{animation:none}}
+
+/* v50: cleaner character sheet, journal tabs */
+.st-top{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:10px;background:linear-gradient(120deg,#1d3550,#101f31);border:1px solid #4d6a82}
+.st-lv{text-align:center;min-width:64px}.st-lv small{display:block;font-size:10px;color:var(--muted)}.st-lv b{font-size:32px;color:var(--gold);font-family:Rubik,inherit;line-height:1}
+.st-meters{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0}
+.st-meter{display:grid;grid-template-columns:52px 1fr auto;gap:8px;align-items:center;font-size:11px;color:var(--muted)}
+.st-meter .pg-bar{margin:0}.st-meter b{color:var(--paper);font-size:11px;white-space:nowrap}
+.st-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.st-stat{padding:8px 6px;border-radius:9px;background:#101f31;border:1px solid #385168;text-align:center}
+.st-stat small{display:block;font-size:10px;color:var(--muted)}.st-stat b{display:block;font-size:20px;color:var(--paper);font-family:Rubik,inherit}
+.st-stat em{display:block;font-size:9px;color:var(--gold);font-style:normal}
+.st-chips{display:flex;flex-wrap:wrap;gap:5px}
+.st-chips span{font-size:11px;padding:3px 9px;border-radius:99px;background:#0d1b2b;border:1px solid #2b4258;color:var(--paper)}
+.j-tabs{display:flex;gap:5px}.j-tabs .system-btn{padding:4px 10px;font-size:12px;min-height:30px}.j-tabs small{opacity:.7;font-size:10px}
+@media(max-width:640px){.st-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style>
 
 </head>
@@ -465,14 +480,14 @@ body.force-land .game-menu-grid{grid-template-columns:repeat(3,minmax(0,1fr));ga
   </div>
 
   <div id="journal-panel" class="panel">
-    <div class="panel-header"><span>📖 יומן המסע</span><span id="journal-count"></span></div>
+    <div class="panel-header"><span>📖 יומן</span><span id="journal-count"></span></div>
     <div class="panel-list" id="journal-list"></div>
     <button class="close-btn" onclick="closeJournal()">חזרה למשחק</button>
   </div>
 
   <div id="gameover-modal" class="modal" style="display:none">
-    <h1>😮‍💨 יום קשה...</h1><p id="gameover-text"></p>
-    <button class="btn-main" onclick="closeGameOver()">מנסים שוב 🔁</button>
+    <h1>😮‍💨 נו, זה קורה</h1><p id="gameover-text"></p>
+    <button class="btn-main" onclick="closeGameOver()">עוד פעם, בעדינות 🔁</button>
   </div>
 
   <div id="inventory-panel" class="panel">
@@ -526,7 +541,7 @@ body.force-land .game-menu-grid{grid-template-columns:repeat(3,minmax(0,1fr));ga
       <button class="game-menu-card" onclick="toggleRunFromMenu()"><b id="menu-run-label">🏃 ריצה</b><small>לרוץ גם במגע קרוב לדמות</small></button>
       <button class="game-menu-card" onclick="launchGameMenu('settings')"><b>⚙️ הגדרות</b><small>צליל, קושי ונגישות</small></button>
     </div>
-    <div class="menu-footer"><span><span dir="ltr">V49</span> · ⏱️ <span id="menu-time"></span></span><span>₪<span id="ui-gold">120</span></span><span>החזק במסך כדי לנוע · רחוק יותר = ריצה</span></div>
+    <div class="menu-footer"><span><span dir="ltr">V50</span> · ⏱️ <span id="menu-time"></span></span><span>₪<span id="ui-gold">120</span></span></div>
     <button class="close-btn menu-close" onclick="closeGameMenu()">חזרה למשחק</button>
   </div>
 
@@ -559,7 +574,7 @@ body.force-land .game-menu-grid{grid-template-columns:repeat(3,minmax(0,1fr));ga
 
 <script>
 /* =========================================================
-   בופי מן RPG V49 (Hebrew dialogue, character voices and situational humor)
+   בופי מן RPG V50 (Hebrew dialogue, character voices and situational humor)
    ========================================================= */
 const canvas = document.getElementById('gameCanvas');
 let ctx = canvas.getContext('2d'); // Temporarily redirected only while building a map layer.
@@ -2429,50 +2444,50 @@ function importSaveFile(inp) {
 
 function updateQuestForMap() {
   if (player.evening) {
-    questText = currentMap === 0 ? 'הקנבס ליד המיטה מחכה. צייר, ואז לישון.' : "ערב. חזור הביתה לצייר.";
+    questText = currentMap === 0 ? 'הקנבס מחכה ליד המיטה. היום כבר קרה; עכשיו לצייר אותו.' : 'הביתה, לקנבס. ערב, והוא מחכה יותר ממך.';
     return;
   }
   questText = currentMap === 0 ? (!player.endless && player.day === 1 && !hasFlag('prologue_done') ? '🐶 ' + introObjective()
-                                  : !player.endless && dayBrief() ? dayBrief().icon + ' ' + dayBrief().goal : 'צא מחדר השינה אל רחוב העיר')
-            : currentMap === 1 ? 'חצה את הרחוב אל תחנת המעבר'
-            : currentMap === 2 ? (roadblockActive(2, SK(2, '27,5')) ? 'עבודות חוסמות את הלובי. רד למנהרה (מדרגות בדרום)'
-                                  : 'עבור את קו 18 והגע ללובי המשרדים')
-            : currentMap === 3 && elevatorDown() ? 'המעלית בתחזוקה. עלה בחדר המדרגות (הדלת בצפון)'
-            : player.endless && currentMap === 13 ? (!hasPower('surf') ? 'חנה מחכה על המזח המזרחי'
-                                  : !hasPower('strength') ? 'שוט דרומה, אל האי'
-                                  : !hasPower('climb') ? 'המחסנים במערב: דחוף את הארגז אל הבור, ומצא את הדלת'
-                                  : !hasFlag('finale_won') ? 'דרך המחסנים, מעל המכולות, אל הגבעה' : 'העיר שלך. לך לאן שתרצה.')
-            : player.endless && currentMap === 14 ? (!hasPower('strength') ? 'עלה למגדלור, אל יונתן' : 'יש ארגזים לדחוף: בנמל, במפרץ ובמחסנים')
-            : player.endless && currentMap === 15 ? (!hasPower('climb') ? 'שירה מחכה בחצר, בקצה המחסנים' : 'טפס על ערימת המכולות, אל הדלת לגבעה')
-            : player.endless && currentMap === 19 ? (!hasPower('dive') ? 'דורית על האי המכותר. חפש את הזרם שנכנס אליו' : hasFlag('oblivion_won') ? 'הים שקט. אפשר לשוט לאן שרוצים' : 'לבריכה הכהה בדרום-מערב, וצלול')
-            : player.endless && currentMap === 20 ? (hasFlag('oblivion_won') ? 'הציורים של אמנון חזרו' : !trainerBeaten(20, SK(20, '17,3')) ? 'הזקן על הסלע במזרח. תזכיר לו מי אתה' : 'אל הספינה הטבועה, אל הכן')
-            : player.endless && currentMap === 14 && hasFlag('market_won') && !hasFlag('oblivion_won') ? 'הפרק הרביעי: שוט דרומה, מעבר לשובר הגלים'
-            : player.endless && hasFlag('market_won') && !hasFlag('oblivion_won') && !hasPower('dive') && [1, 13, 17, 18].indexOf(currentMap) >= 0 ? 'הפרק הרביעי: אל האי, ומשם דרומה לים הפתוח'
-            : player.endless && currentMap === 17 ? (!hasPower('tune') ? 'עמרי בחצר, מתחת לעץ התאנה' : !hasFlag('woke_17_' + SK(17, '16,10')) ? 'נגן לסבל הישן בסמטה' : 'מזרחה, אל מגדל הגלריות')
-            : player.endless && currentMap === 18 ? (hasFlag('market_won') ? 'האולם ריק. הפטיש לא למכירה.' : !hasPower('palette') ? 'לאה בגלריה הצדדית של הלובי'
-                                  : 'טבול צבע, פתח דלתות, עלה לאולם המכירות' + (player.brush ? ' (על המכחול: ' + PAINT[player.brush].name + ')' : ''))
-            : player.endless && hasFlag('finale_won') && !hasFlag('market_won') && !hasPower('tune') && [1, 5, 13, 14, 15, 16].indexOf(currentMap) >= 0 ? 'הפרק השלישי: מהפסגה מזרחה, אל העיר העתיקה'
-            : player.endless && currentMap === 16 ? (hasFlag('finale_won') ? 'הציור של העיר עומד על הפסגה'
-                                  : !hasPower('kite') ? 'נועה מעיפה עפיפונים ברמה האמצעית' : 'חצה את התהום, אל הכן שעל הפסגה')
-            : player.endless && currentMap === 5 && hasPower('climb') && !hasFlag('finale_won') ? 'שביל הסלעים בצפון עולה לגבעה'
-            : player.endless && !hasPower('surf') && currentMap <= 3 ? 'הפרק השני: רד מהרחוב דרומה, אל הנמל'
-            : currentMap === 11 ? (hasPower('cut') ? 'טפס עשרים קומות אל המכון' : 'אב הבית למטה יודע משהו')
-            : currentMap === 12 ? (hasFlag('blank_canvas') ? 'הסטודיו שלך. תחזור אליו.' : 'משהו לבן מחכה באמצע החדר')
-            : currentMap === 3 ? (hasFlag(trainerFlag(SK(3, '9,3'))) ? 'המעלית פנויה. לקומה האחרונה'
-                                                             : 'הממונה חוסם את המעלית. סיים איתו קודם')
-            : currentMap === 4 ? (gymGuardsLeft(4).length ? 'שומרי המכון: עוד ' + gymGuardsLeft(4).length + ' לפני השחיקה'
-                                  : 'הבס את מפלצת השחיקה! (מומלץ: רמה ' + recommendedLevel(player.day) + ')')
-            : currentMap === 10 ? (hasPower('light') ? 'עבור את המנהרה אל לובי המשרדים'
-                                  : 'חשוך לגמרי. לרותי מהרכבת יש פנס')
-            : currentMap === 5 ? 'קצת אוויר צח לפני שממשיכים'
-            : currentMap === 6 ? (!hasPower('door') ? 'מצא את מירה, ציירת הקירות'
-                                  : !hasPower('graffiti') ? 'מישהו ברובע יודע לרסס. תמצא אותו'
-                                  : 'צייר דלתות, רסס קירות, גלה את הרובע')
-            : currentMap === 7 ? 'העיר כולה מתחתיך'
-            : currentMap === 8 ? (hasFlag('joined_itai') ? 'המחלקה נוצחה. מחר התערוכה.' : 'הגע לדנה, ראש המחלקה')
-            : currentMap === 9 ? (paintingsDone() >= FINAL_DAY ? 'התערוכה מוכנה. כל חמשת הציורים על הקיר.'
-                                  : "הציור החמישי חסר. נצח את השחיקה וחזור לצייר בבית.")
-            : 'הבס את מפלצת השחיקה! (מומלץ: רמה ' + recommendedLevel(player.day) + ')';
+                                  : !player.endless && dayBrief() ? dayBrief().icon + ' ' + dayBrief().goal : 'הדלת לרחוב במזרח. העולם לא יבוא לחדר, ניסינו.')
+            : currentMap === 1 ? 'תחנת המעבר, מזרחה. האוטובוס לא יחכה, אבל גם לא יגיע בזמן.'
+            : currentMap === 2 ? (roadblockActive(2, SK(2, '27,5')) ? 'המדרגות בדרום יורדות למנהרה, כי הלובי בעבודות. לפעמים קדימה זה למטה.'
+                                  : 'קו 18, ומשם ללובי. עשרים דקות נסיעה, לפי מי שלא נסע בה.')
+            : currentMap === 3 && elevatorDown() ? 'חדר המדרגות בצפון, כי המעלית בתחזוקה. עשרים קומות של זמן לחשוב.'
+            : player.endless && currentMap === 13 ? (!hasPower('surf') ? 'חנה על המזח המזרחי, עם כן ומבט של מי שמחכה לגאות.'
+                                  : !hasPower('strength') ? 'דרומה, אל האי. ממרחק כזה כל אי נראה כמו תשובה.'
+                                  : !hasPower('climb') ? 'המחסנים במערב: ארגז לבור, ואז הדלת. הרבה בעיות נפתרות בדחיפה אחת לכיוון הנכון.'
+                                  : !hasFlag('finale_won') ? 'דרך המחסנים ומעל המכולות, אל הגבעה. כל טיפוס מתחיל במשהו שחוסם.' : 'העיר פתוחה. החופש מבהיל בדיוק כמו שמספרים.')
+            : player.endless && currentMap === 14 ? (!hasPower('strength') ? 'למעלה, למגדלור. יונתן מאיר לאחרים כבר שלושים שנה.' : 'ארגזים בנמל, במפרץ ובמחסנים. סוף סוף משהו שזז כשדוחפים אותו.')
+            : player.endless && currentMap === 15 ? (!hasPower('climb') ? 'שירה בחצר בקצה המחסנים, בונה משהו ממה שאחרים זרקו.' : 'על ערימת המכולות, אל הדלת לגבעה. מלמטה, למעלה תמיד נראה קרוב.')
+            : player.endless && currentMap === 19 ? (!hasPower('dive') ? 'דורית על האי המכותר, ויש זרם שנכנס אליו. צריך רק להפסיק לשחות נגדו.' : hasFlag('oblivion_won') ? 'הים שקט. אפשר לשוט לכל מקום, וזו בדיוק הבעיה.' : 'הבריכה הכהה בדרום-מערב. מה שמחפשים נמצא בדרך כלל עמוק מהנוח.')
+            : player.endless && currentMap === 20 ? (hasFlag('oblivion_won') ? 'הציורים של אמנון חזרו. שכחה היא רק זיכרון שהתעייף.' : !trainerBeaten(20, SK(20, '17,3')) ? 'הזקן על הסלע במזרח. תזכיר לו מי אתה; אולי תיזכר גם אתה.' : 'הספינה הטבועה, והכן שבתוכה. יש ציורים שמחכים מתחת למים.')
+            : player.endless && currentMap === 14 && hasFlag('market_won') && !hasFlag('oblivion_won') ? 'מעבר לשובר הגלים, דרומה. איפה שהמפה נגמרת, מתחיל הפרק הרביעי.'
+            : player.endless && hasFlag('market_won') && !hasFlag('oblivion_won') && !hasPower('dive') && [1, 13, 17, 18].indexOf(currentMap) >= 0 ? 'אל האי, ומשם לים הפתוח. הפרק הרביעי מתחיל איפה שהחוף מוותר.'
+            : player.endless && currentMap === 17 ? (!hasPower('tune') ? 'עמרי בחצר, מתחת לעץ התאנה. מנגן רק למי שמנצח אותו. עיקרון.' : !hasFlag('woke_17_' + SK(17, '16,10')) ? 'נגן לסבל שישן בסמטה. מנגינה טובה מעירה יותר מצעקה.' : 'מזרחה, למגדל הגלריות. שם אמנות שווה כסף, וזו כל הבעיה.')
+            : player.endless && currentMap === 18 ? (hasFlag('market_won') ? 'האולם ריק. הפטיש לא למכירה.' : !hasPower('palette') ? 'לאה בגלריה הצדדית של הלובי. אוצרת: מי שמחליטה על מה שווה להסתכל.'
+                                  : 'אולם המכירות למעלה, וכל דלת בדרך רוצה את הצבע שלה' + (player.brush ? ' (על המכחול: ' + PAINT[player.brush].name + ')' : ''))
+            : player.endless && hasFlag('finale_won') && !hasFlag('market_won') && !hasPower('tune') && [1, 5, 13, 14, 15, 16].indexOf(currentMap) >= 0 ? 'מהפסגה מזרחה, לעיר העתיקה. הפרק השלישי מתחיל בירידה.'
+            : player.endless && currentMap === 16 ? (hasFlag('finale_won') ? 'הציור של העיר עומד על הפסגה. עדיין רטוב בפינה, כמו כל דבר אמיתי.'
+                                  : !hasPower('kite') ? 'נועה ברמה האמצעית, מעיפה עפיפונים. מישהי שמבינה ברוח.' : 'מעל התהום, אל הכן שעל הפסגה. לא להסתכל למטה. גם לא אחורה.')
+            : player.endless && currentMap === 5 && hasPower('climb') && !hasFlag('finale_won') ? 'שביל הסלעים בצפון עולה לגבעה. הפארק נגמר, הנוף מתחיל.'
+            : player.endless && !hasPower('surf') && currentMap <= 3 ? 'מהרחוב דרומה, אל הנמל. הפרק השני מריח ממלח.'
+            : currentMap === 11 ? (hasPower('cut') ? 'עשרים קומות למעלה, אל המכון. כל קומה היא החלטה לא לחזור.' : 'משה, אב הבית, למטה. מי שמחזיק את המפתחות יודע איפה הדלתות.')
+            : currentMap === 12 ? (hasFlag('blank_canvas') ? 'הסטודיו שלך. הוא חיכה, כמו שרק חדרים יודעים.' : 'משהו לבן מחכה באמצע החדר. שום דבר לא מפחיד כמו התחלה.')
+            : currentMap === 3 ? (hasFlag(trainerFlag(SK(3, '9,3'))) ? 'המעלית פנויה, לקומה האחרונה. סוף היום, אם הכול ילך טוב.'
+                                                             : 'הממונה חוסם את המעלית עם "רק רגע". רגעים כאלה צריך לנצח.')
+            : currentMap === 4 ? (gymGuardsLeft(4).length ? 'עוד ' + gymGuardsLeft(4).length + ' שומרים לפני השחיקה. כל אחד בטוח שהוא הכי חשוב.'
+                                  : 'השחיקה בסוף המסדרון (רמה מומלצת: ' + recommendedLevel(player.day) + '). כדאי להביא גם משהו לחיות בשבילו.')
+            : currentMap === 10 ? (hasPower('light') ? 'המנהרה מובילה ללובי. האור בקצה הוא הפנס שלך.'
+                                  : 'לרותי מהרכבת יש פנס, ובמנהרה חושך מוחלט. לפעמים זה כל מה שצריך מאדם.')
+            : currentMap === 5 ? 'אוויר צח. העצים לא ממהרים לשום מקום, וזה מדבק.'
+            : currentMap === 6 ? (!hasPower('door') ? 'מירה, ציירת הקירות, אי שם ברובע. היא מציירת דלתות שנפתחות.'
+                                  : !hasPower('graffiti') ? 'מישהו ברובע מרסס בלילות. קיר אפור הוא רק קיר שעוד לא שאלו.'
+                                  : 'דלתות לצייר, קירות לרסס. הרובע מחכה שמישהו יחליט.')
+            : currentMap === 7 ? 'העיר כולה מתחתיך. מכאן הבעיות נראות כמו נקודות.'
+            : currentMap === 8 ? (hasFlag('joined_itai') ? 'המחלקה מאחוריך. מחר התערוכה, והלילה עוד ציור.' : 'דנה, ראש המחלקה, בקצה. אופטימיזציה של הכול, חוץ ממנוחה.')
+            : currentMap === 9 ? (paintingsDone() >= FINAL_DAY ? 'חמשת הציורים על הקיר. מעכשיו הם של מי שמסתכל.'
+                                  : 'הציור החמישי: קודם השחיקה, אחר כך הבית והקנבס. בינתיים, מקום ריק על הקיר.')
+            : 'השחיקה בסוף המסדרון (רמה מומלצת: ' + recommendedLevel(player.day) + '). כדאי להביא גם משהו לחיות בשבילו.';
 }
 // trainers reset every morning: each new day is the same commute, fought again
 // the level the quest recommends before the gym; the balance simulator plays to exactly this
@@ -2831,7 +2846,7 @@ function addFloater(x, y, text, o) {
   if (floaters.length > 60) floaters.shift();
   floaters.push({ x, y, text, color: o.color || '#f87171', size: o.size || 17, bold: o.bold !== false,
     life: o.life || 900, max: o.life || 900, vy: o.vy || -34, vx: (Math.random() - .5) * 16, rtl: !!o.rtl,
-    screen: !!o.screen });
+    screen: !!o.screen, pop: !!o.pop });
 }
 function addSlash(x, y, o) {
   o = o || {};
@@ -4164,6 +4179,7 @@ function renderOverworld() {
   drawWorldSteps();
   drawHeroLayer(map);
   renderDepthPass(map, cx0, cx1, cy0, cy1);
+  drawQuestMarkers(map);
   stepAndDrawLife(map, true);
 }
 function drawHeroLayer(map) {
@@ -4232,19 +4248,6 @@ function drawHeroLayer(map) {
   }
   drawHero(ctx, hero.x, hero.y + 4 - (running ? Math.abs(Math.sin(hero.walkPhase * 1.6)) * 2 : 0), 30,
     { facing: hero.facing, phase: running ? hero.walkPhase * 1.6 : hero.walkPhase, walking: hero.moving, pose: worldHeroPose() });
-}
-
-// map-name plate lives in screen space, so the camera's zoom and scroll never move it
-function renderMapLabel() {
-  const map = MAPS[currentMap];
-  ctx.save();
-  ctx.translate(6, 5); ctx.scale(UIS, UIS); ctx.translate(-6, -5);
-  ctx.save();
-  ctx.fillStyle = 'rgba(15,23,42,.72)';
-  roundRect(ctx, 6, 5, 120, 21, 6); ctx.fill();
-  ctx.restore();
-  heText(map.name, 12, 20, { align: 'left', size: 12, bold: true, color: '#e2e8f0', maxWidth: 108 });
-  ctx.restore();
 }
 
 /* =========================================================
@@ -4613,6 +4616,7 @@ function renderBattle() {
   // arena backdrop — full-bleed, ahead of the frame shift, and it matches where the fight is
   const env = battleEnv();
   drawBattleBackdrop(env);
+  drawBattleMotes(env);
 
   // sprites sit at FOE_HOME / HERO_HOME in absolute screen space, so the hit
   // sparks and damage numbers spawned there by renderFx() line up without any shift
@@ -4622,8 +4626,10 @@ function renderBattle() {
   // everything below is laid out in the 480-unit frame; renderFx() runs under the same
   // shift, so hit sparks still land exactly on the sprites
   ctx.translate(frameXB, 0);
+  ctx.save(); punchTransform();                          // the camera leans into a hard hit; the plates stay put
   drawBattlePlatform(FOE_HOME.x, FOE_HOME.y + 46 * S, 74 * S, 17 * S, env);
   drawBattlePlatform(HERO_HOME.x, HERO_HOME.y + 34 * S, 66 * S, 15 * S, env);
+  drawSplats();
 
   // ghosts (after-images) behind the hero
   (battle.ghosts || []).forEach(gh => {
@@ -4667,6 +4673,7 @@ function renderBattle() {
 
   if (battle.dice) drawDie(battle.dice);
   (battle.projectiles || []).forEach(drawProjectile);
+  ctx.restore();
 
   /* ---------- enemy plate (top, right-anchored) ---------- */
   ctx.save(); ctx.translate(10, BL.plateTop); ctx.scale(BL.u * BL.pw, BL.u * BL.pw); ctx.translate(-232, -12);
@@ -4799,6 +4806,10 @@ function cmdCells() {
     c.x = x0 + W - (col + 1) * cw - col * gap; c.y = top + row * (rh + gap); c.w = cw; c.h = rh;
     c.key = ph + ':' + c.kind + ':' + (c.i == null ? '' : c.i);
   });
+  if (ph === 'MENU' && list.length === 5) {            // two on the bottom row share it, no empty hole
+    const w2 = (W - gap) / 2;
+    list.slice(3).forEach((c, k) => { c.x = x0 + W - (k + 1) * w2 - k * gap; c.w = w2; });
+  }
   return list;
 }
 function drawCmdCells() {
@@ -4817,15 +4828,7 @@ function drawCmdCells() {
     ctx.restore();
     const R = CX(c.x + c.w - 8), L = CX(c.x + 8), C = CX(c.x + c.w / 2), mid = c.y + c.h / 2;
     if (c.kind === 'menu') {
-      const tall = false;
       heText(c.label, C, mid + 6, { align: 'center', size: FW > 560 ? 19 : 16, bold: true, maxWidth: CW(c.w - 12), color: c.i === 4 ? '#fde68a' : '#e2e8f0' });
-      if (tall) {
-        const usable = knownMoves().filter(m => (m.cost <= player.ap || inFlow()) && ppOf(m.id) > 0).length;
-        const bag = availableBattleItems().reduce((a, it) => a + (it.n || 0), 0);
-        const sub = [usable + ' טכניקות זמינות · ' + player.ap + ' AP', 'חוסם חלק מהמכה הבאה', bag ? bag + ' פריטים בתיק' : 'התיק ריק',
-          battle.noFlee ? 'מפה אי אפשר לברוח' : 'לצאת מהקרב'][c.i] || '';
-        heText(sub, C, mid + 15, { align: 'center', size: 10, color: '#94a3b8', maxWidth: CW(c.w - 14) });
-      }
     } else if (c.kind === 'back') {
       heText('↩ חזרה', C, mid + 5, { align: 'center', size: 14, bold: true, maxWidth: CW(c.w - 10), color: '#cbd5e1' });
     } else if (c.kind === 'annoy') {
@@ -5032,8 +5035,11 @@ function renderFx() {
   floaters.forEach(f => {
     if (f.screen) return;
     const a = clamp(f.life / f.max, 0, 1);
+    const popK = f.pop && fxOn() ? 1 + .45 * Math.max(0, 1 - (f.max - f.life) / 140) : 1;
+    if (popK !== 1) { ctx.save(); ctx.translate(f.x, f.y); ctx.scale(popK, popK); ctx.translate(-f.x, -f.y); }
     if (f.rtl) heText(f.text, f.x, f.y, { size: f.size * fs, bold: f.bold, color: f.color, alpha: a, shadow: '#000', maxWidth: 200 * fs });
     else numText(f.text, f.x, f.y, { size: f.size * fs, bold: f.bold, color: f.color, alpha: a, align: 'center', shadow: '#000' });
+    if (popK !== 1) ctx.restore();
   });
 }
 
@@ -5053,14 +5059,15 @@ function renderScreenFloaters() {
 // entire visible canvas edge to edge, not just the centred 480x320 play-frame.
 function renderScreenOverlay() {
   if (vignette > 0) {
-    const vMag = player.reduceFx ? .2 : .55;
-    const rg = ctx.createRadialGradient(VW / 2, VH / 2, 90, VW / 2, VH / 2, 290);
+    const vMag = player.reduceFx ? .14 : .32;
+    const rg = ctx.createRadialGradient(VW / 2, VH / 2, Math.min(VW, VH) * .45, VW / 2, VH / 2, Math.max(VW, VH) * .7);
     rg.addColorStop(0, 'rgba(239,68,68,0)');
     rg.addColorStop(1, 'rgba(239,68,68,' + (vignette * vMag) + ')');
     ctx.fillStyle = rg; ctx.fillRect(0, 0, VW, VH);
   }
+  drawLowHpPulse();
   if (flashScreen) {
-    ctx.save(); ctx.globalAlpha = (flashScreen.life / flashScreen.max) * (player.reduceFx ? .3 : .75);
+    ctx.save(); ctx.globalAlpha = (flashScreen.life / flashScreen.max) * (player.reduceFx ? .25 : .55);
     ctx.fillStyle = flashScreen.color; ctx.fillRect(0, 0, VW, VH); ctx.restore();
   }
 }
@@ -5295,9 +5302,9 @@ const CUTSCENES = {
   street_first: [
     { art: 'street', text: "שבע בבוקר. המכוניות עומדות, הנהגים צופרים. עד עכשיו זה לא קידם אף מכונית." },
     { art: 'street', who: 'בופי מן', text: "\"אם אני כבר תקוע פה, לפחות אגיע עם רעיון לציור.\"" },
-    { art: 'street', who: "טיפ לקרב", text: "בטכניקות: 🎨 התז צבע חזק משרבוט. התגוננות מחזירה AP ומפחיתה את המכה הבאה. בופיפן נמצא בתיק." },
-    { art: 'street', who: "טיפ לקרב", text: "🌈 פגיעות, ספיגת נזק והקנטות מוצלחות ממלאות זרימה. כשהמד מלא, מפעילים אותה מתפריט הטכניקות." },
-    { art: 'street', who: "טיפ לקרב", text: "😤 לכל יריב יש משהו שמעצבן אותו במיוחד. נסה פעולות שונות ועקוב אחרי מד העצבים." }
+    { art: 'street', who: "טיפ לקרב", text: "🎨 התז צבע חזק משרבוט. הגנה מחזירה AP ומקטינה את המכה הבאה. ובתיק יש בופיפן, לימים שהפילוסופיה לא מספיקה." },
+    { art: 'street', who: "טיפ לקרב", text: "🌈 כל פגיעה, כל מכה שספגת וכל עקיצה טובה ממלאות זרימה. כשהמד מלא היא מחכה בטכניקות. כמו השראה: לא באה כשקוראים לה, אבל אפשר להתכונן." },
+    { art: 'street', who: "טיפ לקרב", text: "😤 לכל יריב יש משהו שמוציא אותו מדעתו. נסה דברים ותסתכל על מד העצבים. סבלנות היא נשק, וגם חוסר סבלנות, כשהוא של מישהו אחר." }
   ],
   office_first: [
     { art: 'office', text: "משרד, פלורסנטים ומעלית. מישהו חימם דג, והשעה עוד לא תשע." },
@@ -5969,7 +5976,7 @@ function renderTitle() {
   const sub = seg(T, 1750, 2300);
   if (sub > 0) {
     heText('לנצח את היום', VW / 2, ty + 64 + (1 - easeOut(sub)) * 10, { align: 'center', size: 16, color: '#7dd3fc', alpha: sub, shadow: '#000', maxWidth: 400 });
-    heText("משרד בבוקר, ציור בערב. בדרך יש כמה אנשים שצריך לעבור.", VW / 2, ty + 84 + (1 - easeOut(sub)) * 10,
+    heText("משרד בבוקר, ציור בערב, ובאמצע כל מי שיודע מה אתה צריך.", VW / 2, ty + 84 + (1 - easeOut(sub)) * 10,
       { align: 'center', size: 11, color: '#94a3b8', alpha: sub * .85, shadow: '#000', maxWidth: VW * .8 });
   }
 }
@@ -5998,7 +6005,8 @@ function render() {
   if (!player.lowPower) drawVignette();
   if (player.evening && !(gameState === 'BATTLE' && battle)) renderNight();
   if (MAPS[currentMap].dark && !(gameState === 'BATTLE' && battle)) renderDark();
-  if (!(gameState === 'BATTLE' && battle)) renderMapLabel();
+  if (player.evening && !(gameState === 'BATTLE' && battle)) drawFireflies();
+  if (!(gameState === 'BATTLE' && battle)) renderLocationBanner();
   renderScreenFloaters();
   renderScreenOverlay();
   if (dialogue && gameState !== 'BATTLE') renderDialogue();
@@ -6319,18 +6327,18 @@ function stepAndDrawLife(map, over) {
    The gallery needs five paintings in five days. Every day has its own weather and pressure — and
    ends with one painting, named after that day. The day card and the evening say how many are done. */
 const DAY_THEMES = {
-  1: { name: 'הבוקר הראשון', sub: "צריך להכיר את הדרך למשרד, ואז לחזור הביתה לציור הראשון.", paint: 'החלון בחמש וחצי' },
+  1: { name: 'הבוקר הראשון', sub: 'כל דרך נראית ארוכה בפעם הראשונה. אחר כך היא פשוט ארוכה.', paint: 'החלון בחמש וחצי' },
   2: { name: 'יום גשום', sub: 'גשם כל היום. פחות אנשים ברחוב, יותר דברים שקופצים מהשלוליות.', paint: 'העיר בגשם', weather: 'rain', mod: { enc: 1.2 } },
-  3: { name: 'יום של דדליין', sub: "דדליין במשרד. כולם על הקצה: אויבים נותנים יותר כסף ומתעצבנים מהר יותר.", paint: 'דדליין בשמונה בערב', mod: { gold: 1.3, irk: 1.3 } },
-  4: { name: 'יום חם', sub: "חם, והרחוב חסום לעבודות. הדרך למשרד עוברת היום במנהרה.", paint: 'הגג בשקיעה', weather: 'heat', mod: { enc: .7 } },
-  5: { name: 'ערב התערוכה', sub: "הפתיחה הערב. נשאר לעבור את יום העבודה ולצייר את הציור החמישי.", paint: 'בופי מן, בלי מסכה', mod: { irk: 1.15 } }
+  3: { name: 'יום של דדליין', sub: 'הזמן לא זז מהר יותר, רק כולם מרגישים אותו. אויבים משלמים יותר ומתעצבנים מהר יותר.', paint: 'דדליין בשמונה בערב', mod: { gold: 1.3, irk: 1.3 } },
+  4: { name: 'יום חם', sub: 'שלושים וחמש מעלות, והעיר מסתתרת מתחת לעצמה. פחות מפגשים: גם לאויבים חם.', paint: 'הגג בשקיעה', weather: 'heat', mod: { enc: .7 } },
+  5: { name: 'ערב התערוכה', sub: 'הפתיחה הערב. נשאר רק יום אחד וציור אחד. "רק" היא המילה הכי ארוכה בעברית.', paint: 'בופי מן, בלי מסכה', mod: { irk: 1.15 } }
 };
 const DAY_BRIEF = {
-  1: { icon: '☀️', goal: 'למד את הרחוב, עבור בקו 18 והגע לשחיקה.', twist: 'יום ההיכרות: הקרבות מלמדים סוגים, הגנה ו-Flow.' },
-  2: { icon: '🌧️', goal: 'חצה את העיר בגשם ופגוש את איתי בדרך.', twist: 'רובע האמנים נפתח, שווה לסטות מהמסלול.' },
-  3: { icon: '⏳', goal: 'שרוד את יום הדדליין והגע לקומה האחרונה.', twist: 'עצבים עולים מהר יותר; יעל יכולה להצטרף לקרבות.' },
-  4: { icon: '🔦', goal: 'הדרך ללובי חסומה. מצא את המנהרה ועבור מתחת לעיר.', twist: 'הפנס והמסלול התת-קרקעי מחליפים את הנסיעה הרגילה.' },
-  5: { icon: '🖼️', goal: 'עלה בלי המעלית, נצח את היום האחרון והשלם את הציור החמישי.', twist: "המעלית מושבתת: עולים במדרגות, עוברים שלושה שומרים ונלחמים בשחיקה." }
+  1: { icon: '☀️', goal: 'למשרד דרך קו 18, ומשם לשחיקה בקומה האחרונה.', twist: 'היום הראשון: כל קרב הוא שיעור. רוב המורים לא יודעים שהם מורים.' },
+  2: { icon: '🌧️', goal: 'לחצות את העיר בגשם. איתי מחכה בתחנה, עם חליפה ודעות.', twist: 'רובע האמנים נפתח. מסלול קצר הוא לאנשים שכבר יודעים לאן.' },
+  3: { icon: '⏳', goal: 'לשרוד את הדדליין ולהגיע לקומה האחרונה.', twist: 'כולם על הקצה, גם האויבים. יעל יכולה להצטרף: עצבים מדבקים, אבל גם אומץ.' },
+  4: { icon: '🔦', goal: 'הרחוב חסום. הדרך למשרד עוברת מתחת לעיר, במנהרה.', twist: 'בלי פנס אין מנהרה, ובלי מנהרה אין משרד. יש ימים שזה נשמע כמו פתרון.' },
+  5: { icon: '🖼️', goal: 'עשרים קומות ברגל, שלושה שומרים, שחיקה אחת, וציור חמישי בערב.', twist: 'המעלית מושבתת. יש דברים שעולים רק במדרגות.' }
 };
 function dayBrief() { return DAY_BRIEF[Math.min(FINAL_DAY, player.day)] || null; }
 function dayTheme() { return DAY_THEMES[player.endless ? 2 + ((player.day - 1) % 3) : Math.min(5, player.day)] || DAY_THEMES[1]; }
@@ -6670,6 +6678,8 @@ function stepWorld(dt) {
 
 function stepBattle(dt) {
   const b = battle; if (!b) return;
+  if (b.hitStop > 0) { b.hitStop -= dt; return; }           // the frame holds on a hard hit
+  stepBattleFx(dt);
   b.msgFade = Math.min(1, (b.msgFade || 0) + dt / 140);
   const e = b.enemy;
   if (e.recoil) { e.recoil.t += dt; if (e.recoil.t >= e.recoil.dur) e.recoil = null; }
@@ -6833,6 +6843,9 @@ function gameLoop(now) {
    HUD
    ========================================================= */
 const hudCache = {};
+// the objective pill: the full line (with its joke) for a few seconds, then only the part that says where to go
+let questSeen = { text: '', at: 0 };
+function questShort(t) { const i = String(t || '').indexOf('. '); return i > 0 ? t.slice(0, i) : t; }
 function hudSet(id, prop, val) {
   const k = id + '|' + prop;
   if (hudCache[k] === val) return;
@@ -6855,8 +6868,10 @@ function updateHUD() {
   if (fc) {
     fc.innerText = inFlow() ? '🌈 FLOW ' + player.flowTurns : flowReady() ? '🌈 מוכן' : '🌈 ' + Math.round(player.flow || 0) + '%';
     fc.classList.toggle('ready', flowReady() || inFlow());
+    fc.style.display = (player.flow || 0) > 0 || inFlow() ? '' : 'none';
   }
-  hudSet('quest-text', 'text', questText);
+  if (questText !== questSeen.text) questSeen = { text: questText, at: clock };
+  hudSet('quest-text', 'text', clock - questSeen.at < 7000 ? questText : questShort(questText));
   hudSet('quest-box', 'opacity',
     (gameState === 'BATTLE' || gameState === 'CUTSCENE' || gameState === 'TITLE' || transition) ? '0' : '1');
   updateMusicTrack();
@@ -7494,7 +7509,7 @@ function startBattle(key, opts) {
   display.menuX = MENU_CELLS[0].rightX; display.menuY = MENU_CELLS[0].y;
   screenFlash('#fff', 200);
   updateMusicTrack();
-  let intro = enemy.icon + ' ' + enemy.name + ' חוסם את הדרך!';
+  let intro = pickLine(BATTLE_INTROS).replace('{n}', enemy.icon + ' ' + enemy.name);
   // Abilities/gimmicks live on the enemy plate. The first message should get out of the player's way.
   if (enemy.ability === 'intimidate') battle.stages.patk = -1;
   battleMessage(intro, 620, () => { battle.phase = 'MENU'; });
@@ -7515,8 +7530,9 @@ function enemyImpactFx(dmg, color, big) {
   addRing(FOE_HOME.x, FOE_HOME.y + 40, { maxR: big ? 78 : 52, color: '#94a3b8', width: 2, flat: true, life: 500 });
   addParticles(FOE_HOME.x, FOE_HOME.y, big ? 26 : 14,
     { color: color || '#fbbf24', speed: big ? 190 : 130, life: 620, size: big ? 4 : 3, lift: 40 });
-  addFloater(FOE_HOME.x + 6, FOE_HOME.y - 18, '-' + dmg, { color: big ? '#fbbf24' : '#fff', size: big ? 25 : 19 });
-  if (big) screenFlash('#fde68a', 160);
+  addFloater(FOE_HOME.x + 6, FOE_HOME.y - 18, '-' + dmg, { color: big ? '#fbbf24' : '#fff', size: big ? 25 : 19, pop: big });
+  fxHit(big, (TYPE_INFO[battle.vfxType] || {}).color);
+  if (big) screenFlash('#fde68a', 110);
   big ? sfx.crit() : sfx.hit();
 }
 
@@ -7572,6 +7588,7 @@ function afterPlayerAction(msg, dmg, big, healAmt) {
   }
   if (e.hp <= 0) {
     e.hp = 0; e.dying = { t: 0, dur: 700 };
+    fxKO(e);
     addParticles(FOE_HOME.x, FOE_HOME.y, 30, { color: e.color, speed: 150, life: 900, size: 4 });
     battleMessage(msg, 850, winBattle);
     return;
@@ -7631,7 +7648,7 @@ function useTechnique(moveId) {
     const recoil = Math.max(1, Math.round(sdmg / 4));
     schedule(150, () => {
       player.hp = Math.max(0, player.hp - recoil); updateHUD();
-      if (player.hp <= 0) { battleMessage('בופי מן נאבק עד הסוף... ונופל.', 1300, playerDefeated); return; }
+      if (player.hp <= 0) { battleMessage('בופי מן נופל. הרצפה, לפחות, לא מבקשת ממנו כלום.', 1300, playerDefeated); return; }
       afterPlayerAction('✊ נגמר ה-PP בכל הטכניקות. בופי מן נלחם בידיים! ' + sdmg + ' נזק, ורתע של ' + recoil + '.', sdmg, false);
     });
     return;
@@ -7826,13 +7843,13 @@ function doDefend() {
   battle.phase = 'ANIM'; battle.msg = '';
   addRing(HERO_HOME.x, HERO_HOME.y - 4, { maxR: 60, color: '#94a3b8', width: 5, life: 480 });
   addParticles(HERO_HOME.x, HERO_HOME.y, 10, { color: '#94a3b8', speed: 50, life: 600, size: 3, grav: -20 });
-  schedule(240, () => battleMessage('בופי מן נושם עמוק ומתגונן. (+15 AP)', 750, () => enemyTurnSoon()));
+  schedule(240, () => battleMessage(pickLine(DEFEND_LINES) + ' (+15 AP)', 750, () => enemyTurnSoon()));
 }
 
 function doRun() {
   if (battle.noFlee) {
     sfx.bump();
-    battleMessage("אי אפשר לברוח מהקרב הזה.", 1000, () => { battle.phase = 'MENU'; });
+    battleMessage('אין לאן לברוח. יש דברים שפוגשים רק פנים מול פנים.', 1000, () => { battle.phase = 'MENU'; });
     return;
   }
   if (battle.tower) {
@@ -7847,13 +7864,13 @@ function doRun() {
   }
   if (Math.random() < .7) {
     sfx.select();
-    battleMessage('ברחת בהצלחה!', 700, () => {
+    battleMessage(pickLine(FLEE_LINES), 700, () => {
       transition = { kind: 'fade', t: 0, dur: 420, at: .5, onMid: () => {
         battle = null; gameState = 'OVERWORLD'; updateHUD();
       } };
     });
   } else {
-    battleMessage('הבריחה נכשלה!', 800, () => enemyTurnSoon());
+    battleMessage('הבריחה נכשלה. הרגליים הסכימו, המציאות פחות.', 800, () => enemyTurnSoon());
   }
 }
 
@@ -7911,7 +7928,7 @@ function enemyTurn() {
     player.hp -= tick;
     addFloater(HERO_HOME.x - 20, HERO_HOME.y - 20, '-' + tick, { color: '#f87171', size: 14 });
     updateHUD();
-    if (player.hp <= 0) { battleMessage('הלחץ הכריע את בופי מן...', 1300, playerDefeated); return; }
+    if (player.hp <= 0) { battleMessage('הלחץ מנצח בנקודות. בופי מן נשכב לחשוב על החיים.', 1300, playerDefeated); return; }
   }
   if (ps.burn > 0) {
     const tick = Math.max(2, Math.round(player.maxHp / 16));
@@ -8007,7 +8024,8 @@ function enemyTurn() {
     if (wasGuarding) battle.supportFx = { type: 'guard', t: 0, dur: 450 };
     battle.heroFlash = 260;
     spawnTypeVfx(e.type, { x: FOE_HOME.x - 20, y: FOE_HOME.y }, { x: HERO_HOME.x, y: HERO_HOME.y - 8 }, dmg > player.maxHp * .2);
-    shake = 200; vignette = 1;
+    shake = 200; vignette = wasGuarding ? .35 : .7;
+    fxHit(dmg > player.maxHp * .2, e.color, true);
     sfx.hit();
     addSlash(HERO_HOME.x, HERO_HOME.y - 10, { color: '#fca5a5', rot: 2.4 });
     addParticles(HERO_HOME.x, HERO_HOME.y - 6, 14, { color: '#fca5a5', speed: 130, life: 520, size: 3, lift: 30 });
@@ -8077,7 +8095,7 @@ function winBattle() {
   player.gold += rGold; player.exp += rExp;
   player.bestiary = player.bestiary || {};
   if (!left) player.bestiary[e.key] = true;
-  let msg = (left ? 'הקרב נגמר בלי מנצח. קיבלת חצי: ₪' : 'ניצחון! קיבלת ₪') + rGold + ' ו-' + rExp + ' נק\' ניסיון.';
+  let msg = (left ? 'הקרב נגמר בלי מנצח, רק עם מי שהלך. חצי פרס: ₪' : pickLine(WIN_LINES) + ' ₪') + rGold + ' · ' + rExp + ' נק\' ניסיון.';
   let leveled = false, learned = [], offered = [];
   while (player.exp >= player.nextExp) {
     player.exp -= player.nextExp; player.level++;
@@ -8098,9 +8116,9 @@ function winBattle() {
   }
   addParticles(FOE_HOME.x, FOE_HOME.y, 24, { color: '#fbbf24', speed: 120, life: 900, size: 3, lift: 60 });
   if (leveled) {
-    msg += ' עלית לרמה ' + player.level + '!';
-    learned.forEach(id => { msg += ' בופי מן למד טכניקה חדשה: ' + MOVES[id].icon + ' ' + MOVES[id].name + '!'; });
-    offered.forEach(id => { msg += ' בופי מן מוכן ל' + MOVES[id].name + ', אבל התיק מלא.'; });
+    msg += ' רמה ' + player.level + '! אותו בופי מן, רק קצת יותר.';
+    learned.forEach(id => { msg += ' טכניקה חדשה: ' + MOVES[id].icon + ' ' + MOVES[id].name + '. הידיים למדו לפני הראש.'; });
+    offered.forEach(id => { msg += ' ' + MOVES[id].name + ' מחכה, אבל בראש יש רק ארבע מגירות.'; });
     sfx.levelUp();
     for (let i = 0; i < 3; i++) schedule(i * 130, () => addRing(HERO_HOME.x, HERO_HOME.y - 8,
       { maxR: 110, color: '#fde047', width: 4, life: 620 }));
@@ -8224,7 +8242,7 @@ function playerDefeated() {
     const where = player.checkpoint.act === 1 ? 'לבוקר של היום ה-' + player.day : 'לתחילת הפרק';
     addJournal('loop');
     document.getElementById('gameover-text').innerText =
-      '🔁 הלולאה חוזרת ' + where + '. בופי מן זוכר הכול: הכוחות, המאסטרים, היומן והטכניקות נשארים איתו.\n\n' +
+      '🔁 הזמן מתגלגל אחורה, ' + where + '. העולם שכח, בופי מן לא: הכוחות, המאסטרים, היומן והטכניקות נשארו איתו. זה ההבדל בין לחזור על משהו לבין לחזור אליו.\n\n' +
       'רמה ' + r.lvBefore + ' ← ' + r.lvNow + (r.goldLost ? ' · ₪' + r.goldLost + ' אבדו' : '') + '\n' +
       '✨ הד: ' + r.echoExp + ' נק\' ניסיון נשארו' + (r.got.length ? ' · קבוע: ' + r.got.join(', ') : '') + '\n' +
       '📈 בלולאה הזאת: +' + Math.round(10 * Math.min(5, player.loopsInAct)) + '% ניסיון מכל קרב · המאמנים של הפרק חזרו.';
@@ -8243,8 +8261,8 @@ function playerDefeated() {
   battle = null; gameState = 'GAMEOVER';
   seedMotes(); saveGame(); updateHUD();
   document.getElementById('gameover-text').innerText =
-    'בופי מן התעייף לגמרי ואיבד ₪' + lost + " בדרך הביתה. הוא נח והכוחות התמלאו. קיבלת: " +
-    '💪 נחישות +' + Math.round(BALANCE.gritPerLoss * player.grit * 100) + '% התקפה והגנה עד סוף היום.';
+    'בופי מן התעורר במיטה. ₪' + lost + ' נעלמו בדרך, כנראה אל מישהו שהיה צריך אותם יותר. הגוף נח, האגו עוד לא.\n\n' +
+    '💪 נחישות +' + Math.round(BALANCE.gritPerLoss * player.grit * 100) + '% להתקפה ולהגנה עד סוף היום. מי שנפל פעם, יודע איפה הרצפה.';
   document.getElementById('gameover-modal').style.display = 'flex';
 }
 function closeGameOver() {
@@ -8264,10 +8282,10 @@ function showVictoryModal() {
   saveGame();
   const finalDay = player.day >= FINAL_DAY && !player.endless;
   document.getElementById('victory-text').innerText =
-    'ניצחת את יום ' + player.day + ' מתוך 5. ' + (BADGES[gymDay()] ? '🏅 ' + BADGES[gymDay()] + '. ' : '') +
+    'יום ' + player.day + ' מתוך 5 מאחוריך. ' + (BADGES[gymDay()] ? '🏅 ' + BADGES[gymDay()] + '. ' : '') +
     'רמה ' + player.level + ', ₪' + player.gold + '. ' +
-    (finalDay ? 'הציור החמישי עדיין מחכה בבית. אחריו, התערוכה.'
-      : '🖼️ על הקיר כבר ' + player.paintings.length + '/5 ציורים. הציור של היום עדיין מחכה בבית.' +
+    (finalDay ? 'הציור החמישי מחכה בבית. אחריו, התערוכה, ואחריה כנראה תנומה.'
+      : '🖼️ על הקיר ' + player.paintings.length + '/5 ציורים. הציור של היום מחכה בבית: הוא לא ממהר, אבל גם לא מצייר את עצמו.' +
         (player.day === FINAL_DAY - 1 ? ' מחר היום האחרון.' : ''));
   document.getElementById('victory-modal').style.display = 'flex';
   maybeOfferLearn();
@@ -8663,17 +8681,17 @@ function closeShop() { document.getElementById('shop-panel').style.display = 'no
 function renderInventoryList() {
   const note = document.getElementById('inventory-note'); if (note) note.textContent = '';
   const entries = [
-    ['pill','💊 קפסולת בופיפן',"50 חיים; מסירה לחץ וכוויה"],
-    ['coffee','☕ קפה חזק',"אנרגיה מלאה ו־15 חיים; מעיר מעייפות ושינה"],
-    ['headphones','🎧 אוזניות','מבטלות שיתוק'],
-    ['sketchbook','📓 מחברת סקיצות','מחזירה 10 PP לכל טכניקה'],
-    ['kit','🩹 ערכת חירום','חיים ואנרגיה מלאים; מסירה מצבים שליליים']
-  ];
-  document.getElementById('inv-list').innerHTML = entries.map(([key,name,desc]) => {
-    const n = player.inventory[key] || 0, enabled = n > 0 && itemUseful(key);
-    return '<div class="panel-item' + (n ? '' : ' stock-out') + '"><div><strong>' + name + ' ×' + n + '</strong><br><small>' + desc + '</small></div>' +
-      '<button class="system-btn" ' + (enabled ? 'onclick="useItem(\'' + key + '\',false)"' : 'disabled') + '>' + (n ? enabled ? 'השתמש' : 'אין צורך כרגע' : 'אזל') + '</button></div>';
-  }).join('');
+    ['pill','💊 קפסולת בופיפן',"50 חיים, ומוריד לחץ וכוויה"],
+    ['coffee','☕ קפה חזק',"אנרגיה מלאה ו־15 חיים. מעיר גם מי שנרדם בעמידה"],
+    ['headphones','🎧 אוזניות','משתיקות את העולם, ואיתו את השיתוק'],
+    ['sketchbook','📓 מחברת סקיצות','10 PP לכל טכניקה. רעיונות ישנים, כוח חדש'],
+    ['kit','🩹 ערכת חירום','הכול מלא, כל המצבים נעלמים. כמו שינה טובה, בקופסה']
+  ].filter(([key]) => (player.inventory[key] || 0) > 0);
+  document.getElementById('inv-list').innerHTML = entries.length ? entries.map(([key,name,desc]) => {
+    const n = player.inventory[key] || 0, enabled = itemUseful(key);
+    return '<div class="panel-item"><div><strong>' + name + ' ×' + n + '</strong><br><small>' + desc + '</small></div>' +
+      '<button class="system-btn" ' + (enabled ? 'onclick="useItem(\'' + key + '\',false)"' : 'disabled') + '>' + (enabled ? 'השתמש' : 'לא צריך עכשיו') + '</button></div>';
+  }).join('') : '<div class="journal-entry"><b>התיק ריק</b>רק מטבע של עשר אגורות ופתק "לקנות בופיפן". ניצן בחנות הפינה יכולה לעזור.</div>';
 }
 
 let menuReturn = false;
@@ -8823,35 +8841,34 @@ function techniquesHelpHTML() {
 
 function openStatus() {
   heldDir = null; gameState = 'STATUS';
-  const row = (a, b) => '<div class="panel-item"><div>' + a + '</div><div>' + b + '</div></div>';
+  const pctOf = (a, b) => Math.round(clamp(a / Math.max(1, b), 0, 1) * 100);
+  const meter = (label, a, b, color, txt) => '<div class="st-meter"><span>' + label + '</span>' + pctBar(pctOf(a, b), color) + '<b>' + txt + '</b></div>';
+  const stat = (icon, name, v, note) => '<div class="st-stat"><small>' + icon + ' ' + name + '</small><b>' + v + '</b>' + (note ? '<em>' + note + '</em>' : '') + '</div>';
+  const nm = nextMoveAfter(player.level), powers = Object.keys(FIELD_POWERS).filter(hasPower), friends = availableFriends();
+  const extras = [];
+  if (player.grit > 0) extras.push('💪 נחישות +' + Math.round(BALANCE.gritPerLoss * Math.min(player.grit, BALANCE.gritMax) * 100) + '%');
+  if (inFlow() || (player.flow || 0) > 0) extras.push('🌈 ' + (inFlow() ? 'בזרימה' : flowReady() ? 'זרימה מוכנה' : 'זרימה ' + Math.round(player.flow) + '%'));
+  if (player.echoCount) extras.push('🔁 ' + player.echoCount + ' נקודות הד');
   document.getElementById('status-body').innerHTML =
-    row('שם', player.name) + row('יום', player.day) + row('רמה', player.level) +
-    row('ניסיון', player.exp + ' / ' + player.nextExp) +
-    row('חיים', Math.round(player.hp) + ' / ' + player.maxHp) +
-    row('אנרגיה', Math.round(player.ap) + ' / ' + player.maxAp) +
-    row('⚔️ כוח (מכות ⚡ וניטרליות)', player.atk + ' (עדשות ' + player.atkLevel + ')') +
-    row('🎨 יצירה (מכות 🎯 ו-🍃)', player.sat) +
-    row('🛡️ הגנה (מול מכות כוח)', player.def + ' (שריון ' + player.armorLevel + ')') +
-    row('🧘 חוסן (מול מכות יצירה)', player.sdf) +
-    row('💨 מהירות', player.spd) +
-    row('🔁 לולאות', (player.loops || 0) + (player.echoCount ? ' · הד: ' + player.echoCount + ' נקודות קבועות' : '')) +
-    row("כסף", '₪' + player.gold) +
-    row('🖼️ ציורים על הקיר', paintingsDone() + ' / ' + FINAL_DAY) +
-    row('⚔️ קרבות', (player.stats.wins || 0) + ' ניצחונות מתוך ' + (player.stats.battles || 0)) +
-    row('👣 צעדים', player.stats.steps || 0) +
-    row('⏱️ זמן משחק', fmtTime(player.stats.time || 0)) +
-    row('📜 משימות', Object.keys(QUESTS).filter(id => hasFlag('q_' + id + '_done')).length + ' / ' + Object.keys(QUESTS).length) +
-    row('🤝 חברים', availableFriends().map(k => FRIENDS[k].name).join(' · ') || 'עוד אין') +
-    row('כוחות שדה', Object.keys(FIELD_POWERS).filter(hasPower).map(k => FIELD_POWERS[k].name).join(' · ') || 'עוד אין') +
-    row('🌈 מצב זרימה', inFlow() ? 'פעיל (' + player.flowTurns + ' תורות)'
-        : flowReady() ? 'טעון ומוכן לקרב' : Math.round((player.flow || 0)) + '%') +
-    row('טכניקות (' + knownMoves().length + '/' + MAX_MOVES + ')',
-        knownMoves().map(m => (TYPE_INFO[m.type] || TYPE_INFO.none).icon + m.name).join(' · ')) +
-    (nextMoveAfter(player.level)
-      ? row('הבאה בתור', nextMoveAfter(player.level).icon + ' ' + nextMoveAfter(player.level).name +
-            ' (רמה ' + nextMoveAfter(player.level).unlock + ')')
-      : row('הבאה בתור', "כל טכניקות הרמה נפתחו"));
-  document.getElementById('status-body').innerHTML += techniquesHelpHTML();
+    '<div class="st-top"><div class="st-lv"><small>רמה</small><b>' + player.level + '</b></div><div class="st-meters">' +
+      meter('ניסיון', player.exp, player.nextExp, '#e9c17c', player.exp + ' / ' + player.nextExp) +
+      meter('חיים', player.hp, player.maxHp, '#68cf9c', Math.round(player.hp) + ' / ' + player.maxHp) +
+      meter('אנרגיה', player.ap, player.maxAp, '#7edcf0', Math.round(player.ap) + ' / ' + player.maxAp) +
+    '</div></div>' +
+    '<div class="st-grid">' +
+      stat('⚔️', 'כוח', player.atk, player.atkLevel ? 'עדשות ' + player.atkLevel : '') +
+      stat('🎨', 'יצירה', player.sat) +
+      stat('🛡️', 'הגנה', player.def, player.armorLevel ? 'שריון ' + player.armorLevel : '') +
+      stat('🧘', 'חוסן', player.sdf) +
+      stat('💨', 'מהירות', player.spd) +
+    '</div>' +
+    (extras.length ? '<div class="st-chips">' + extras.map(x => '<span>' + x + '</span>').join('') + '</div>' : '') +
+    '<div class="pg-section">טכניקות (' + knownMoves().length + '/' + MAX_MOVES + ')' + (nm ? ' · הבאה: ' + nm.icon + ' ' + nm.name + ' ברמה ' + nm.unlock : '') + '</div>' +
+    knownMoves().map(m => '<div class="journal-entry"><b>' + m.icon + ' ' + m.name + ' <small style="color:#7dd3fc;font-weight:400">' + moveStatsLine(m) + '</small></b>' +
+      moveEffectText(m, null) + (m.desc ? '<br><small style="color:#94a3b8">' + m.desc + '</small>' : '') + '</div>').join('') +
+    (friends.length || powers.length ? '<div class="pg-section">מה שנאסף בדרך</div><div class="st-chips">' +
+      friends.map(k => '<span title="' + (FRIEND_HELP[k] || '') + '">🤝 ' + FRIENDS[k].name + '</span>').join('') +
+      powers.map(k => '<span>' + FIELD_POWERS[k].name + '</span>').join('') + '</div>' : '');
   document.getElementById('status-panel').style.display = 'flex';
 }
 function closeStatus() { document.getElementById('status-panel').style.display = 'none'; returnFromPanel(); }
@@ -8862,8 +8879,7 @@ function questLogHTML() {
   const rows = open.map(id => '<div class="journal-entry" style="border-right-color:#38bdf8"><b>' + QUESTS[id].title + '</b>' +
       QUESTS[id].hint + '<br><small style="color:#7dd3fc">' + QUESTS[id].progress() + '</small></div>').join('') +
     done.map(id => '<div class="journal-entry" style="opacity:.6;border-right-color:#4ade80"><b>✅ ' + QUESTS[id].title + '</b>הושלמה</div>').join('');
-  return '<div style="color:#94a3b8;font-size:11px;margin:6px 2px">📜 משימות (' + done.length + ' / ' + Object.keys(QUESTS).length + ')</div>' +
-    (rows || '<div class="journal-entry"><b>אין משימות פתוחות</b>אנשים בעיר מבקשים עזרה. דבר איתם.</div>');
+  return (rows || '<div class="journal-entry"><b>אין משימות פתוחות</b>אנשים בעיר מבקשים עזרה. דבר איתם.</div>');
 }
 function bestiaryHTML() {
   const seen = player.bestiary || {};
@@ -8874,18 +8890,23 @@ function bestiaryHTML() {
       ? '<div class="journal-entry"><b>' + b.icon + ' ' + b.name + '</b>טיפוס: ' + ti.icon + ' ' + ti.name + '</div>'
       : '<div class="journal-entry"><b>❓ ???</b>עדיין לא הובס בקרב.</div>';
   }).join('');
-  const count = Object.keys(seen).filter(k => seen[k]).length;
-  return '<div style="color:#94a3b8;font-size:11px;margin:6px 2px">מפגשים (' + count + ' / ' +
-    Object.keys(ENEMY_BASE).length + ')</div>' + rows;
+  return rows;
 }
-function openJournal() {
+let journalTab = 'story';
+function openJournal(tab) {
   heldDir = null; gameState = 'JOURNAL';
+  if (tab) journalTab = tab;
   const ids = (player.journal || []).filter(id => JOURNAL[id]);
-  document.getElementById('journal-count').innerText = ids.length + ' / ' + Object.keys(JOURNAL).length;
-  document.getElementById('journal-list').innerHTML = (ids.length
-    ? ids.map(id => '<div class="journal-entry"><b>' + JOURNAL[id].t + '</b>' + JOURNAL[id].x + '</div>').join('')
-    : "<div class=\"journal-entry\"><b>היומן ריק</b>בדוק את המראה והפתק בחדר. בהמשך יתווספו לכאן מקומות, אנשים ורמזים.</div>")
-    + questLogHTML() + bestiaryHTML();
+  const qDone = Object.keys(QUESTS).filter(id => hasFlag('q_' + id + '_done')).length;
+  const tabs = [['story', '📖 רשומות', ids.length + '/' + Object.keys(JOURNAL).length], ['quests', '📜 משימות', qDone + '/' + Object.keys(QUESTS).length],
+    ['foes', '👾 אויבים', bestiaryCount() + '/' + Object.keys(ENEMY_BASE).length]];
+  document.getElementById('journal-count').innerHTML = '<span class="j-tabs">' + tabs.map(t =>
+    '<button class="system-btn' + (journalTab === t[0] ? ' diff-sel' : '') + '" onclick="openJournal(\'' + t[0] + '\')">' + t[1] + ' <small>' + t[2] + '</small></button>').join('') + '</span>';
+  document.getElementById('journal-list').innerHTML =
+    journalTab === 'quests' ? questLogHTML()
+    : journalTab === 'foes' ? bestiaryHTML()
+    : ids.length ? ids.slice().reverse().map(id => '<div class="journal-entry"><b>' + JOURNAL[id].t + '</b>' + JOURNAL[id].x + '</div>').join('')
+    : '<div class="journal-entry"><b>היומן ריק</b>דף לבן. בופי מן מכיר את ההרגשה. בדוק את המראה והפתק בחדר.</div>';
   document.getElementById('journal-panel').style.display = 'flex';
 }
 function closeJournal() { document.getElementById('journal-panel').style.display = 'none'; returnFromPanel(); }
@@ -9643,6 +9664,16 @@ function setupControls() {
 }
 
 
+
+/* small rotating lines: battle starts, wins, guards and getaways shouldn't sound like the same sticker */
+function pickLine(a) { return a[(Math.random() * a.length) | 0]; }
+const BATTLE_INTROS = ['{n} נעמד מולך, כאילו קבעתם.', '{n} חוסם את הדרך. גם לו יש יום ארוך.', '{n} מופיע. מסתבר שהיום עוד לא נגמר.',
+  '{n} צץ מעבר לפינה. תמיד יש פינה.', '{n} כאן. אף אחד לא הזמין אותו, וזה אף פעם לא עצר אף אחד.', '{n} מסתכל עליך כמו על משימה פתוחה.'];
+const WIN_LINES = ['ניצחון. עוד בעיה שנפתרה בלי אסיפה.', 'ניצחון. הוא לא פתר שום דבר גדול, אבל הוא נעים.', 'ניצחון. מתברר שגם זה עובר.',
+  'ניצחון. בופי מן מרשה לעצמו חצי חיוך.', 'ניצחון. היום קצת יותר קל, והמחר עוד לא יודע.'];
+const DEFEND_LINES = ['בופי מן נושם עמוק. ההגנה הכי טובה היא לא לקחת את זה אישית.', 'בופי מן מתגונן. לפעמים לעמוד במקום זה הצעד הכי אמיץ.',
+  'בופי מן נאסף לתוך עצמו. בפנים, לפחות, אין ישיבות.'];
+const FLEE_LINES = ['בופי מן נסוג. גם זו אסטרטגיה, לפי ספרי ניהול.', 'בורחים. לא כל קרב צריך מנצח.', 'בופי מן מתאדה מהקרב, כמו תוכנית חומש.'];
 /* =========================================================
    V49 — PROGRESSION: chapters, completion, achievements,
    the Tower of Inspiration (50 floors) and three save slots
@@ -9705,24 +9736,24 @@ function towerData() {
 }
 function towerUnlocked() { return hasFlag('day_done_1') || !!player.endless; }
 const CHAPTERS = [
-  { n: 1, icon: '🌅', title: 'חמישה ימים', sub: 'מהמיטה, דרך קו 18, אל התערוכה. חמישה ימי עבודה, חמישה ציורים.',
+  { n: 1, icon: '🌅', title: 'חמישה ימים', sub: 'חמישה ימי עבודה, חמישה ערבים של ציור. השאלה היא לא אם יש זמן, אלא של מי הוא.',
     open: () => true,
     steps: [1, 2, 3, 4, 5].map(d => [DAY_BRIEF[d].icon + ' יום ' + d + ': ' + DAY_THEMES[d].name, () => hasFlag('day_done_' + d)])
       .concat([['🖼️ התערוכה: חמישה ציורים על הקיר', () => !!player.endless]]) },
-  { n: 2, icon: '🏙️', title: 'העיר הגדולה', sub: 'הנמל, האי, המחסנים והגבעה. ארבעה מאסטרים, ארבעה כוחות, ציור אחד.',
+  { n: 2, icon: '🏙️', title: 'העיר הגדולה', sub: 'העיר גדולה מהמסלול למשרד. ארבעה מאסטרים, וכל אחד מלמד משהו שהוא עצמו עוד לומד.',
     open: () => !!player.endless, lock: 'אחרי התערוכה',
     steps: [['🌊 חנה, ציירת הנמל', () => hasPower('surf')], ['🗼 יונתן, שומר המגדלור', () => hasPower('strength')],
       ['🗿 שירה, פסלת הגרוטאות', () => hasPower('climb')], ['🪁 נועה, בונת העפיפונים', () => hasPower('kite')],
       ['🖼️ הציפייה', () => hasFlag('finale_won')]] },
-  { n: 3, icon: '🏷️', title: 'השוק', sub: 'העיר העתיקה ומגדל הגלריות. מי שלא מוכר, צריך לעבור את מי שקונה.',
+  { n: 3, icon: '🏷️', title: 'השוק', sub: 'כולם רוצים לקנות את מה שציירת. אף אחד לא שואל אם זה למכירה.',
     open: () => hasFlag('finale_won'), lock: 'אחרי יצירת המופת',
     steps: [['🪕 עמרי, נגן העוד', () => hasPower('tune')], ['🗝️ לאה, האוצרת', () => hasPower('palette')],
       ['💰 ויקטור, סוחר האמנות', () => trainerBeaten(18, SK(18, '13,3'))], ['🏷️ השוק', () => hasFlag('market_won')]] },
-  { n: 4, icon: '🌊', title: 'המעמקים', sub: 'מעבר לשובר הגלים: זרמים, שונית, ומורה שהשכחה לקחה.',
+  { n: 4, icon: '🌊', title: 'המעמקים', sub: 'מתחת למים שוכב כל מה ששכחנו לצייר. וגם מורה אחד.',
     open: () => hasFlag('market_won'), lock: 'אחרי השוק',
     steps: [['🐚 דורית, ציירת מתחת למים', () => hasPower('dive')], ['🧓 אמנון, המורה שנעלם', () => trainerBeaten(20, SK(20, '17,3'))],
       ['🕳️ השכחה', () => hasFlag('oblivion_won')]] },
-  { n: 5, icon: '🗼', title: 'מגדל ההשראה', sub: 'חמישים קומות, כל אחת קשה מהקודמת. שומר בכל עשירית. הפרק שלא נגמר עד שהפסגה שלך.',
+  { n: 5, icon: '🗼', title: 'מגדל ההשראה', sub: 'חמישים קומות של כל מה שהעיר זרקה עליך, מסודר לפי גובה. למעלה אף אחד לא מחכה, וזו בדיוק הנקודה.',
     open: () => towerUnlocked(), lock: 'אחרי היום הראשון',
     steps: [10, 20, 30, 40, 50].map(f => [TOWER_GUARDS[f].icon + ' קומה ' + f + ': ' + TOWER_GUARDS[f].title, () => towerData().best >= f]) }
 ];
@@ -9788,53 +9819,53 @@ function closeProgress() { document.getElementById('progress-panel').style.displ
 
 /* ---- achievements ---- */
 const ACHIEVEMENTS = [
-  ['awake', '⏰', 'בוקר טוב', 'יצאת מהחדר בבוקר הראשון', () => hasFlag('prologue_done')],
-  ['win1', '⚔️', 'ניצחון ראשון', 'נצח בקרב הראשון', () => (player.stats.wins || 0) >= 1],
-  ['win50', '🥊', 'לוחם רחוב', '50 ניצחונות', () => (player.stats.wins || 0) >= 50],
-  ['win200', '🛡️', 'ותיק הקרבות', '200 ניצחונות', () => (player.stats.wins || 0) >= 200],
-  ['win500', '👑', 'אגדת העיר', '500 ניצחונות', () => (player.stats.wins || 0) >= 500],
-  ['lv10', '⭐', 'רמה 10', 'הגע לרמה 10', () => player.level >= 10],
-  ['lv20', '🌟', 'רמה 20', 'הגע לרמה 20', () => player.level >= 20],
-  ['lv30', '💫', 'רמה 30', 'הגע לרמה 30', () => player.level >= 30],
-  ['lv40', '☄️', 'רמה 40', 'הגע לרמה 40', () => player.level >= 40],
-  ['lv50', '🌌', 'רמה 50', 'הגע לרמה 50', () => player.level >= 50],
-  ['day1', '☀️', 'שרדת את היום', 'נצח את השחיקה ביום הראשון', () => hasFlag('day_done_1')],
-  ['ch1', '🖼️', 'חמישה ציורים', 'סיים את הפרק הראשון', () => !!player.endless],
-  ['ch2', '🏙️', 'יצירת המופת', 'סיים את הפרק השני', () => hasFlag('finale_won')],
-  ['ch3', '🏷️', 'לא למכירה', 'סיים את הפרק השלישי', () => hasFlag('market_won')],
-  ['ch4', '🕯️', 'מה שנשכח חוזר', 'סיים את הפרק הרביעי', () => hasFlag('oblivion_won')],
-  ['hard', '🔥', 'קשוח באמת', 'סיים את הפרק הראשון ברמת קושי "קשוח"', () => !!player.endless && player.difficulty === 'hard'],
-  ['pw4', '🧰', 'ארגז כלים', 'קבל 4 כוחות שדה', () => Object.keys(FIELD_POWERS).filter(hasPower).length >= 4],
-  ['pwall', '🌈', 'כל הכוחות', 'קבל את כל כוחות השדה', () => Object.keys(FIELD_POWERS).every(hasPower)],
-  ['quest1', '📜', 'עוזר טוב', 'השלם משימת צד', () => Object.keys(QUESTS).some(id => hasFlag('q_' + id + '_done'))],
-  ['questall', '🤝', 'השכן של כולם', 'השלם את כל משימות הצד', () => Object.keys(QUESTS).every(id => hasFlag('q_' + id + '_done'))],
-  ['best20', '🔍', 'חוקר', '20 סוגי אויבים במדריך', () => bestiaryCount() >= 20],
-  ['best50', '📚', 'אנציקלופדיה', '50 סוגי אויבים במדריך', () => bestiaryCount() >= 50],
-  ['bestall', '🧿', 'ראיתי הכול', 'כל סוגי האויבים במדריך', () => bestiaryCount() >= Object.keys(ENEMY_BASE).length],
-  ['friends', '👯', 'צוות שלם', 'כל החברים הצטרפו', () => availableFriends().length >= Object.keys(FRIENDS).length],
-  ['mural3', '🎨', 'אמן רחוב', 'רסס 3 ציורי קיר', () => muralsDone() >= 3],
-  ['muralall', '🖌️', 'העיר צבועה', 'רסס את כל ציורי הקיר', () => muralsDone() >= totalSlabs() && totalSlabs() > 0],
-  ['found25', '🔦', 'עין חדה', 'מצא 25 פריטים בעולם', () => (player.stats.found || 0) >= 25],
-  ['brush', '🖌️', 'המכחול המוזהב', 'מצא את המכחול המוזהב', () => hasFlag('golden_brush')],
-  ['blank', '⬜', 'השכבה הראשונה', 'נצח את הקנבס הריק', () => hasFlag('blank_canvas')],
-  ['loop', '🔁', 'עוד פעם מההתחלה', 'חזור בלולאה בפעם הראשונה', () => (player.loops || 0) >= 1],
-  ['ma', '🎲', 'מא???', 'גרום לאויב לעזוב את הקרב בעצבים', () => (player.journal || []).indexOf('ma') >= 0],
-  ['gear', '🦺', 'מצויד היטב', 'שריון ועדשות ברמה 3', () => player.armorLevel >= 3 && player.atkLevel >= 3],
-  ['rich', '💰', 'חיסכון', '₪2,000 בכיס', () => player.gold >= 2000],
-  ['rich2', '💎', 'אספן', '₪10,000 בכיס', () => player.gold >= 10000],
-  ['steps', '👟', 'מטייל', '10,000 צעדים', () => (player.stats.steps || 0) >= 10000],
-  ['steps2', '🗺️', 'מכיר כל פינה', '40,000 צעדים', () => (player.stats.steps || 0) >= 40000],
-  ['time1', '⏱️', 'שעה ראשונה', 'שעת משחק אחת', () => (player.stats.time || 0) >= 3600000],
-  ['time5', '⌛', 'מתמסר', '5 שעות משחק', () => (player.stats.time || 0) >= 5 * 3600000],
-  ['time10', '🕰️', 'חלק מהחיים', '10 שעות משחק', () => (player.stats.time || 0) >= 10 * 3600000],
-  ['tw1', '🚪', 'הקומה הראשונה', 'עבור קומה במגדל ההשראה', () => towerData().best >= 1],
-  ['tw10', '🧱', 'מטפס', 'קומה 10 במגדל', () => towerData().best >= 10],
-  ['tw20', '🪜', 'גבוה יותר', 'קומה 20 במגדל', () => towerData().best >= 20],
-  ['tw30', '🏔️', 'מעל העננים', 'קומה 30 במגדל', () => towerData().best >= 30],
-  ['tw40', '🌠', 'כמעט שם', 'קומה 40 במגדל', () => towerData().best >= 40],
-  ['tw50', '🏆', 'אגדת המגדל', 'כבוש את קומה 50', () => towerData().best >= 50],
-  ['pct50', '📈', 'חצי הדרך', '50% השלמה', () => completionPct() >= 50],
-  ['pct100', '💯', 'השלמה מלאה', '100% השלמה', () => completionPct() >= 100]
+  ['awake', '⏰', 'בוקר טוב', 'יצאת מהחדר. הצעד הראשון קשה; השני הוא לא לחזור למיטה', () => hasFlag('prologue_done')],
+  ['win1', '⚔️', 'ניצחון ראשון', 'נצח בקרב. מתחילים איפשהו', () => (player.stats.wins || 0) >= 1],
+  ['win50', '🥊', 'לוחם רחוב', '50 ניצחונות. העיר מתחילה לזהות אותך', () => (player.stats.wins || 0) >= 50],
+  ['win200', '🛡️', 'ותיק הקרבות', '200 ניצחונות. האויבים כבר מספרים עליך בהפסקות', () => (player.stats.wins || 0) >= 200],
+  ['win500', '👑', 'אגדת העיר', '500 ניצחונות. מתישהו הקרב הפך לשגרה, וזה מפחיד קצת', () => (player.stats.wins || 0) >= 500],
+  ['lv10', '⭐', 'רמה 10', 'אותו אחד, עם עוד עשר שכבות', () => player.level >= 10],
+  ['lv20', '🌟', 'רמה 20', 'מתברר שאפשר להשתפר גם בלי מצגת', () => player.level >= 20],
+  ['lv30', '💫', 'רמה 30', 'חצי מהדברים שהפחידו אותך עכשיו משעממים אותך', () => player.level >= 30],
+  ['lv40', '☄️', 'רמה 40', 'כמעט מאסטר. המאסטרים אומרים שזה לא נגמר', () => player.level >= 40],
+  ['lv50', '🌌', 'רמה 50', 'הגעת לפסגה. מסתבר שגם ממנה יש נוף', () => player.level >= 50],
+  ['day1', '☀️', 'שרדת את היום', 'נצח את השחיקה ביום הראשון. מגדל ההשראה נפתח בתפריט', () => hasFlag('day_done_1')],
+  ['ch1', '🖼️', 'חמישה ציורים', 'סיים את הפרק הראשון. חמישה ערבים שלא הלכו לטלוויזיה', () => !!player.endless],
+  ['ch2', '🏙️', 'יצירת המופת', 'סיים את הפרק השני. ציור אחד, עיר שלמה', () => hasFlag('finale_won')],
+  ['ch3', '🏷️', 'לא למכירה', 'סיים את הפרק השלישי. יש דברים שאין להם מחיר, רק ערך', () => hasFlag('market_won')],
+  ['ch4', '🕯️', 'מה שנשכח חוזר', 'סיים את הפרק הרביעי. הזיכרון עמוק יותר מהים', () => hasFlag('oblivion_won')],
+  ['hard', '🔥', 'קשוח באמת', 'סיים את הפרק הראשון ב"קשוח". אף אחד לא ביקש, ובגלל זה זה נחשב', () => !!player.endless && player.difficulty === 'hard'],
+  ['pw4', '🧰', 'ארגז כלים', '4 כוחות שדה. כשיש לך מכחול, כל קיר נראה כמו דלת', () => Object.keys(FIELD_POWERS).filter(hasPower).length >= 4],
+  ['pwall', '🌈', 'כל הכוחות', 'כל כוחות השדה. העיר כבר לא יכולה להגיד לך "אין כניסה"', () => Object.keys(FIELD_POWERS).every(hasPower)],
+  ['quest1', '📜', 'עוזר טוב', 'השלם משימת צד. מסתבר שגם לאחרים יש יום', () => Object.keys(QUESTS).some(id => hasFlag('q_' + id + '_done'))],
+  ['questall', '🤝', 'השכן של כולם', 'כל משימות הצד. השכונה תזכור, לפחות עד יום שלישי', () => Object.keys(QUESTS).every(id => hasFlag('q_' + id + '_done'))],
+  ['best20', '🔍', 'חוקר', '20 סוגי אויבים. לכל אחד יש סיבה, גם אם היא מעצבנת', () => bestiaryCount() >= 20],
+  ['best50', '📚', 'אנציקלופדיה', '50 סוגי אויבים. אתה מכיר את הבעיות של העיר יותר טוב מהעירייה', () => bestiaryCount() >= 50],
+  ['bestall', '🧿', 'ראיתי הכול', 'כל סוגי האויבים. ועדיין, כל בוקר מפתיע', () => bestiaryCount() >= Object.keys(ENEMY_BASE).length],
+  ['friends', '👯', 'צוות שלם', 'כל החברים הצטרפו. אמנות היא עבודה של יחיד, שעושים ביחד', () => availableFriends().length >= Object.keys(FRIENDS).length],
+  ['mural3', '🎨', 'אמן רחוב', '3 ציורי קיר. הקירות לא ביקשו, אבל גם לא התנגדו', () => muralsDone() >= 3],
+  ['muralall', '🖌️', 'העיר צבועה', 'כל ציורי הקיר. אפור היה רק הצעה', () => muralsDone() >= totalSlabs() && totalSlabs() > 0],
+  ['found25', '🔦', 'עין חדה', '25 פריטים בעולם. מי שמסתכל למטה מוצא דברים', () => (player.stats.found || 0) >= 25],
+  ['brush', '🖌️', 'המכחול המוזהב', 'מצאת את המכחול המוזהב. הוא לא מצייר טוב יותר, אבל מרגיש ככה', () => hasFlag('golden_brush')],
+  ['blank', '⬜', 'השכבה הראשונה', 'נצח את הקנבס הריק. האויב הכי גדול של כל צייר', () => hasFlag('blank_canvas')],
+  ['loop', '🔁', 'עוד פעם מההתחלה', 'חזור בלולאה. כישלון הוא רק טיוטה עם תאריך', () => (player.loops || 0) >= 1],
+  ['ma', '🎲', 'מא???', 'גרום לאויב לעזוב בעצבים. ניצחון בלי מכה, הסוג האהוב על פילוסופים', () => (player.journal || []).indexOf('ma') >= 0],
+  ['gear', '🦺', 'מצויד היטב', 'שריון ועדשות ברמה 3. לא מושלם, אבל מוכן', () => player.armorLevel >= 3 && player.atkLevel >= 3],
+  ['rich', '💰', 'חיסכון', '₪2,000 בכיס. הכסף לא קונה השראה, אבל קונה צבעים', () => player.gold >= 2000],
+  ['rich2', '💎', 'אספן', '₪10,000 בכיס. כנראה שכחת שיש חנות', () => player.gold >= 10000],
+  ['steps', '👟', 'מטייל', '10,000 צעדים. הרופא היה גאה בך', () => (player.stats.steps || 0) >= 10000],
+  ['steps2', '🗺️', 'מכיר כל פינה', '40,000 צעדים. העיר כבר לא מפה, היא שכונה', () => (player.stats.steps || 0) >= 40000],
+  ['time1', '⏱️', 'שעה ראשונה', 'שעת משחק אחת. בערך אורך של ישיבה, רק בכיף', () => (player.stats.time || 0) >= 3600000],
+  ['time5', '⌛', 'מתמסר', '5 שעות משחק. בופי מן מודה לך על הזמן, הוא יודע כמה הוא שווה', () => (player.stats.time || 0) >= 5 * 3600000],
+  ['time10', '🕰️', 'חלק מהחיים', '10 שעות משחק. זה כבר לא משחק, זה תחביב', () => (player.stats.time || 0) >= 10 * 3600000],
+  ['tw1', '🚪', 'הקומה הראשונה', 'עבור קומה במגדל. כל מגדל מתחיל בקומת קרקע מבולבלת', () => towerData().best >= 1],
+  ['tw10', '🧱', 'מטפס', 'קומה 10 במגדל. דנה הייתה בטוחה שתיעצר כאן', () => towerData().best >= 10],
+  ['tw20', '🪜', 'גבוה יותר', 'קומה 20. האוויר דליל, הרעיונות פחות', () => towerData().best >= 20],
+  ['tw30', '🏔️', 'מעל העננים', 'קומה 30. מכאן כבר לא רואים את המשרד', () => towerData().best >= 30],
+  ['tw40', '🌠', 'כמעט שם', 'קומה 40. כמעט זה מקום מצוין לחשוב על הכול', () => towerData().best >= 40],
+  ['tw50', '🏆', 'אגדת המגדל', 'קומה 50. הגג, הנוף, והשאלה מה עכשיו', () => towerData().best >= 50],
+  ['pct50', '📈', 'חצי הדרך', '50% השלמה. הכוס חצי מלאה, ומלאה בעוד משחק', () => completionPct() >= 50],
+  ['pct100', '💯', 'השלמה מלאה', '100% השלמה. נשאר רק לצייר את זה', () => completionPct() >= 100]
 ];
 function achCount() { const a = player.ach || {}; return ACHIEVEMENTS.filter(x => a[x[0]]).length; }
 let achT = 0, achQueue = [], achShowing = false;
@@ -9857,7 +9888,7 @@ function checkAchievements(silent) {
 function showNextAch() {
   if (achShowing || !achQueue.length) return;
   const el = document.getElementById('ach-toast'); if (!el) return;
-  if (battle || cutscene || transition) { clearTimeout(showNextAch.t); showNextAch.t = setTimeout(showNextAch, 1200); return; }
+  if (battle || cutscene || transition || gameState !== 'OVERWORLD') { clearTimeout(showNextAch.t); showNextAch.t = setTimeout(showNextAch, 1200); return; }
   const a = achQueue.shift(); achShowing = true;
   el.innerHTML = '<span class="ach-ico">' + a[0] + '</span><span><small>🏆 הישג חדש</small><b>' + a[1] + '</b><em>' + a[2] + '</em></span>';
   el.classList.add('show');
@@ -9959,7 +9990,7 @@ function towerFloorCleared(f) {
   if (TOWER_REWARDS[f] && !t.claimed[f]) { t.claimed[f] = true; TOWER_REWARDS[f].give(); lines.push('🎁 פרס הקומה: ' + TOWER_REWARDS[f].text); }
   if (f >= TOWER_FLOORS) {
     t.run = null;
-    lines.unshift('🏆 בופי מן עומד על הגג של מגדל ההשראה. חמישים קומות. העיר כולה, מצוירת מתחתיו.');
+    lines.unshift('🏆 הגג של מגדל ההשראה. חמישים קומות, ומלמעלה מתברר שהעיר הייתה ציור כל הזמן.');
     sfx.levelUp(); screenFlash('#fde68a', 400);
   } else {
     t.run = { floor: f + 1, start: t.run ? t.run.start : f };
@@ -9982,7 +10013,7 @@ function towerDefeat(f) {
   player.flow = 0; player.flowTurns = 0;
   gameState = 'GAMEOVER'; saveGame(); updateHUD();
   document.getElementById('gameover-text').innerText =
-    '🗼 בופי מן נפל בקומה ' + f + ' והתעורר ליד המגדל, בלי שום הפסד. החיים התמלאו.\n\n' +
+    '🗼 בופי מן נפל בקומה ' + f + ' והתעורר ליד המגדל, שלם. אין כאן הפסד, רק גובה שעוד לא הגעת אליו.\n\n' +
     'השיא שלך: קומה ' + t.best + ' / ' + TOWER_FLOORS + '. ' +
     (towerGates().length > 1 ? 'אפשר להתחיל את הריצה הבאה מקומה ' + towerGates()[towerGates().length - 1] + '.' : 'עוד כמה רמות, וננסה שוב.');
   document.getElementById('gameover-modal').style.display = 'flex';
@@ -10063,6 +10094,158 @@ function refreshTitleButtons() {
   if (sb) sb.style.display = anySave() ? 'inline-block' : 'none';
 }
 try { const n = +localStorage.getItem(SLOT_PREF); if (n >= 1 && n <= SLOT_COUNT) setSaveSlot(n); else setSaveSlot(1); } catch (e) { setSaveSlot(1); }
+
+
+/* =========================================================
+   V50 — FEEL: hit-stop, camera punch, paint that stays on the floor,
+   a location banner, quest markers and the night's fireflies
+   ========================================================= */
+const PAINT_SPLASH = ['#ff5c9d', '#38bdf8', '#fde047', '#a3e635', '#c084fc'];
+function fxOn() { return !player.reduceFx; }
+// a hard hit freezes the fight for a breath and the camera leans in, like a brush stroke landing
+function fxHit(big, color, onHero) {
+  if (!battle) return;
+  const at = onHero ? { x: HERO_HOME.x, y: HERO_HOME.y } : { x: FOE_HOME.x, y: FOE_HOME.y };
+  if (fxOn()) {
+    battle.hitStop = big ? 85 : 35;
+    battle.punch = { t: 0, dur: big ? 300 : 200, x: at.x, y: at.y, amt: big ? .065 : .025 };
+  }
+  addSplat(at.x + (Math.random() - .5) * 50, at.y + (onHero ? 34 : 46) * BL.s + (Math.random() - .3) * 8,
+    color || PAINT_SPLASH[(Math.random() * PAINT_SPLASH.length) | 0], big ? 1.25 : .85);
+  if (big) addSplat(at.x + (Math.random() - .5) * 80, at.y + 50 * BL.s, PAINT_SPLASH[(Math.random() * 5) | 0], .6);
+}
+function addSplat(x, y, color, scale) {
+  if (!battle || player.lowPower) return;
+  const s = battle.splats = battle.splats || [];
+  const blobs = [];
+  for (let i = 0; i < 6; i++) { const a = Math.random() * 6.28, d = 6 + Math.random() * 10;
+    blobs.push([Math.cos(a) * d, Math.sin(a) * d * .38, 1.5 + Math.random() * 3.5]); }
+  s.push({ x, y, color, r: (7 + Math.random() * 5) * (scale || 1), blobs, t: 0, life: 7000, grow: 0 });
+  if (s.length > 14) s.shift();
+}
+function drawSplats() {
+  const s = battle && battle.splats; if (!s || !s.length) return;
+  ctx.save();
+  s.forEach(p => {
+    const a = clamp(1 - p.t / p.life, 0, 1) * .62, g = easeOut(clamp(p.t / 160, 0, 1));
+    ctx.globalAlpha = a; ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.ellipse(p.x, p.y, p.r * g, p.r * .38 * g, 0, 0, 6.28); ctx.fill();
+    p.blobs.forEach(b => { ctx.beginPath(); ctx.ellipse(p.x + b[0] * g * (p.r / 9), p.y + b[1] * g * (p.r / 9), b[2], b[2] * .45, 0, 0, 6.28); ctx.fill(); });
+  });
+  ctx.restore();
+}
+// a knockout: the enemy goes up in paint
+function fxKO(e) {
+  if (!battle) return;
+  PAINT_SPLASH.forEach((c, i) => addParticles(FOE_HOME.x, FOE_HOME.y - 6, 9, { color: c, speed: 170 + i * 15, life: 1000, size: 3.5, grav: 140, lift: 70 }));
+  addRing(FOE_HOME.x, FOE_HOME.y + 44 * BL.s, { maxR: 120, color: '#fde68a', width: 3, flat: true, life: 700 });
+  for (let i = 0; i < 4; i++) addSplat(FOE_HOME.x + (i - 1.5) * 26, FOE_HOME.y + 46 * BL.s + (i % 2) * 6, PAINT_SPLASH[i], 1.1);
+  if (fxOn()) { battle.hitStop = 140; battle.punch = { t: 0, dur: 420, x: FOE_HOME.x, y: FOE_HOME.y, amt: .08 }; }
+}
+function stepBattleFx(dt) {
+  const b = battle;
+  if (b.punch) { b.punch.t += dt; if (b.punch.t >= b.punch.dur) b.punch = null; }
+  if (b.splats) b.splats = b.splats.filter(p => (p.t += dt) < p.life);
+  if (b.bmotes) b.bmotes.forEach(m => { m.x += m.vx * dt / 1000; m.y += m.vy * dt / 1000; m.ph += dt / 900;
+    if (m.y < -6) m.y = VH + 4; if (m.y > VH + 6) m.y = -4; if (m.x < -6) m.x = VW + 4; if (m.x > VW + 6) m.x = -4; });
+}
+function punchTransform() {
+  const p = battle && battle.punch; if (!p) return;
+  const k = Math.sin(clamp(p.t / p.dur, 0, 1) * Math.PI) * p.amt;
+  ctx.translate(p.x, p.y); ctx.scale(1 + k, 1 + k); ctx.translate(-p.x, -p.y);
+}
+const MOTE_STYLE = { city: ['#fcd9a0', -8], grass: ['#f7fee7', -6], water: ['#e0f2fe', -4], cave: ['#fb923c', -14],
+  storm: ['#d8b4fe', -10], tower: ['#fde68a', -7], indoor: ['#e2e8f0', -3] };
+function drawBattleMotes(env) {
+  if (player.lowPower || env === 'reef' || !MOTE_STYLE[env]) return;
+  const b = battle, st = MOTE_STYLE[env];
+  if (!b.bmotes || b.bmotesEnv !== env) {
+    b.bmotesEnv = env; b.bmotes = [];
+    for (let i = 0; i < (player.reduceFx ? 8 : 18); i++)
+      b.bmotes.push({ x: Math.random() * VW, y: Math.random() * VH, vx: (Math.random() - .5) * 10, vy: st[1] * (.5 + Math.random()),
+        r: .8 + Math.random() * 1.6, ph: Math.random() * 6.28 });
+  }
+  ctx.save(); ctx.fillStyle = st[0];
+  b.bmotes.forEach(m => { ctx.globalAlpha = .18 + .3 * Math.abs(Math.sin(m.ph)); ctx.beginPath(); ctx.arc(m.x, m.y, m.r, 0, 6.28); ctx.fill(); });
+  ctx.restore();
+}
+// low HP: the edges of the screen beat like a heart, so you notice before the bar does
+function drawLowHpPulse() {
+  if (!(gameState === 'BATTLE' && battle) || player.hp <= 0 || player.hp / player.maxHp >= .25) return;
+  const beat = Math.pow(Math.max(0, Math.sin(clock / 260)), 6), a = (player.reduceFx ? .12 : .22) + beat * (player.reduceFx ? .08 : .2);
+  const rg = ctx.createRadialGradient(VW / 2, VH / 2, Math.min(VW, VH) * .42, VW / 2, VH / 2, Math.max(VW, VH) * .72);
+  rg.addColorStop(0, 'rgba(220,38,38,0)'); rg.addColorStop(1, 'rgba(220,38,38,' + a + ')');
+  ctx.fillStyle = rg; ctx.fillRect(0, 0, VW, VH);
+}
+
+/* ---- the location banner: the place's name slides in when you arrive, then gets out of the way ---- */
+let banner = { map: -1, t: 0 };
+function renderLocationBanner() {
+  if (banner.map !== currentMap) { banner = { map: currentMap, t: 0 }; }
+  banner.t += renderDt;
+  const T = banner.t, DUR = 2600;
+  if (T > DUR || transition) { if (transition) banner.t = 0; return; }
+  const k = T < 380 ? easeOut(T / 380) : T > DUR - 450 ? 1 - easeIn((T - (DUR - 450)) / 450) : 1;
+  const name = MAPS[currentMap].name, sub = player.evening ? 'ערב · יום ' + player.day : 'יום ' + player.day;
+  ctx.save();
+  ctx.translate(8, 8); ctx.scale(UIS, UIS); ctx.translate(-8, -8);
+  ctx.globalAlpha = k;
+  const w = 160, x = 8 - (1 - k) * 40, y = 8;
+  const g = ctx.createLinearGradient(x, 0, x + w, 0);
+  g.addColorStop(0, 'rgba(9,19,33,.9)'); g.addColorStop(.75, 'rgba(9,19,33,.8)'); g.addColorStop(1, 'rgba(9,19,33,0)');
+  ctx.fillStyle = g; ctx.fillRect(x, y, w, 36);
+  ctx.fillStyle = '#e9c17c'; ctx.fillRect(x, y, 3, 36);
+  heText(name, x + 11, y + 17, { align: 'left', size: 14, bold: true, color: '#edf3f5', maxWidth: w - 24, alpha: k });
+  heText(sub, x + 11, y + 31, { align: 'left', size: 9.5, color: '#a3b4c5', maxWidth: w - 24, alpha: k });
+  ctx.restore();
+}
+
+/* ---- quest markers: "!" over someone with a job for you, "✓" over someone waiting for what you brought ---- */
+function questMarkersFor(mi) {
+  const out = {};
+  Object.keys(QUESTS).forEach(id => {
+    const q = QUESTS[id];
+    const [gm, gk] = q.giver.split(':');
+    if (+gm === mi && !hasFlag('q_' + id + '_active') && player.day >= (q.minDay || 1)) out[gk] = out[gk] || '!';
+    const [tm, tk] = (q.turnIn || q.giver).split(':');
+    if (+tm === mi && questActive(id) && q.ready()) out[tk] = '✓';
+  });
+  return out;
+}
+function drawQuestMarkers(map) {
+  const marks = questMarkersFor(currentMap);
+  Object.keys(marks).forEach(k => {
+    const npc = (map.npc || {})[k];
+    if (!npc || npcAway(npc)) return;
+    const [x, y] = k.split(',').map(Number);
+    const bob = fxOn() ? Math.sin(clock / 300 + x) * 2 : 0, cx = x * TILE + 20, cy = y * TILE - 8 + bob;
+    const ok = marks[k] === '✓';
+    ctx.save();
+    ctx.fillStyle = ok ? '#22c55e' : '#e9c17c'; ctx.strokeStyle = 'rgba(9,19,33,.85)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, cy, 7.5, 0, 6.28); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx - 3, cy + 6); ctx.lineTo(cx, cy + 11); ctx.lineTo(cx + 3, cy + 6); ctx.closePath(); ctx.fill();
+    numText(marks[k], cx, cy + 4, { size: 11, bold: true, color: '#091321', align: 'center' });
+    ctx.restore();
+  });
+}
+
+/* ---- evening: fireflies over the outdoor maps ---- */
+const FIREFLY_CATS = { street: 1, park: 1, hill: 1, art: 1, harbor: 1, market: 1, roof: 1, transit: 1 };
+let fireflies = null;
+function drawFireflies() {
+  if (!player.evening || !FIREFLY_CATS[MAPS[currentMap].cat] || player.lowPower) return;
+  if (!fireflies) { fireflies = []; for (let i = 0; i < 16; i++) fireflies.push({ x: Math.random(), y: Math.random(), ph: Math.random() * 6.28, sp: .4 + Math.random() * .6 }); }
+  const t = clock / 1000;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  fireflies.forEach(f => {
+    const x = ((f.x + Math.sin(t * .13 * f.sp + f.ph) * .06) % 1) * VW, y = ((f.y + Math.cos(t * .11 * f.sp + f.ph) * .05) % 1) * VH;
+    const a = Math.pow(Math.max(0, Math.sin(t * 1.3 * f.sp + f.ph)), 2) * .75;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, 7);
+    g.addColorStop(0, 'rgba(253,240,138,' + a + ')'); g.addColorStop(1, 'rgba(253,240,138,0)');
+    ctx.fillStyle = g; ctx.fillRect(x - 7, y - 7, 14, 14);
+  });
+  ctx.restore();
+}
 
 resizeCanvas();
 setupControls();
