@@ -10564,7 +10564,7 @@ const CB = window.CB = {
 /* ---------- רגע אמת (Moment of Truth) ---------- */
 const MOMENTS = {
   eilam:{name:"אם ימחקו, אצייר שוב", icon:"🎨", line:"\"תמחקו כמה שתרצו. אני אצייר שוב. וזה מה שהורג אתכם.\"",
-    fn:()=>{ aliveFoes().forEach(f=>dealToFoe(f, Math.round(charAtk("eilam")*2.4), "🎨 גל צבע ענק!")); addAnx(-25); worldColorPulse&&0; }},
+    fn:()=>{ aliveFoes().forEach(f=>dealToFoe(f, Math.round(charAtk("eilam")*2.4), "🎨 גל צבע ענק!")); addAnx(-25); }},
   dan:{name:"תנשום, אני פה", icon:"❤️", line:"\"תנשום. אני פה. אני לא הולך לשום מקום.\"",
     fn:()=>{ addAnx(-40); CB.frozen=false; CB.allies.forEach(a=>{ if(a.alive) G.hp[a.id]=Math.min(maxHP(a.id),(G.hp[a.id]||0)+Math.round(maxHP(a.id)*0.35)); spawnHealNumber&&spawnHealNumber({type:"ally",id:a.id},1); }); giveExtraTurn("eilam"); }},
   pablo:{name:"לא אני", icon:"🐈", line:"\"מה שקרה עכשיו — לא באשמתי. אבל זה היה מדהים.\"",
@@ -26795,7 +26795,7 @@ var CombatFullscreen=(function(){
 /* Mini-games (eye/mirror/final canvas) draw on a translucent screen: the world HUD,
    objective pill and "what now" button showed through and covered the mini-game title
    and instructions. The mini-game owns the foreground while it is open. */
-body:is(:has(#canvas-screen:not(.hidden)),:has(#party-select-screen:not(.hidden)),:has(#ending-screen:not(.hidden))) :is(#toasts,#hud3d,#objective-banner,#move-hint,#scene-caption3d,#act-cluster,#world-layout28,.lm-whatnow-fab,#lm-context-card,#lm-world-cue){visibility:hidden!important;pointer-events:none!important;}
+body:is(:has(#canvas-screen:not(.hidden)),:has(#party-select-screen:not(.hidden)),:has(#ending-screen:not(.hidden))) :is(#hint-bubble,#toasts,#hud3d,#objective-banner,#move-hint,#scene-caption3d,#act-cluster,#world-layout28,.lm-whatnow-fab,#lm-context-card,#lm-world-cue){visibility:hidden!important;pointer-events:none!important;}
 /* The eye mini-game switches the screen to a dark theme whose centre was see-through,
    while the title/description kept the dark ink of the light paper theme (unreadable). */
 #app #canvas-screen.lm-eye-upgrade:not(.hidden){background:radial-gradient(900px 560px at 50% 30%,rgba(255,79,163,.16),transparent 65%),rgba(22,18,14,.94)!important;-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);}
@@ -26862,6 +26862,657 @@ body:is(:has(#canvas-screen:not(.hidden)),:has(#party-select-screen:not(.hidden)
       return r;
     };
   }
+})();
+</script>
+<style id="lm-32-ff7">
+/* 0.32 — "FF7 pass": window skin, battle transition, limit gauge, field polish, mini-games.
+   Presentation only; layout of the approved combat screen is kept (sizes, grid, positions). */
+:root{
+  --ff7-win:linear-gradient(180deg,#5068c4 0%,#2f409a 36%,#1a2570 72%,#121a55 100%);
+  --ff7-edge:#e8ebf4;
+  --ff7-inner:#6d79b0;
+  --ff7-text:#ffffff;
+  --ff7-shadow:1px 1px 0 #0a1035,0 0 2px rgba(10,16,53,.6);
+  --ff7-hand:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 22'%3E%3Cpath d='M33 6.5c0-1.7-1.3-3-3-3H19.5c-1.6 0-2.4-1-3.6-1.9C14.7.7 13.4.2 12 .9 10.8 1.5 10.5 3 11.2 4.1l.9 1.4H3.4C1.9 5.5.8 6.6.8 8s1.1 2.5 2.6 2.5h9.2v1.2H9.9c-1.3 0-2.3 1-2.3 2.3s1 2.3 2.3 2.3h2.5v.6c-1 .2-1.7 1.1-1.7 2.1 0 1.2 1 2.2 2.2 2.2H27c3.3 0 6-2.7 6-6Z' fill='%23fff' stroke='%23222a55' stroke-width='1.4' stroke-linejoin='round'/%3E%3Cpath d='M12.6 10.5h6M12.4 14.3h5.5M12.9 17.5h4.5' stroke='%237a84b4' stroke-width='1.2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+/* ---------- window skin ---------- */
+#app#app #dialog-box,
+#app#app #modal-box,
+#combat-screen#combat-screen #party-panel,
+#combat-screen#combat-screen #commands-panel,
+#combat-screen#combat-screen .sheet-panel,
+#combat-screen#combat-screen #battle-intro .intro-sheet,
+#app#app .ff7-win{
+  background:var(--ff7-win)!important;
+  border:2px solid var(--ff7-edge)!important;
+  border-radius:9px!important;
+  box-shadow:inset 0 0 0 2px var(--ff7-inner),inset 0 10px 18px rgba(255,255,255,.07),0 8px 26px rgba(0,0,0,.55)!important;
+  color:var(--ff7-text)!important;
+  text-shadow:var(--ff7-shadow);
+}
+#app#app #dialog-box #dlg-name{color:#fff!important;letter-spacing:.3px;}
+#app#app #dialog-box #dlg-text{color:#fff!important;}
+#app#app #dialog-box :is(.dlg-ctl,#dlg-choices button),
+#app#app #modal-box button{
+  background:rgba(8,14,52,.35)!important;border:1px solid rgba(232,235,244,.45)!important;color:#fff!important;
+  border-radius:7px!important;box-shadow:none!important;text-shadow:var(--ff7-shadow);position:relative;
+}
+#app#app #modal-box button.primary{background:rgba(255,255,255,.16)!important;border-color:#fff!important;font-weight:700;}
+#app#app #modal-box :is(h2,h3,p,div,span,b){color:inherit;}
+#app#app #modal-box h3{color:#fff!important;border-bottom:1px solid rgba(232,235,244,.35);padding-bottom:6px;}
+/* combat strip becomes floating windows */
+#combat-screen#combat-screen #combat-bottom-ui{background:linear-gradient(180deg,rgba(6,10,30,0),rgba(6,10,30,.55) 35%)!important;}
+#combat-screen#combat-screen #party-panel,#combat-screen#combat-screen #commands-panel{padding:6px!important;pointer-events:auto;}
+#combat-screen#combat-screen #party-zone .ally-card{border:1px solid transparent;border-radius:7px;}
+#combat-screen#combat-screen #party-zone .ally-card.active{background:rgba(255,255,255,.13)!important;border-color:rgba(255,255,255,.75)!important;}
+#combat-screen#combat-screen #party-zone .face{background:rgba(8,14,52,.55)!important;border:1px solid rgba(232,235,244,.5);}
+#combat-screen#combat-screen #party-zone .nm{color:#fff;font-weight:700;}
+#combat-screen#combat-screen .meter{background:rgba(6,10,36,.75)!important;border:1px solid rgba(232,235,244,.35);}
+#combat-screen#combat-screen #party-zone .meter.hp>i{background:linear-gradient(90deg,#3a6fe0,#a9cbff)!important;}
+#combat-screen#combat-screen #party-zone .meter.res>i{background:linear-gradient(90deg,#2f9a5b,#a8f0b9)!important;}
+#combat-screen#combat-screen #enemy-zone .enemy-card{background:var(--ff7-win)!important;border:2px solid var(--ff7-edge)!important;border-radius:8px!important;box-shadow:inset 0 0 0 1px var(--ff7-inner),0 4px 12px rgba(0,0,0,.45)!important;color:#fff!important;}
+#combat-screen#combat-screen #combat-menu .cmd-btn{background:rgba(8,14,52,.32)!important;border:1px solid rgba(232,235,244,.4)!important;color:#fff!important;text-shadow:var(--ff7-shadow);position:relative;}
+#combat-screen#combat-screen #combat-menu .cmd-btn[data-core='talk']{border:1px solid rgba(232,235,244,.4)!important;}
+#combat-screen#combat-screen #combat-menu .cmd-btn:is(:hover,:focus-visible){background:rgba(255,255,255,.16)!important;border-color:#fff!important;}
+#combat-screen#combat-screen #sub-menu button{background:rgba(8,14,52,.3)!important;border:1px solid rgba(232,235,244,.35)!important;color:#fff!important;position:relative;}
+/* pointing-hand cursor (RTL: sits on the right, points at the option) */
+:is(#combat-screen #combat-menu .cmd-btn,#combat-screen #sub-menu button,#app #dlg-choices button,#app #modal-box button,#ff7-mg-actions button):is(:hover,:focus-visible)::after{
+  content:"";position:absolute;right:4px;top:50%;width:26px;height:18px;margin-top:-9px;
+  background:var(--ff7-hand) center/contain no-repeat;pointer-events:none;z-index:3;
+  animation:ff7Hand .6s ease-in-out infinite alternate;filter:drop-shadow(0 2px 2px rgba(0,0,0,.5));
+}
+@keyframes ff7Hand{from{transform:translateX(0)}to{transform:translateX(5px)}}
+@media (pointer:coarse){:is(#combat-screen #combat-menu .cmd-btn,#combat-screen #sub-menu button,#app #dlg-choices button,#app #modal-box button,#ff7-mg-actions button):is(:hover,:focus-visible)::after{display:none}}
+
+/* ---------- limit gauge ---------- */
+#combat-screen#combat-screen #party-zone .ally-card.ff7-has-limit .moment{display:block!important;height:13px!important;margin-top:3px;position:relative;}
+#combat-screen#combat-screen #party-zone .ally-card.ff7-has-limit .moment>i{background:linear-gradient(90deg,#d4365d,#ff9fb5)!important;transition:width .35s ease-out;}
+#combat-screen#combat-screen #party-zone .ally-card.moment-ready.ff7-has-limit .moment>i{background:linear-gradient(90deg,#ff3d6e,#ffd166,#6ee7ff,#ff3d6e)!important;background-size:300% 100%!important;animation:ff7LimitFlow 1s linear infinite;}
+#combat-screen#combat-screen #party-zone .ally-card.ff7-has-limit .moment::after{content:"LIMIT";position:absolute;inset:0;text-align:center;font:800 10px/13px Arial,sans-serif;letter-spacing:2px;color:#ffd6df;text-shadow:1px 1px 0 #0a1035;}
+#combat-screen#combat-screen #party-zone .ally-card.moment-ready.ff7-has-limit .moment::after{color:#fff;animation:ff7Blink .5s steps(2,end) infinite;}
+@keyframes ff7LimitFlow{from{background-position:0 0}to{background-position:300% 0}}
+@keyframes ff7Blink{50%{opacity:.25}}
+#combat-screen#combat-screen #combat-menu .ff7-limit-btn{grid-column:1 / -1;background:linear-gradient(90deg,rgba(212,54,93,.55),rgba(255,209,102,.35),rgba(110,231,255,.45))!important;background-size:200% 100%!important;animation:ff7LimitFlow 1.6s linear infinite;border:2px solid #fff!important;font-weight:800;letter-spacing:.5px;}
+#ff7-limit-banner{position:fixed;inset:0;z-index:250;pointer-events:none;display:grid;place-items:center;}
+#ff7-limit-banner .bar{width:100%;padding:18px 12px;text-align:center;background:linear-gradient(90deg,transparent,rgba(10,16,60,.92) 18%,rgba(10,16,60,.92) 82%,transparent);border-block:2px solid rgba(232,235,244,.85);transform:scaleY(0);animation:ff7BarIn 1.25s cubic-bezier(.2,.8,.2,1) forwards;}
+#ff7-limit-banner small{display:block;font:800 13px/1 Arial,sans-serif;letter-spacing:6px;color:#ffd166;margin-bottom:8px;}
+#ff7-limit-banner b{display:block;font-family:'Suez One','Heebo',serif;font-size:clamp(26px,5vw,52px);color:#fff;text-shadow:0 0 18px rgba(110,231,255,.9),2px 2px 0 #0a1035;}
+#ff7-limit-banner::before{content:"";position:absolute;inset:0;background:#fff;opacity:0;animation:ff7Flash .45s ease-out .05s;}
+@keyframes ff7BarIn{0%{transform:scaleY(0);opacity:0}14%{transform:scaleY(1.15);opacity:1}22%{transform:scaleY(1)}82%{transform:scaleY(1);opacity:1}100%{transform:scaleY(.6);opacity:0}}
+@keyframes ff7Flash{0%{opacity:0}20%{opacity:.75}100%{opacity:0}}
+.ally-card.ff7-limit-pop{animation:ff7CardPop .7s ease-out;}
+@keyframes ff7CardPop{0%{box-shadow:0 0 0 0 rgba(255,209,102,.9)}100%{box-shadow:0 0 0 14px rgba(255,209,102,0)}}
+
+/* ---------- battle transition ---------- */
+#ff7-swirl{position:fixed;inset:0;z-index:400;pointer-events:none;overflow:hidden;background:#000;animation:ff7SwirlOut 1.2s ease-in forwards;}
+#ff7-swirl .snap{position:absolute;inset:-12%;background-size:cover;background-position:center;transform-origin:50% 50%;animation:ff7Swirl .7s cubic-bezier(.5,0,.85,.35) forwards;}
+#ff7-swirl .rays{position:absolute;inset:-60%;background:repeating-conic-gradient(from 0deg,rgba(0,0,0,0) 0 9deg,rgba(0,0,0,.85) 9deg 18deg);opacity:0;animation:ff7Rays .7s ease-in forwards;}
+#ff7-swirl .flash{position:absolute;inset:0;background:#fff;opacity:0;animation:ff7Flash .3s ease-out;}
+@keyframes ff7Swirl{0%{transform:rotate(0) scale(1);filter:blur(0) brightness(1)}55%{filter:blur(2px) brightness(1.5)}100%{transform:rotate(300deg) scale(3.4);filter:blur(12px) brightness(2.6);opacity:0}}
+@keyframes ff7Rays{0%{opacity:0;transform:rotate(0) scale(1.6)}60%{opacity:.9}100%{opacity:1;transform:rotate(-140deg) scale(.6)}}
+@keyframes ff7SwirlOut{0%,58%{opacity:1}100%{opacity:0}}
+
+/* ---------- damage numbers: FF-style drop & bounce ---------- */
+.lmfx-dmg{direction:ltr;unicode-bidi:isolate;font-family:Arial Black,Arial,'Heebo',sans-serif!important;font-weight:900!important;-webkit-text-stroke:1.5px #0a1035;text-shadow:2px 2px 0 #0a1035,0 0 10px rgba(0,0,0,.6)!important;animation:ff7Bounce 1.05s ease-out forwards!important;}
+@keyframes ff7Bounce{0%{transform:translate(-50%,-150%) scale(1.25);opacity:0}12%{transform:translate(-50%,-50%) scale(1);opacity:1}24%{transform:translate(-50%,-95%)}36%{transform:translate(-50%,-50%)}46%{transform:translate(-50%,-68%)}56%{transform:translate(-50%,-50%)}85%{transform:translate(-50%,-50%);opacity:1}100%{transform:translate(-50%,-60%);opacity:0}}
+
+/* ---------- field: location card + fade ---------- */
+#ff7-fade{position:fixed;inset:0;z-index:90;background:#000;pointer-events:none;animation:ff7FadeIn .7s ease-out forwards;}
+@keyframes ff7FadeIn{from{opacity:1}to{opacity:0}}
+#ff7-loc{position:fixed;top:max(74px,calc(env(safe-area-inset-top) + 70px));left:50%;z-index:91;pointer-events:none;padding:10px 26px;min-width:200px;text-align:center;transform:translateX(-50%);animation:ff7Loc 2.8s ease-in-out forwards;}
+#ff7-loc b{display:block;font-family:'Suez One','Heebo',serif;font-size:clamp(20px,3.4vw,30px);}
+#ff7-loc small{display:block;opacity:.85;font-size:13px;margin-top:2px;}
+@keyframes ff7Loc{0%{opacity:0;transform:translate(-50%,-10px)}12%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-6px)}}
+
+/* ---------- mini-games ---------- */
+#app #canvas-screen.ff7-mg:not(.hidden){background:radial-gradient(900px 560px at 50% 35%,rgba(80,104,196,.28),transparent 65%),rgba(10,12,30,.95)!important;}
+#app #canvas-screen.ff7-mg #canvas-title{color:#fff!important;text-shadow:var(--ff7-shadow),0 0 14px rgba(110,231,255,.45)!important;}
+#app #canvas-screen.ff7-mg p{color:#d7dcf0!important;}
+#app #canvas-screen.ff7-mg #canvas-progress,#app #canvas-screen.ff7-mg #canvas-progress+p{display:none!important;}
+#app #canvas-screen.ff7-mg #final-canvas{border:2px solid var(--ff7-edge)!important;border-radius:12px!important;box-shadow:inset 0 0 0 2px var(--ff7-inner),0 16px 40px rgba(0,0,0,.6)!important;background:#0d1238!important;touch-action:none;}
+#app #canvas-screen.ff7-mg #final-canvas.ff7-shake{animation:ff7Shake .32s linear;}
+@keyframes ff7Shake{20%{transform:translate(-6px,2px)}40%{transform:translate(5px,-3px)}60%{transform:translate(-3px,3px)}80%{transform:translate(2px,-1px)}}
+#ff7-mg-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px;}
+#ff7-mg-actions button{min-height:48px;padding:10px 22px;font:700 16px 'Heebo',sans-serif;color:#fff;background:var(--ff7-win);border:2px solid var(--ff7-edge);border-radius:9px;box-shadow:inset 0 0 0 2px var(--ff7-inner);text-shadow:var(--ff7-shadow);cursor:pointer;position:relative;}
+#ff7-mg-actions button.primary{background:linear-gradient(180deg,#6a83e0,#33459f 60%,#1d2a7a)!important;}
+#ff7-mg-actions button:active{transform:scale(.97);}
+
+.lmfx-dmg[style*="rgb(255, 91, 91)"]{color:#fff!important;}
+/* dealToFoe also spawned a second, older floating number; the bouncing one is enough */
+.dmg-float3d{display:none!important;}
+/* action name window (FF7 shows it as a small blue window at the top) */
+#combat-screen#combat-screen #battle-beat{background:var(--ff7-win)!important;border:2px solid var(--ff7-edge)!important;border-radius:8px!important;box-shadow:inset 0 0 0 2px var(--ff7-inner),0 6px 18px rgba(0,0,0,.5)!important;color:#fff!important;text-shadow:var(--ff7-shadow);left:50%!important;right:auto!important;transform:translateX(-50%);width:max-content;max-width:min(560px,86%);padding:8px 22px!important;}
+@media (prefers-reduced-motion:reduce){#ff7-swirl,#ff7-swirl *,#ff7-limit-banner *,.lmfx-dmg,#ff7-loc,#ff7-fade{animation-duration:.01s!important;}}
+</style>
+<script id="lm-32-ff7-js">
+/* 0.32 — FF7-style presentation pass. See lo-meushar/CHANGES.md.
+   Gameplay rules stay turn-based; this layer adds choreography, camera direction,
+   the limit gauge (built on the existing "רגע אמת" meter), transitions and new mini-games. */
+(function(){
+  'use strict';
+  const $id=id=>document.getElementById(id);
+  const reduced=()=>{try{return (typeof LivingFX!=='undefined'&&LivingFX.reduced())||!!(G&&G.settings&&G.settings.reduceMotion);}catch(e){return false;}};
+  const clamp01=v=>Math.max(0,Math.min(1,v));
+  const easeOut=t=>1-Math.pow(1-t,3);
+  const easeInOut=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+  const now=()=>performance.now()/1000;
+  const hx=s=>String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const inCombat=()=>typeof W3!=='undefined'&&W3.mode==='combat'&&typeof CB!=='undefined';
+
+  /* ================= audio stingers (WebAudio, obeys the SFX setting) ================= */
+  const AUD={ctx:null};
+  function ac(){
+    try{ if(!G||!G.settings||G.settings.sfx===false) return null; }catch(e){ return null; }
+    if(!AUD.ctx){ try{ AUD.ctx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } }
+    if(AUD.ctx.state==='suspended') AUD.ctx.resume().catch(()=>{});
+    return AUD.ctx;
+  }
+  document.addEventListener('visibilitychange',()=>{ try{ if(!AUD.ctx) return; if(document.hidden) AUD.ctx.suspend(); else AUD.ctx.resume(); }catch(e){} });
+  function tone(f,d,type,vol,when,slide){
+    const c=ac(); if(!c) return; const t=c.currentTime+(when||0);
+    const o=c.createOscillator(),g=c.createGain(); o.type=type||'triangle'; o.frequency.setValueAtTime(f,t);
+    if(slide) o.frequency.exponentialRampToValueAtTime(slide,t+d);
+    g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(vol||.06,t+.012); g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    o.connect(g).connect(c.destination); o.start(t); o.stop(t+d+.03);
+  }
+  function noise(d,vol,when,freq,toFreq){
+    const c=ac(); if(!c) return; const t=c.currentTime+(when||0);
+    const len=Math.max(1,Math.floor(c.sampleRate*d)); const buf=c.createBuffer(1,len,c.sampleRate); const ch=buf.getChannelData(0);
+    for(let i=0;i<len;i++) ch[i]=Math.random()*2-1;
+    const src=c.createBufferSource(); src.buffer=buf; const bp=c.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=1.2;
+    bp.frequency.setValueAtTime(freq||900,t); if(toFreq) bp.frequency.exponentialRampToValueAtTime(toFreq,t+d);
+    const g=c.createGain(); g.gain.setValueAtTime(vol||.08,t); g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    src.connect(bp).connect(g).connect(c.destination); src.start(t); src.stop(t+d+.02);
+  }
+  const STING={
+    swirl(){ noise(.75,.09,0,300,4200); tone(880,.5,'sawtooth',.025,0,110); tone(660,.55,'triangle',.03,.08,98); },
+    slash(){ noise(.16,.11,0,2600,700); tone(220,.12,'square',.03,0,90); },
+    thud(){ tone(110,.18,'sine',.09,0,55); noise(.1,.06,0,500,200); },
+    limitReady(){ [784,988,1175,1568].forEach((f,i)=>tone(f,.16,'triangle',.045,i*.06)); },
+    limit(){ [392,494,587,784].forEach((f,i)=>tone(f,.9,'sawtooth',.022,i*.03)); noise(.6,.07,.05,800,5000); },
+    tick(){ tone(1320,.03,'square',.02); },
+    rate(r){ const seq=r==='perfect'?[784,988,1175,1568]:r==='great'?[659,784,988]:r==='good'?[587,740]:[330,262];
+      seq.forEach((f,i)=>tone(f,.14,r==='miss'?'sawtooth':'triangle',.05,i*.07)); },
+    jingle(){ [523,659,784,1047,988,1047].forEach((f,i)=>tone(f,i>3?.22:.12,'triangle',.05,i*.1)); }
+  };
+  window.LM_FF7_STING=STING;
+
+  /* ================= battle: camera direction ================= */
+  const DIR={epoch:null,t0:0,focus:null,shake:0,mode:null,vt0:0};
+  function rotateAroundY(v,c,ang){ const x=v.x-c.x,z=v.z-c.z,cs=Math.cos(ang),sn=Math.sin(ang); v.x=c.x+x*cs-z*sn; v.z=c.z+x*sn+z*cs; }
+  function partyCenter(){
+    const v=new THREE.Vector3(); let n=0;
+    Object.values((typeof CB3!=='undefined'&&CB3.allyMeshes)||{}).forEach(m=>{ if(m&&m.visible){ v.add(m.position); n++; } });
+    return n?v.multiplyScalar(1/n):null;
+  }
+  function focusOn(point,amt,dur){ if(!point) return; DIR.focus={point:point.clone(),amt:amt||.4,dur:dur||.9,t0:now()}; }
+  function shake(amount){ if(document.body.classList.contains('no-shake')) return; DIR.shake=Math.max(DIR.shake,amount); }
+  function directCamera(dt){
+    if(!inCombat()||reduced()||typeof BattlePresentation==='undefined') return;
+    const fit=BattlePresentation.cameraFit20; if(!fit||!W3.camera) return;
+    if(DIR.epoch!==CB.epoch){ DIR.epoch=CB.epoch; DIR.t0=now(); DIR.focus=null; DIR.mode=null; DIR.shake=0; }
+    const t=now()-DIR.t0; const eye=fit.eye.clone(), target=fit.target.clone(); let changed=false;
+    // opening sweep: the camera swings in from the side and settles on the fitted framing
+    if(t<2.2){ const k=1-easeOut(clamp01(t/2.2)); rotateAroundY(eye,target,k*1.05); eye.y+=k*2.2; eye.sub(target).multiplyScalar(1+k*.35).add(target); changed=true; }
+    // victory: slow orbit around the party
+    if(DIR.mode==='victory'){
+      const pc=partyCenter(); const vt=now()-DIR.vt0;
+      if(pc){ const k=easeInOut(clamp01(vt/1.4)); target.lerp(pc.clone().setY(pc.y+1.1),.55*k); rotateAroundY(eye,target,vt*.22*k); eye.lerp(target,.22*k); changed=true; }
+    }
+    if(DIR.focus){
+      const ft=(now()-DIR.focus.t0)/DIR.focus.dur;
+      if(ft>=1) DIR.focus=null;
+      else { const k=Math.sin(Math.PI*ft)*DIR.focus.amt; target.lerp(DIR.focus.point,k*.7); eye.lerp(DIR.focus.point,k*.32); changed=true; }
+    }
+    if(DIR.shake>0){
+      const s=DIR.shake*.35; eye.x+=(Math.random()-.5)*s; eye.y+=(Math.random()-.5)*s; target.x+=(Math.random()-.5)*s*.5;
+      DIR.shake=Math.max(0,DIR.shake-(dt||.016)*3); changed=true;
+    }
+    if(changed){
+      W3.camera.position.copy(eye); W3.camera.lookAt(target); W3.camera.updateMatrixWorld(true);
+      if(typeof CombatFullscreen!=='undefined'&&CombatFullscreen.frame) CombatFullscreen.frame(0); // keep name cards on their actors
+    }
+  }
+
+  /* ================= battle: choreography ================= */
+  const DUR={attack:.95,foeAttack:1.0,hit:.4,victory:1.5,limit:1.15};
+  function restoreMesh(mesh,a){
+    mesh.position.x=a.x; mesh.position.z=a.z; mesh.rotation.y=a.ry; mesh.rotation.z=a.rz;
+    const p=mesh.userData&&mesh.userData.parts; if(p&&a.armR!=null){ p.armR.rotation.x=a.armR; p.armL.rotation.x=a.armL; }
+  }
+  function sideCenter(mesh){
+    // the opposite formation's centre, for knock-back direction
+    const isFoe=(CB3.foeMeshes||[]).includes(mesh);
+    if(isFoe) return partyCenter();
+    const v=new THREE.Vector3(); let n=0; (CB3.foeMeshes||[]).forEach(m=>{ if(m.visible){ v.add(m.position); n++; } });
+    return n?v.multiplyScalar(1/n):null;
+  }
+  function queueMotion(mesh,kind,target,opts){
+    if(!mesh||!inCombat()||reduced()||typeof CombatMotion23==='undefined') return;
+    const old=CombatMotion23.get(mesh);
+    if(old){
+      // the hit handler re-requests a lunge at the first foe; keep the real one already running
+      if((kind==='attack'||kind==='foeAttack')&&(old.kind==='attack'||old.kind==='foeAttack'||old.kind==='limit')&&old.time<old.lead+old.duration*.85) return;
+      if(kind==='hit'&&(old.kind==='attack'||old.kind==='foeAttack'||old.kind==='limit')) return;
+      restoreMesh(mesh,old);
+    }
+    const p=mesh.userData&&mesh.userData.parts;
+    const a={kind,epoch:CB.epoch,time:0,lead:(opts&&opts.lead)||0,duration:DUR[kind]||.5,x:mesh.position.x,z:mesh.position.z,ry:mesh.rotation.y,rz:mesh.rotation.z,
+      armR:p?p.armR.rotation.x:null,armL:p?p.armL.rotation.x:null,fired:false};
+    if(target){
+      const dx=target.position.x-a.x,dz=target.position.z-a.z,len=Math.hypot(dx,dz)||1;
+      const stop=Math.max(0,len-(kind==='foeAttack'?1.6:1.25));
+      a.tx=a.x+dx/len*stop; a.tz=a.z+dz/len*stop; a.face=Math.atan2(dx,dz); a.target=target;
+    } else if(kind==='hit'){
+      const c=sideCenter(mesh); let dx=0,dz=1; if(c){ dx=a.x-c.x; dz=a.z-c.z; const l=Math.hypot(dx,dz)||1; dx/=l; dz/=l; }
+      a.kx=dx*.42; a.kz=dz*.42;
+    }
+    CombatMotion23.set(mesh,a);
+    if(kind==='attack'&&target) setTimeout(()=>{ if(CB.epoch===a.epoch) focusOn(target.position.clone().setY(1.2),.42,.95); },0);
+    if(kind==='foeAttack'){ const pc=partyCenter(); if(pc) setTimeout(()=>{ if(CB.epoch===a.epoch) focusOn(pc.setY(1.2),.3,1.1); },a.lead*1000); }
+    if(kind==='hit') shake(.5);
+  }
+  function stepMotion(dt){
+    if(typeof CombatMotion23==='undefined') return;
+    for(const [mesh,a] of CombatMotion23){
+      a.time+=Math.min(Math.max(dt||0,0),.05);
+      const T=a.time-a.lead;
+      if(a.epoch!==CB.epoch||!inCombat()||reduced()||T>=a.duration){
+        restoreMesh(mesh,a); CombatMotion23.delete(mesh);
+        if(a.kind==='victory'&&DIR.mode==='victory'&&a.epoch===CB.epoch&&inCombat()&&!reduced()) setTimeout(()=>{ if(DIR.mode==='victory') queueMotion(mesh,'victory'); },500);
+        continue;
+      }
+      if(T<0) continue;
+      const t=T/a.duration, p=mesh.userData&&mesh.userData.parts;
+      if(a.kind==='attack'||a.kind==='foeAttack'){
+        if(a.face!=null) mesh.rotation.y=a.face;
+        if(t<.28){ const u=easeOut(t/.28); mesh.position.x=a.x+(a.tx-a.x)*u; mesh.position.z=a.z+(a.tz-a.z)*u; mesh.position.y+=Math.sin(Math.PI*u)*.22; }
+        else if(t<.52){
+          const u=(t-.28)/.24; mesh.position.x=a.tx; mesh.position.z=a.tz;
+          if(p){ p.armR.rotation.x=-2.7+u*3.4; p.armL.rotation.x=.5*u; }
+          mesh.rotation.z=a.rz+Math.sin(u*Math.PI)*.08;
+          if(!a.fired&&u>.35){ a.fired=true; STING.slash(); if(a.target&&typeof LivingFX!=='undefined') LivingFX.ring(a.target.position.x,1.3,a.target.position.z,a.kind==='foeAttack'?0xff6b6b:0xffffff,true); shake(a.kind==='foeAttack'?.7:.45); }
+        } else {
+          const u=easeInOut((t-.52)/.48); mesh.position.x=a.tx+(a.x-a.tx)*u; mesh.position.z=a.tz+(a.z-a.tz)*u;
+          mesh.position.y+=Math.sin(Math.PI*u)*.85; mesh.rotation.z=a.rz;
+          if(p){ p.armR.rotation.x=a.armR*u+(.7)*(1-u); }
+          if(u>.85) mesh.rotation.y=a.ry;
+        }
+      } else if(a.kind==='hit'){
+        const k=Math.sin(Math.PI*t)*(1-t*.3);
+        mesh.position.x=a.x+a.kx*k+Math.sin(t*Math.PI*8)*.06*(1-t); mesh.position.z=a.z+a.kz*k; mesh.rotation.z=a.rz+Math.sin(t*Math.PI*5)*.12*(1-t);
+      } else if(a.kind==='victory'){
+        const hop=Math.abs(Math.sin(t*Math.PI*2)); mesh.position.y+=hop*.55;
+        mesh.rotation.y=a.ry+(t<.5?easeInOut(t*2)*Math.PI*2:0);
+        if(p){ p.armR.rotation.x=-2.9; p.armL.rotation.x=t>.5?-2.9:a.armL; }
+      } else if(a.kind==='limit'){
+        mesh.position.y+=Math.sin(Math.PI*t)*2.1; mesh.rotation.y=a.ry+easeInOut(t)*Math.PI*4;
+        if(p){ p.armR.rotation.x=-2.9; p.armL.rotation.x=-2.9; }
+      }
+    }
+  }
+
+  /* ================= battle: limit gauge (built on רגע אמת) ================= */
+  const LIMIT_LABEL='לימיט';
+  function hasLimit(id){ return typeof MOMENTS!=='undefined'&&!!MOMENTS[id]; }
+  function limitUnlocked(){ try{ return Object.keys(G.bosses||{}).length>=1; }catch(e){ return false; } }
+  function trackLimit(){
+    if(typeof CB==='undefined'||!CB.allies) return;
+    if(CB._ff7Epoch!==CB.epoch){ CB._ff7Epoch=CB.epoch; CB._ff7hp={}; CB._ff7ready={}; }
+    CB.allies.forEach(a=>{
+      const hp=G.hp[a.id]||0, prev=CB._ff7hp[a.id];
+      // FF7 rule of thumb: taking damage fills the gauge, on top of each character's own triggers
+      if(prev!=null&&hp<prev&&a.alive&&hasLimit(a.id)&&typeof addMoment==='function') addMoment(a.id,Math.round((prev-hp)/Math.max(1,maxHP(a.id))*120));
+      CB._ff7hp[a.id]=hp;
+      if(hasLimit(a.id)&&typeof momentOf==='function'&&momentOf(a.id)>=100&&!CB._ff7ready[a.id]){
+        CB._ff7ready[a.id]=true;
+        if(limitUnlocked()){ STING.limitReady(); setTimeout(()=>{ const c=document.querySelector('.ally-card[data-aid="'+a.id+'"]'); if(c){ c.classList.remove('ff7-limit-pop'); void c.offsetWidth; c.classList.add('ff7-limit-pop'); } },30); }
+      }
+      if(typeof momentOf==='function'&&momentOf(a.id)<100) CB._ff7ready[a.id]=false;
+    });
+  }
+  function decorateCards(){
+    document.querySelectorAll('#party-zone .ally-card[data-aid]').forEach(c=>c.classList.toggle('ff7-has-limit',hasLimit(c.dataset.aid)&&limitUnlocked()));
+  }
+  function addLimitButton(id){
+    if(!id||CB.ended||CB.activeAlly!==id||CB.phase!=='choice'||!hasLimit(id)||!limitUnlocked()) return;
+    if(typeof momentOf!=='function'||momentOf(id)<100) return;
+    const menu=$id('combat-menu'); if(!menu) return;
+    let b=menu.querySelector('.cmd-btn.moment,button.moment');
+    if(!b){
+      b=document.createElement('button'); b.type='button'; b.className='cmd-btn moment';
+      b.textContent='⚡ '+LIMIT_LABEL+': '+MOMENTS[id].name;
+      b.title=MOMENTS[id].line||'';
+      if(typeof tapBtn==='function') tapBtn(b,()=>useMoment(id)); else b.addEventListener('click',()=>useMoment(id));
+      menu.prepend(b);
+    } else if(!/לימיט/.test(b.textContent)) b.textContent='⚡ '+LIMIT_LABEL+': '+MOMENTS[id].name;
+    b.classList.add('ff7-limit-btn');
+  }
+  function limitBanner(name){
+    const old=$id('ff7-limit-banner'); if(old) old.remove();
+    const el=document.createElement('div'); el.id='ff7-limit-banner';
+    el.innerHTML='<div class="bar"><small>LIMIT BREAK</small><b>'+hx(name)+'</b></div>';
+    document.body.appendChild(el); setTimeout(()=>el.remove(),1300);
+  }
+
+  /* ================= battle: transition into combat ================= */
+  function battleSwirl(){
+    if(reduced()) return;
+    let snap=null;
+    try{
+      const world=$id('world3d-screen');
+      if(W3&&W3.renderer&&W3.mode==='explore'&&world&&!world.classList.contains('hidden')){
+        W3.renderer.render(W3.scene,W3.camera); // capture the field exactly as the player sees it
+        snap=W3.renderer.domElement.toDataURL('image/jpeg',.72);
+      }
+    }catch(e){ snap=null; }
+    const old=$id('ff7-swirl'); if(old) old.remove();
+    const o=document.createElement('div'); o.id='ff7-swirl';
+    o.innerHTML=(snap?'<div class="snap" style="background-image:url('+snap+')"></div>':'')+'<div class="rays"></div><div class="flash"></div>';
+    document.body.appendChild(o); STING.swirl();
+    setTimeout(()=>o.remove(),1250);
+  }
+
+  /* ================= field: run cycle, dust, location card ================= */
+  let dustT=0;
+  function fieldLife(dt){
+    if(typeof W3==='undefined'||W3.mode!=='explore'||!W3.player||reduced()||typeof WorldPoseState==='undefined') return;
+    const actors=[W3.player]; (W3.npcs||[]).forEach(n=>{ if(n) actors.push(n.group||n); });
+    for(const actor of actors){
+      const st=WorldPoseState.get(actor), p=actor.userData&&actor.userData.parts; if(!st||!p) continue;
+      if(actor.rotation.order!=='YXZ') actor.rotation.order='YXZ';
+      if(actor.userData.ff7BaseY==null) actor.userData.ff7BaseY=actor.position.y;
+      const b=st.blend, g=Math.sin(st.phase);
+      // a fuller run: longer stride, real arm pump, forward lean and a step bounce
+      p.legL.rotation.x=g*.95*b; p.legR.rotation.x=-g*.95*b;
+      p.armL.rotation.x=-g*1.05*b+(p.armL.rotation.x*(1-b)); p.armR.rotation.x=g*1.05*b+(p.armR.rotation.x*(1-b));
+      actor.rotation.x=.14*b;
+      actor.position.y=actor.userData.ff7BaseY+Math.abs(Math.cos(st.phase))*.07*b;
+    }
+    const st=WorldPoseState.get(W3.player);
+    if(st&&st.blend>.6&&typeof LivingFX!=='undefined'&&W3.scene){
+      dustT-=dt; if(dustT<=0){ dustT=.2;
+        const node=new THREE.Mesh(new THREE.CircleGeometry(.16,10),new THREE.MeshBasicMaterial({color:0xd8cdb8,transparent:true,opacity:.5,depthWrite:false}));
+        const yaw=W3.player.rotation.y; node.rotation.x=-Math.PI/2;
+        node.position.set(W3.player.position.x-Math.sin(yaw)*.35+(Math.random()-.5)*.25,.06,W3.player.position.z-Math.cos(yaw)*.35);
+        LivingFX.add(node,.55,(f,t)=>{ f.node.scale.setScalar(1+t*1.8); f.node.position.y=.06+t*.25; f.node.material.opacity=.5*(1-t); });
+      }
+    }
+  }
+  let lastScene=null;
+  function locationCard(id){
+    if(reduced()||typeof SCENES==='undefined'||!SCENES[id]) return;
+    const f=document.createElement('div'); f.id='ff7-fade'; document.body.appendChild(f); setTimeout(()=>f.remove(),750);
+    const old=$id('ff7-loc'); if(old) old.remove();
+    const c=document.createElement('div'); c.id='ff7-loc'; c.className='ff7-win';
+    c.innerHTML='<b>'+hx(SCENES[id].name)+'</b>'+(SCENES[id].caption?'<small>'+hx(String(SCENES[id].caption).split('.')[0])+'</small>':'');
+    document.body.appendChild(c); setTimeout(()=>c.remove(),2900);
+  }
+
+  /* ================= mini-games ================= */
+  const RATE=[
+    {key:'perfect',he:'מושלם!',score:100,color:'#ffd166'},
+    {key:'great',he:'מצוין',score:82,color:'#6ee7ff'},
+    {key:'good',he:'טוב',score:62,color:'#a8f0b9'},
+    {key:'miss',he:'כמעט',score:30,color:'#ff8fa3'}
+  ];
+  function rateFor(dist,zone){ return dist<=zone*.18?RATE[0]:dist<=zone*.38?RATE[1]:dist<=zone*.5?RATE[2]:RATE[3]; }
+  function rankOf(avg){ return avg>=92?'S':avg>=76?'A':avg>=58?'B':'C'; }
+  const MG={active:null};
+  function mgOpen(title,desc){
+    show('canvas-screen'); const scr=$id('canvas-screen'); scr.classList.add('ff7-mg');
+    $id('canvas-title').textContent=title; $id('canvas-desc').innerHTML=desc;
+    const cv=$id('final-canvas'); const css=Math.round(Math.min((innerWidth||800)*.8,(innerHeight||700)*.48,480)); const dpr=Math.min(2,devicePixelRatio||1);
+    cv.width=css*dpr; cv.height=css*dpr; cv.style.width=css+'px'; cv.style.height=css+'px';
+    const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+    return {scr,cv,ctx,size:css};
+  }
+  function mgActions(list){
+    let row=$id('ff7-mg-actions'); if(!row){ row=document.createElement('div'); row.id='ff7-mg-actions'; $id('canvas-screen').appendChild(row); }
+    row.innerHTML='';
+    list.forEach(b=>{ const el=document.createElement('button'); el.type='button'; el.textContent=b.t; if(b.primary) el.className='primary';
+      el.addEventListener('click',e=>{ e.preventDefault(); try{ SFX.click(); }catch(_){} b.fn(); }); row.appendChild(el); });
+    const first=row.querySelector('button.primary'); if(first&&!matchMedia('(pointer:coarse)').matches) setTimeout(()=>first.focus({preventScroll:true}),30);
+  }
+  function mgClose(){
+    const row=$id('ff7-mg-actions'); if(row) row.remove();
+    const scr=$id('canvas-screen'); if(scr) scr.classList.remove('ff7-mg');
+    const cv=$id('final-canvas'); if(cv){ cv.style.width=''; cv.style.height=''; cv.onpointerdown=null; }
+    MG.active=null; try{ show('world3d-screen'); }catch(e){}
+  }
+  function mgShake(cv){ if(reduced()) return; cv.classList.remove('ff7-shake'); void cv.offsetWidth; cv.classList.add('ff7-shake'); }
+  // particles + pop text drawn on the mini-game canvas
+  function fx(){ return {parts:[],pops:[]}; }
+  function burst(F,x,y,color,n){ if(reduced()) n=Math.min(n,6); for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2,s=60+Math.random()*170; F.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-60,life:.6+Math.random()*.4,t:0,color,r:2+Math.random()*3}); } }
+  function pop(F,x,y,text,color,S){ const m=70; if(S) x=Math.max(m,Math.min(S-m,x)); F.pops.push({x,y,text,color,t:0}); }
+  function drawFx(F,ctx,dt){
+    for(let i=F.parts.length-1;i>=0;i--){ const p=F.parts[i]; p.t+=dt; if(p.t>=p.life){ F.parts.splice(i,1); continue; }
+      p.vy+=320*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; ctx.globalAlpha=1-p.t/p.life; ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); }
+    ctx.globalAlpha=1;
+    for(let i=F.pops.length-1;i>=0;i--){ const q=F.pops[i]; q.t+=dt; if(q.t>1.1){ F.pops.splice(i,1); continue; }
+      const s=q.t<.15?1+(.15-q.t)*3:1; ctx.save(); ctx.globalAlpha=q.t>.8?(1.1-q.t)/.3:1; ctx.translate(q.x,q.y-q.t*26); ctx.scale(s,s);
+      ctx.font='900 30px "Heebo",Arial,sans-serif'; ctx.textAlign='center'; ctx.lineWidth=4; ctx.lineJoin='round'; ctx.strokeStyle='#0a1035'; ctx.strokeText(q.text,0,0); ctx.fillStyle=q.color; ctx.fillText(q.text,0,0); ctx.restore(); }
+  }
+  function onKey(e){ if(!MG.active||!MG.active.key) return; if(e.key===' '||e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); MG.active.key(); } }
+  document.addEventListener('keydown',onKey,true);
+
+  /* --- eye: choose a spot, then three timing layers (outline, colour, shine) --- */
+  function eyeGame(label,onDone){
+    const {cv,ctx,size}=mgOpen('👁️ איפה העין תשב?','<p>בחרו מקום על המשטח. אחר כך עוצרים את המכחול שלוש פעמים: קו, צבע וברק. ככל שעוצרים קרוב יותר למרכז הזוהר, העין חדה יותר.</p><p><b>'+hx(label||'נקודת אמנות')+'</b></p>');
+    const spots=[{x:.27,y:.5,name:'שקט'},{x:.5,y:.42,name:'באמצע'},{x:.73,y:.52,name:'אמיץ'}];
+    const layers=[{name:'קו מתאר',speed:1.0,zone:.30},{name:'צבע',speed:1.45,zone:.24},{name:'ברק',speed:1.95,zone:.18}];
+    const F=fx(); let choice=1, phase='pick', li=0, u=0, dir=1, results=[], last=now(), raf=0, closed=false;
+    const S=size, eyeW=S*.36, eyeH=S*.2;
+    function anchor(){ return {x:spots[choice].x*S,y:spots[choice].y*S}; }
+    function draw(){
+      const t=now(), dt=Math.min(.05,t-last); last=t;
+      const g=ctx.createLinearGradient(0,0,S,S); g.addColorStop(0,'#2a2f4f'); g.addColorStop(1,'#141833'); ctx.fillStyle=g; ctx.fillRect(0,0,S,S);
+      ctx.globalAlpha=.25; ctx.strokeStyle='#8a93c4'; ctx.lineWidth=2; for(let y=28;y<S;y+=34){ ctx.beginPath(); ctx.moveTo(14,y); ctx.bezierCurveTo(S*.3,y+10,S*.6,y-8,S-14,y+6); ctx.stroke(); } ctx.globalAlpha=1;
+      if(phase==='pick'){
+        spots.forEach((s,i)=>{ const x=s.x*S,y=s.y*S, on=i===choice, pulse=on?1+Math.sin(t*6)*.06:1;
+          ctx.beginPath(); ctx.arc(x,y,S*.085*pulse,0,Math.PI*2); ctx.fillStyle=on?'rgba(255,79,163,.35)':'rgba(255,255,255,.07)'; ctx.fill();
+          ctx.lineWidth=on?4:2; ctx.strokeStyle=on?'#ff4fa3':'#9aa3d6'; ctx.stroke();
+          ctx.fillStyle='#fff'; ctx.font='700 15px "Heebo",sans-serif'; ctx.textAlign='center'; ctx.fillText(s.name,x,y+S*.085+22); });
+      } else {
+        const a=anchor();
+        // painted layers so far
+        ctx.save(); ctx.translate(a.x,a.y); ctx.rotate(-.1);
+        const q=i=>results[i]?results[i].score/100:0;
+        ctx.setLineDash([6,8]); ctx.lineWidth=2; ctx.strokeStyle='rgba(200,206,240,.35)'; ctx.beginPath(); ctx.ellipse(0,0,eyeW/2,eyeH/2,0,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+        if(results[0]){ const wob=(1-q(0))*6; ctx.lineWidth=7; ctx.strokeStyle='#ff4fa3'; ctx.beginPath();
+          for(let k=0;k<=48;k++){ const an=k/48*Math.PI*2, r=1+Math.sin(an*5)*wob/eyeW; const x=Math.cos(an)*eyeW/2*r, y=Math.sin(an)*eyeH/2*r; k?ctx.lineTo(x,y):ctx.moveTo(x,y); } ctx.closePath(); ctx.stroke(); }
+        if(results[1]){ ctx.beginPath(); ctx.ellipse(0,0,eyeW/2-4,eyeH/2-4,0,0,Math.PI*2); ctx.fillStyle='rgba(245,232,208,'+(.55+q(1)*.4)+')'; ctx.fill();
+          ctx.beginPath(); ctx.arc(0,0,eyeH*.36,0,Math.PI*2); ctx.fillStyle='#3ad2c6'; ctx.fill(); ctx.beginPath(); ctx.arc(0,0,eyeH*.18,0,Math.PI*2); ctx.fillStyle='#120d0b'; ctx.fill(); }
+        if(results[2]){ ctx.beginPath(); ctx.arc(-eyeH*.12,-eyeH*.12,eyeH*(.05+q(2)*.06),0,Math.PI*2); ctx.fillStyle='#fff'; ctx.shadowColor='#fff'; ctx.shadowBlur=12*q(2); ctx.fill(); ctx.shadowBlur=0; }
+        ctx.restore();
+        if(phase==='run'){
+          // timing track under the eye
+          const L=layers[li], trackW=S*.78, x0=(S-trackW)/2, ty=a.y+eyeH/2+S*.13, zone=trackW*L.zone;
+          u+=dir*dt*L.speed; if(u>=1){ u=1; dir=-1; STING.tick(); } if(u<=0){ u=0; dir=1; STING.tick(); }
+          const pos=x0+trackW*(.5-.5*Math.cos(u*Math.PI)); // eased ping-pong: fast in the middle, slows at the ends
+          ctx.fillStyle='rgba(6,10,36,.8)'; ctx.fillRect(x0,ty-9,trackW,18);
+          const gz=ctx.createLinearGradient(S/2-zone/2,0,S/2+zone/2,0); gz.addColorStop(0,'rgba(110,231,255,0)'); gz.addColorStop(.5,'rgba(255,209,102,.95)'); gz.addColorStop(1,'rgba(110,231,255,0)');
+          ctx.fillStyle=gz; ctx.fillRect(S/2-zone/2,ty-9,zone,18); ctx.strokeStyle='#e8ebf4'; ctx.lineWidth=2; ctx.strokeRect(x0,ty-9,trackW,18);
+          ctx.fillStyle='#fff'; ctx.beginPath(); ctx.moveTo(pos,ty-14); ctx.lineTo(pos-8,ty-26); ctx.lineTo(pos+8,ty-26); ctx.closePath(); ctx.fill(); ctx.fillRect(pos-2,ty-12,4,24);
+          ctx.fillStyle='#d7dcf0'; ctx.font='700 15px "Heebo",sans-serif'; ctx.textAlign='center'; ctx.fillText('שכבה '+(li+1)+'/3 · '+L.name,S/2,ty+34);
+          MG.eyeState={pos,zone,trackW};
+        }
+      }
+      drawFx(F,ctx,dt);
+      if(!closed) raf=requestAnimationFrame(draw);
+    }
+    function finish(good){ if(closed) return; closed=true; cancelAnimationFrame(raf); mgClose(); onDone&&onDone(!!good); }
+    function stopLayer(){
+      if(phase!=='run'||!MG.eyeState) return;
+      const {pos,zone}=MG.eyeState, r=rateFor(Math.abs(pos-S/2),zone); results.push(r);
+      const a=anchor(); burst(F,a.x,a.y,r.color,r.key==='perfect'?36:r.key==='miss'?8:20); pop(F,a.x,a.y-eyeH*.7,r.he,r.color,S); STING.rate(r.key);
+      if(r.key==='perfect') mgShake(cv);
+      li++; u=0; dir=1;
+      if(li>=layers.length){
+        phase='done'; const avg=Math.round(results.reduce((s,x)=>s+x.score,0)/results.length), rank=rankOf(avg);
+        $id('canvas-title').textContent=rank==='S'||rank==='A'?'👁️ העין מסתכלת בחזרה':'👁️ העין קצת עקומה. זה גם משהו.';
+        $id('canvas-desc').innerHTML='<p>דירוג: <b style="color:#ffd166;font-size:1.3em">'+rank+'</b> · '+results.map(x=>x.he).join(' · ')+'</p>';
+        setTimeout(()=>{ if(!closed) STING.jingle(); },350);
+        MG.active={key:()=>finish(avg>=58)};
+        mgActions([{t:'להשאיר אותה שם',primary:true,fn:()=>finish(avg>=58)}]);
+      }
+    }
+    function start(){
+      phase='run'; li=0; results=[]; u=0; dir=1;
+      $id('canvas-title').textContent='👁️ עצרו את המכחול';
+      $id('canvas-desc').innerHTML='<p>לחצו "עצור" (או רווח) כשהסמן במרכז הזוהר. שלוש פעמים, וכל פעם קצת יותר מהר.</p>';
+      MG.active={key:stopLayer};
+      mgActions([{t:'🖌️ עצור',primary:true,fn:stopLayer},{t:'דלג והדבק',fn:()=>finish(false)}]);
+    }
+    cv.onpointerdown=e=>{
+      if(phase==='run'){ stopLayer(); return; }
+      if(phase!=='pick') return;
+      const r=cv.getBoundingClientRect(), x=(e.clientX-r.left)*(S/r.width), y=(e.clientY-r.top)*(S/r.height);
+      let best=0,bd=1e9; spots.forEach((s,i)=>{ const d=Math.hypot(x-s.x*S,y-s.y*S); if(d<bd){ bd=d; best=i; } }); choice=best; try{ SFX.click(); }catch(_){}
+    };
+    MG.active={key:start};
+    mgActions([{t:'כאן — ממשיכים',primary:true,fn:start},{t:'דלג והדבק',fn:()=>finish(false)}]);
+    draw();
+  }
+
+  /* --- mirror: three beams, the sweet spot moves and shrinks each round --- */
+  function mirrorGame(label,onDone){
+    const {cv,ctx,size}=mgOpen('🪞 יישור המראה','<p>האור נע על המראה. עצרו אותו על הנקודה הבוהקת, שלוש פעמים. הנקודה זזה ומצטמצמת בכל סיבוב.</p><p><b>'+hx(label||'מראה')+'</b></p>');
+    const S=size, F=fx(); const rounds=[{speed:.85,zone:.22,c:.5},{speed:1.2,zone:.17,c:.34+Math.random()*.32},{speed:1.6,zone:.13,c:.28+Math.random()*.44}];
+    let ri=0,u=0,dir=1,results=[],last=now(),raf=0,closed=false,phase='run',beam=0;
+    const fx0=S*.12,fw=S*.76,fy=S*.3,fh=S*.4;
+    function draw(){
+      const t=now(),dt=Math.min(.05,t-last); last=t;
+      const g=ctx.createLinearGradient(0,0,0,S); g.addColorStop(0,'#1b2150'); g.addColorStop(1,'#0c1030'); ctx.fillStyle=g; ctx.fillRect(0,0,S,S);
+      // sun
+      ctx.beginPath(); ctx.arc(S*.14,S*.12,S*.05,0,Math.PI*2); ctx.fillStyle='#ffd166'; ctx.shadowColor='#ffd166'; ctx.shadowBlur=24; ctx.fill(); ctx.shadowBlur=0;
+      // mirror glass + shimmer
+      const gl=ctx.createLinearGradient(fx0,fy,fx0+fw,fy+fh); gl.addColorStop(0,'#5b6fb8'); gl.addColorStop(.5,'#b9c6f2'); gl.addColorStop(1,'#4a5aa0'); ctx.fillStyle=gl; ctx.fillRect(fx0,fy,fw,fh);
+      ctx.save(); ctx.beginPath(); ctx.rect(fx0,fy,fw,fh); ctx.clip(); ctx.globalAlpha=.25; ctx.fillStyle='#fff'; const sh=((t*.35)%1.6-.3)*fw; ctx.beginPath(); ctx.moveTo(fx0+sh,fy); ctx.lineTo(fx0+sh+40,fy); ctx.lineTo(fx0+sh-20,fy+fh); ctx.lineTo(fx0+sh-60,fy+fh); ctx.fill(); ctx.restore(); ctx.globalAlpha=1;
+      ctx.strokeStyle='#c99a4b'; ctx.lineWidth=6; ctx.strokeRect(fx0,fy,fw,fh); ctx.strokeStyle='#8a6428'; ctx.lineWidth=2; ctx.strokeRect(fx0+5,fy+5,fw-10,fh-10);
+      // reflected beams already landed
+      results.forEach((r,i)=>{ if(r.key==='miss') return; const x=fx0+fw*r.at; ctx.strokeStyle=r.color; ctx.globalAlpha=.85; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(S*.14,S*.12); ctx.lineTo(x,fy+fh/2); ctx.lineTo(S*(.2+i*.3),S*.95); ctx.stroke(); ctx.globalAlpha=1; });
+      if(beam>0){ beam-=dt; }
+      if(phase==='run'){
+        const R=rounds[ri]; u+=dir*dt*R.speed; if(u>=1){u=1;dir=-1;STING.tick();} if(u<=0){u=0;dir=1;STING.tick();}
+        const at=.5-.5*Math.cos(u*Math.PI), zx=fx0+fw*R.c, zw=fw*R.zone;
+        const gz=ctx.createRadialGradient(zx,fy+fh/2,2,zx,fy+fh/2,zw*.7); gz.addColorStop(0,'rgba(255,240,180,.95)'); gz.addColorStop(1,'rgba(255,240,180,0)'); ctx.fillStyle=gz; ctx.fillRect(zx-zw,fy,zw*2,fh);
+        ctx.strokeStyle='rgba(255,209,102,.9)'; ctx.setLineDash([5,5]); ctx.lineWidth=2; ctx.strokeRect(zx-zw/2,fy+6,zw,fh-12); ctx.setLineDash([]);
+        const x=fx0+fw*at; ctx.fillStyle='#fff'; ctx.shadowColor='#fff'; ctx.shadowBlur=16; ctx.beginPath(); ctx.arc(x,fy+fh/2,9,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+        ctx.strokeStyle='rgba(255,255,255,.35)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(S*.14,S*.12); ctx.lineTo(x,fy+fh/2); ctx.stroke();
+        ctx.fillStyle='#d7dcf0'; ctx.font='700 15px "Heebo",sans-serif'; ctx.textAlign='center'; ctx.fillText('קרן '+(ri+1)+'/3',S/2,fy+fh+30);
+        MG.mirState={at,zx,zw,x};
+      }
+      drawFx(F,ctx,dt);
+      if(!closed) raf=requestAnimationFrame(draw);
+    }
+    function finish(good){ if(closed) return; closed=true; cancelAnimationFrame(raf); mgClose(); onDone&&onDone(!!good); }
+    function stopBeam(){
+      if(phase!=='run'||!MG.mirState) return;
+      const {at,zx,zw,x}=MG.mirState, r=Object.assign({},rateFor(Math.abs(x-zx),zw),{at});
+      results.push(r); burst(F,x,fy+fh/2,r.color,r.key==='perfect'?34:r.key==='miss'?6:18); pop(F,x,fy-14,r.he,r.color,S); STING.rate(r.key); if(r.key==='perfect') mgShake(cv);
+      ri++; u=0; dir=1;
+      if(ri>=rounds.length){
+        phase='done'; const hits=results.filter(x=>x.key!=='miss').length, avg=Math.round(results.reduce((s,x)=>s+x.score,0)/results.length), rank=rankOf(avg);
+        $id('canvas-title').textContent=hits>=2?'🪞 העיר רואה את עצמה':'🪞 קצת עקום. עדיין משקף.';
+        $id('canvas-desc').innerHTML='<p>דירוג: <b style="color:#ffd166;font-size:1.3em">'+rank+'</b> · '+hits+'/3 קרניים פגעו</p>';
+        setTimeout(()=>{ if(!closed) STING.jingle(); },350);
+        MG.active={key:()=>finish(hits>=2)};
+        mgActions([{t:hits>=2?'✨ הצב':'הצב בכל זאת',primary:true,fn:()=>finish(hits>=2)}]);
+      }
+    }
+    cv.onpointerdown=()=>stopBeam();
+    MG.active={key:stopBeam};
+    mgActions([{t:'🛑 עצור',primary:true,fn:stopBeam},{t:'לדלג',fn:()=>finish(false)}]);
+    draw();
+  }
+
+  /* ================= install (after every older patch has hooked in) ================= */
+  function install(){
+    if(window.__LM_FF7_32__) return; window.__LM_FF7_32__=true;
+    // combat motion + camera
+    if(typeof queueCombatMotion23==='function'){ queueCombatMotion23=queueMotion; }
+    if(typeof updateCombatMotion23==='function'){ updateCombatMotion23=stepMotion; }
+    if(typeof W3!=='undefined'&&typeof W3.animateCombat3D==='function'){
+      const rawAnim=W3.animateCombat3D;
+      W3.animateCombat3D=function(dt){ const r=rawAnim.apply(this,arguments); try{ directCamera(dt); }catch(e){} return r; };
+    }
+    // enemy run-in, timed to land with the existing strike delay
+    if(typeof foeTurn==='function'){
+      const rawFoe=foeTurn;
+      foeTurn=function(f){
+        try{
+          if(f&&f.alive&&!(f.stunned>0)&&!(f.sleep>0)&&f._mesh&&!CB.ended){
+            const target=CB.allies.filter(a=>a.alive).map(a=>CB3.allyMeshes[a.id]).find(Boolean);
+            const strikeAt=(G.settings.reduceMotion?300:700*(typeof battlePace==='function'?battlePace():1))/1000;
+            if(target) queueMotion(f._mesh,'foeAttack',target,{lead:Math.max(0,strikeAt-.36)});
+          }
+        }catch(e){}
+        return rawFoe.apply(this,arguments);
+      };
+    }
+    // limit gauge
+    if(typeof renderCombat==='function'){
+      const rawRender=renderCombat;
+      renderCombat=function(){ try{ trackLimit(); }catch(e){} const r=rawRender.apply(this,arguments); try{ decorateCards(); if(CB.activeAlly&&CB.phase==='choice') addLimitButton(CB.activeAlly); }catch(e){} return r; };
+    }
+    if(typeof showCommands==='function'){
+      const rawCmd=window.showCommands||showCommands;
+      window.showCommands=function(id){ const r=rawCmd.apply(this,arguments); try{ addLimitButton(id); }catch(e){} return r; };
+    }
+    if(typeof useMoment==='function'){
+      const rawMoment=useMoment;
+      useMoment=function(id){
+        if(reduced()||!inCombat()||typeof MOMENTS==='undefined'||!MOMENTS[id]||momentOf(id)<100||CB._ff7LimitBusy) return rawMoment.apply(this,arguments);
+        CB._ff7LimitBusy=true; const epoch=CB.epoch;
+        lockInput(true); CB.phase='action'; const scr=$id('combat-screen'); if(scr) scr.dataset.phase='action';
+        limitBanner(MOMENTS[id].name); STING.limit();
+        const hero=CB3.allyMeshes[id]; if(hero){ queueMotion(hero,'limit'); focusOn(hero.position.clone().setY(1.6),.55,1.2); }
+        setTimeout(()=>{
+          CB._ff7LimitBusy=false;
+          if(CB.epoch!==epoch||CB.ended) return;
+          const foe=(CB3.foeMeshes||[]).find(m=>m.visible); if(foe){ focusOn(foe.position.clone().setY(1.2),.5,.9); shake(1.1); }
+          CB.phase='choice'; lockInput(false); rawMoment.call(this,id);
+        },1150);
+      };
+    }
+    // battle start swirl + victory poses
+    if(typeof window.battle==='function'){
+      const rawBattle=window.battle;
+      window.battle=function(){ try{ battleSwirl(); }catch(e){} return rawBattle.apply(this,arguments); };
+    }
+    if(typeof victory==='function'){
+      const rawVictory=victory;
+      victory=function(){
+        const before=CB._resultShown; const r=rawVictory.apply(this,arguments);
+        try{ if(!before&&CB._resultShown&&!(CB.boss&&CB.boss.final)&&!reduced()){ DIR.mode='victory'; DIR.vt0=now(); CB.allies.forEach(a=>{ if(a.alive) queueMotion(CB3.allyMeshes[a.id],'victory'); }); } }catch(e){}
+        return r;
+      };
+    }
+    // field
+    if(typeof lmIdleLife==='function'){
+      const rawLife=lmIdleLife;
+      lmIdleLife=function(dt){ const r=rawLife.apply(this,arguments); try{ fieldLife(dt); }catch(e){} return r; };
+    }
+    if(typeof window.enterScene==='function'){
+      const rawEnter=window.enterScene;
+      window.enterScene=function(id){
+        const r=rawEnter.apply(this,arguments);
+        try{ if(G&&G.started&&G.scene&&G.scene!==lastScene){ if(!document.body.classList.contains('lm-cinematic-active')) locationCard(G.scene); lastScene=G.scene; } }catch(e){}
+        return r;
+      };
+    }
+    // mini-games
+    window.placeEye=function(label,spotId){
+      try{ if(!G.inv.eye_stickers||G.inv.eye_stickers<=0){ G.inv.eye_stickers=1; if(typeof toast==='function') toast('👁️','מצאת מדבקת עין מקופלת בכיס. ברור שזה עדי.'); } }catch(e){}
+      if(G.settings&&G.settings.skipMinigames){ return finishEye(label,false,spotId); }
+      eyeGame(label,good=>finishEye(label,good,spotId));
+    };
+    if(typeof MiniGame!=='undefined') try{ MiniGame.mirror=mirrorGame; }catch(e){}
+  }
+  window.LM_FF7={install,eyeGame,mirrorGame,DIR,STING};
+  function later(){ setTimeout(install,0); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',later,{once:true}); else later();
 })();
 </script>
 </body>
