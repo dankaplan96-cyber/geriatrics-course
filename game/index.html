@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- בופי מן RPG V55 -->
+<!-- בופי מן RPG V56 -->
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -414,6 +414,35 @@ body.hc #quest-box{background:#000;border-color:#fde047}body.hc #hud{background:
 button:focus-visible,button:focus{outline:3px solid var(--accent);outline-offset:2px}
 button:focus:not(:focus-visible){outline:none}
 body.pad-on button:focus,body.pad-on input:focus{outline:3px solid var(--accent)!important;outline-offset:2px}
+
+/* v56: the corner shop */
+.shop-wallet{background:#2a2214;border:1px solid #a8894f;border-radius:99px;padding:3px 12px;color:#fde68a;font-size:14px}
+.shop-counter{display:flex;gap:12px;align-items:flex-end;padding:8px;border-radius:12px;background:linear-gradient(120deg,#2b2140,#122235);border:1px solid #4d3f66}
+.shop-face{width:74px;height:74px;border-radius:12px;border:2px solid #f472b6;flex-shrink:0;background:#1d2433}
+.shop-bubble{position:relative;flex:1;background:#f8fafc;color:#0f172a;border-radius:12px;padding:8px 12px;font-size:13px;line-height:1.5;min-width:0}
+.shop-bubble b{display:block;color:#be185d;font-size:11px}
+.shop-bubble::after{content:'';position:absolute;right:-7px;bottom:14px;border:7px solid transparent;border-left-color:#f8fafc;border-right:0}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.shop-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:start;padding:10px 10px 8px;border-radius:12px;cursor:pointer;
+ background:linear-gradient(160deg,color-mix(in srgb,var(--tint) 22%,#132235),#0d1a2a 70%);border:1px solid color-mix(in srgb,var(--tint) 45%,#2b4258);color:var(--paper);
+ font-family:inherit;transition:transform .12s,box-shadow .15s,border-color .15s;overflow:hidden;min-height:118px}
+.shop-card:hover{border-color:var(--tint);box-shadow:0 6px 18px #0006,0 0 0 1px var(--tint) inset}
+.shop-card:active{transform:scale(.97)}
+.shop-ico{font-size:30px;line-height:1;filter:drop-shadow(0 3px 4px #0008)}
+.shop-name{font-weight:800;font-size:13px}.shop-name em{font-style:normal;font-size:10px;color:var(--gold);font-weight:600}
+.shop-fx{font-size:10.5px;color:var(--muted);line-height:1.35}
+.shop-foot{display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:auto;gap:6px}
+.shop-dots{display:flex;gap:3px}.shop-dots i{width:7px;height:7px;border-radius:50%;background:#2b4258;display:block}.shop-dots i.on{background:var(--tint);box-shadow:0 0 6px var(--tint)}
+.shop-own{font-size:10px;color:var(--muted)}
+.shop-price{position:absolute;top:8px;left:8px;background:#fde68a;color:#3a2a0a;font-weight:900;font-size:13px;padding:2px 9px;border-radius:99px;box-shadow:0 2px 6px #0007}
+.shop-card.poor .shop-price{background:#3a1d22;color:#fca5a5}
+.shop-card.out{opacity:.55;cursor:default}.shop-card.out .shop-price{background:#334155;color:#cbd5e1;font-size:10px}
+.shop-stamp{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%) rotate(-14deg);border:3px solid #ef4444;color:#ef4444;font-weight:900;font-size:20px;padding:0 10px;border-radius:6px;opacity:.85}
+.shop-card.bought{animation:shopPop .5s ease}
+.shop-plus{position:absolute;top:40%;right:14px;font-weight:900;color:#4ade80;font-size:22px;animation:shopPlus .7s ease forwards;text-shadow:0 2px 6px #000}
+@keyframes shopPop{30%{transform:scale(1.05);box-shadow:0 0 22px var(--tint)}}
+@keyframes shopPlus{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-26px)}}
+@media(prefers-reduced-motion:reduce){.shop-card.bought,.shop-plus{animation:none}}
 </style>
 
 </head>
@@ -514,8 +543,8 @@ body.pad-on button:focus,body.pad-on input:focus{outline:3px solid var(--accent)
     <button class="close-btn" onclick="closeInventory()">חזרה למשחק</button>
   </div>
 
-  <div id="shop-panel" class="panel">
-    <div class="panel-header"><span>🛒 חנות הפינה</span><span>₪<span id="shop-gold">120</span></span></div>
+  <div id="shop-panel" class="panel shop-panel">
+    <div class="panel-header"><span>🛒 חנות הפינה של ניצן</span><span class="shop-wallet">💰 ₪<span id="shop-gold">120</span></span></div>
     <div class="panel-list" id="shop-list"></div>
     <button class="close-btn" onclick="closeShop()">צא מהחנות</button>
   </div>
@@ -558,7 +587,7 @@ body.pad-on button:focus,body.pad-on input:focus{outline:3px solid var(--accent)
       <button class="game-menu-card" onclick="toggleRunFromMenu()"><b id="menu-run-label">🏃 ריצה</b><small>לרוץ גם במגע קרוב לדמות</small></button>
       <button class="game-menu-card" onclick="launchGameMenu('settings')"><b>⚙️ הגדרות</b><small>צליל, קושי ונגישות</small></button>
     </div>
-    <div class="menu-footer"><span><span dir="ltr">V55</span> · ⏱️ <span id="menu-time"></span></span><span>₪<span id="ui-gold">120</span></span></div>
+    <div class="menu-footer"><span><span dir="ltr">V56</span> · ⏱️ <span id="menu-time"></span></span><span>₪<span id="ui-gold">120</span></span></div>
     <button class="close-btn menu-close" onclick="closeGameMenu()">חזרה למשחק</button>
   </div>
 
@@ -591,7 +620,7 @@ body.pad-on button:focus,body.pad-on input:focus{outline:3px solid var(--accent)
 
 <script>
 /* =========================================================
-   בופי מן RPG V55 (Hebrew dialogue, character voices and situational humor)
+   בופי מן RPG V56 (Hebrew dialogue, character voices and situational humor)
    ========================================================= */
 const canvas = document.getElementById('gameCanvas');
 let ctx = canvas.getContext('2d'); // Temporarily redirected only while building a map layer.
@@ -7238,7 +7267,7 @@ function attemptMove(dx, dy) {
     addRing(nx * TILE + 20, ny * TILE + 20, { maxR: 34, color: '#facc15', life: 420 });
     addJournal('nitzan');
     refreshStock();
-    showDialogue(shopkeeperLine(), () => openShop(true));
+    openShop(true);
     return;
   }
   if (tile === 'W') {
@@ -8848,43 +8877,76 @@ function shopkeeperLine() {
 }
 function armorPrice() { return 120 + player.armorLevel * 50; }
 function lensPrice() { return 130 + player.atkLevel * 55; }
-function shopRow(key, title, desc, cost) {
-  const left = stockLeft(key);
-  const afford = player.gold >= cost;
-  const btn = left <= 0
-    ? '<button class="system-btn" disabled>אזל להיום</button>'
-    : '<button class="system-btn" onclick="buyItem(\'' + key + '\',' + cost + ')">קנה ₪' + cost + '</button>';
-  return '<div class="panel-item' + (left <= 0 ? ' stock-out' : '') + '"><div><strong>' + title + '</strong><br>' +
-    '<small>' + desc + '</small><br><small style="color:#fbbf24">נשאר היום: ' + left + '</small></div>' +
-    (afford || left <= 0 ? btn : '<button class="system-btn" disabled>אין מספיק ₪</button>') + '</div>';
+/* the corner shop: Nitzan behind the counter, the day's shelf as cards, upgrades on their own shelf */
+const SHOP_ITEMS = [
+  { key: 'pill', icon: '💊', name: 'קפסולת בופיפן', fx: '+50 חיים · מוריד לחץ וכוויה', cost: () => 60, tint: '#f472b6' },
+  { key: 'coffee', icon: '☕', name: 'קפה חזק', fx: 'אנרגיה מלאה · +15 חיים · מעיר', cost: () => 45, tint: '#d6a46b' },
+  { key: 'headphones', icon: '🎧', name: 'אוזניות', fx: 'מבטלות שיתוק', cost: () => 50, tint: '#38bdf8' },
+  { key: 'sketchbook', icon: '📓', name: 'מחברת סקיצות', fx: '+10 PP לכל טכניקה', cost: () => 90, tint: '#a3e635' },
+  { key: 'kit', icon: '🩹', name: 'ערכת חירום', fx: 'הכול מלא · כל המצבים נעלמים', cost: () => 150, tint: '#f87171' }
+];
+const SHOP_UPGRADES = [
+  { key: 'armor', icon: '🛡️', name: 'שדרוג שריון', stat: () => 'הגנה ' + player.def + ' → ' + (player.def + 4), lvl: () => player.armorLevel, cost: armorPrice, tint: '#94a3b8' },
+  { key: 'lens', icon: '👓', name: 'עדשות רזרביות', stat: () => 'כוח ' + player.atk + ' → ' + (player.atk + 3), lvl: () => player.atkLevel, cost: lensPrice, tint: '#fbbf24' }
+];
+const SHOP_THANKS = ['"תודה. תשמור על זה יותר טוב מהקודם."', '"רשמתי. כלומר, לא רשמתי. אבל זכרתי."', '"זה עובד. לפחות לפי האריזה."',
+  '"עוד אחד ותקבל כרטיסיית מועדון. אין לנו כרטיסיית מועדון."', '"בהצלחה שם בחוץ. אני נשארת פה, עם המזגן."'];
+let shopSay = '', shopFlash = '';
+function shopPortrait() {
+  if (shopPortrait.url) return shopPortrait.url;
+  try {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 120; const c = cv.getContext('2d');
+    c.fillStyle = hdLin(c, 0, 0, 0, 120, [[0, '#3b2f4a'], [1, '#1d2433']]); c.fillRect(0, 0, 120, 120);
+    c.fillStyle = 'rgba(253,224,138,.25)'; c.beginPath(); c.arc(60, 40, 46, 0, 6.28); c.fill();
+    drawPersonHD(c, 60, 138, 3.1, { seed: 8, look: '#f472b6', hairStyle: 1, facing: 'down', glasses: false });
+    c.fillStyle = '#7c4a24'; c.fillRect(0, 104, 120, 16); c.fillStyle = 'rgba(255,255,255,.15)'; c.fillRect(0, 104, 120, 2);
+    shopPortrait.url = cv.toDataURL();
+  } catch (e) { shopPortrait.url = ''; }
+  return shopPortrait.url;
+}
+function shopCard(it, cost, opts) {
+  const left = stockLeft(it.key), afford = player.gold >= cost, out = left <= 0, own = opts.own;
+  const dots = Array.from({ length: Math.max(left, 0) + (opts.max ? Math.max(0, opts.max - left) : 0) }, (_, i) => '<i class="' + (i < left ? 'on' : '') + '"></i>').join('');
+  return '<button class="shop-card' + (out ? ' out' : !afford ? ' poor' : '') + (shopFlash === it.key ? ' bought' : '') + '" style="--tint:' + it.tint + '"' +
+    (out ? ' disabled' : '') + ' onclick="buyItem(\'' + it.key + '\',' + cost + ')">' +
+    '<span class="shop-ico">' + it.icon + '</span>' +
+    '<span class="shop-name">' + it.name + (opts.lvl != null ? ' <em>רמה ' + opts.lvl + '</em>' : '') + '</span>' +
+    '<span class="shop-fx">' + opts.fx + '</span>' +
+    '<span class="shop-foot"><span class="shop-dots">' + dots + '</span>' + (own != null ? '<span class="shop-own">בתיק: ' + own + '</span>' : '') + '</span>' +
+    '<span class="shop-price">' + (out ? 'אזל להיום' : '₪' + cost) + '</span>' +
+    (out ? '<span class="shop-stamp">אזל</span>' : '') + (shopFlash === it.key ? '<span class="shop-plus">+1</span>' : '') + '</button>';
 }
 function renderShopList() {
   refreshStock();
+  const full = scaledStock();
+  const say = shopSay || shopkeeperLine();
   document.getElementById('shop-list').innerHTML =
-    shopRow('pill', '💊 קפסולת בופיפן', "מרפאה 50 חיים ומסירה לחץ וכוויה", 60) +
-    shopRow('coffee', '☕ כוס קפה חזק', "אנרגיה מלאה ו־15 חיים; מעירה מעייפות ושינה", 45) +
-    shopRow('headphones', '🎧 אוזניות מבטלות רעש', 'מבטלות שיתוק', 50) +
-    shopRow('sketchbook', '📓 מחברת סקיצות', 'מחזירה 10 PP לכל טכניקה', 90) +
-    shopRow('kit', '🩹 ערכת חירום', 'החלמה מלאה ומבטלת את כל המצבים', 150) +
-    shopRow('armor', '🛡️ שדרוג שריון (רמה ' + player.armorLevel + ')', 'הגנה קבועה +4', armorPrice()) +
-    shopRow('lens', '👓 עדשות רזרביות (רמה ' + player.atkLevel + ')', 'התקפה קבועה +3', lensPrice()) +
-    '<div class="panel-item" style="border-color:#334155"><div><small>' +
-    "המלאי מתחדש בכל בוקר. לקניות צריך להגיע לחנות ברחוב." +
-    '</small></div></div>';
+    '<div class="shop-counter"><img class="shop-face" alt="ניצן" src="' + shopPortrait() + '"><div class="shop-bubble"><b>ניצן</b>' + say.replace(/^ניצן[^:"]*:?\s*/, '') + '</div></div>' +
+    '<div class="pg-section">🧴 המדף של היום</div><div class="shop-grid">' +
+    SHOP_ITEMS.map(it => shopCard(it, it.cost(), { fx: it.fx, own: player.inventory[it.key] || 0, max: full[it.key] })).join('') + '</div>' +
+    '<div class="pg-section">⬆ שדרוגים קבועים</div><div class="shop-grid">' +
+    SHOP_UPGRADES.map(it => shopCard(it, it.cost(), { fx: it.stat(), lvl: it.lvl(), max: full[it.key] })).join('') + '</div>' +
+    '<div class="settings-desc">המדף מתמלא מחדש כל בוקר. הנקודות בכל כרטיס הן מה שנשאר היום.</div>';
+  hudSet('shop-gold', 'text', player.gold);
 }
 function buyItem(type, cost) {
   refreshStock();
-  if (player.gold < cost || stockLeft(type) <= 0) { sfx.bump(); return; }
+  if (stockLeft(type) <= 0) { sfx.bump(); return; }
+  if (player.gold < cost) { sfx.bump(); shopSay = '"חסרים לך ₪' + (cost - player.gold) + '. אני מאמינה בך, אבל הקופה לא."'; shopFlash = ''; renderShopList(); return; }
   player.gold -= cost;
   player.stock[type]--;
   if (type === 'armor') { player.armorLevel++; player.def += 4; player.sdf += 4; }
   else if (type === 'lens') { player.atkLevel++; player.atk += 3; player.sat += 3; }
   else player.inventory[type] = (player.inventory[type] || 0) + 1;
-  sfx.heal(); saveGame(); updateHUD(); renderShopList();
+  sfx.coin(); buzz(15);
+  shopSay = SHOP_THANKS[(player.gold + cost) % SHOP_THANKS.length]; shopFlash = type;
+  saveGame(); updateHUD(); renderShopList();
+  clearTimeout(buyItem.t); buyItem.t = setTimeout(() => { shopFlash = ''; }, 700);
 }
 // reachable only from the shop tile (the on-screen shop button was removed on purpose)
 function openShop(fromCounter) {
   if (!fromCounter) return;
+  shopSay = ''; shopFlash = '';
   flag('shop_seen'); heldDir = null; gameState = 'SHOP';
   refreshStock(); renderShopList();
   document.getElementById('shop-panel').style.display = 'flex';
@@ -11711,6 +11773,23 @@ function drawIrkFx(e, fx, fy, S) {
     heText('💢', fx + 34 * S, fy - 40 * S + Math.sin(t * 6) * 2, { align: 'center', size: 22 * S * (1 + .12 * p), maxWidth: 40 });
   }
 }
+
+/* A tap that closes a message can open a window under the same finger; the browser then delivers that
+   tap as a click on whatever button is there now ("leave the shop", for one). A window that has just
+   appeared ignores clicks for a moment. */
+(function guardFreshWindows() {
+  try {
+    const mark = el => { el._shownAt = performance.now(); };
+    const obs = new MutationObserver(list => list.forEach(m => { const el = m.target;
+      const vis = el.style.display === 'flex' || el.style.display === 'block';
+      if (vis && !el._vis) mark(el); el._vis = vis; }));
+    document.querySelectorAll('.panel, .modal').forEach(el => { el._vis = el.style.display === 'flex'; obs.observe(el, { attributes: true, attributeFilter: ['style'] }); });
+    document.addEventListener('click', ev => {
+      const box = ev.target && ev.target.closest && ev.target.closest('.panel, .modal');
+      if (box && box._shownAt && performance.now() - box._shownAt < 420) { ev.stopPropagation(); ev.preventDefault(); }
+    }, true);
+  } catch (e) {}
+})();
 
 resizeCanvas();
 setupControls();
