@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- בופי מן RPG V54 -->
+<!-- בופי מן RPG V55 -->
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -558,7 +558,7 @@ body.pad-on button:focus,body.pad-on input:focus{outline:3px solid var(--accent)
       <button class="game-menu-card" onclick="toggleRunFromMenu()"><b id="menu-run-label">🏃 ריצה</b><small>לרוץ גם במגע קרוב לדמות</small></button>
       <button class="game-menu-card" onclick="launchGameMenu('settings')"><b>⚙️ הגדרות</b><small>צליל, קושי ונגישות</small></button>
     </div>
-    <div class="menu-footer"><span><span dir="ltr">V54</span> · ⏱️ <span id="menu-time"></span></span><span>₪<span id="ui-gold">120</span></span></div>
+    <div class="menu-footer"><span><span dir="ltr">V55</span> · ⏱️ <span id="menu-time"></span></span><span>₪<span id="ui-gold">120</span></span></div>
     <button class="close-btn menu-close" onclick="closeGameMenu()">חזרה למשחק</button>
   </div>
 
@@ -591,7 +591,7 @@ body.pad-on button:focus,body.pad-on input:focus{outline:3px solid var(--accent)
 
 <script>
 /* =========================================================
-   בופי מן RPG V54 (Hebrew dialogue, character voices and situational humor)
+   בופי מן RPG V55 (Hebrew dialogue, character voices and situational humor)
    ========================================================= */
 const canvas = document.getElementById('gameCanvas');
 let ctx = canvas.getContext('2d'); // Temporarily redirected only while building a map layer.
@@ -1957,8 +1957,8 @@ function makeEnemy(key, lv) {
 }
 function effectiveDef(e) { return e.def * (e.defMod || 1); }
 function stageText(a, d) {
-  const f = (lbl, v) => v ? lbl + (v > 0 ? '+' : '') + v : '';
-  return [f('ATK', a), f('DEF', d)].filter(Boolean).join(' ');
+  const f = (lbl, v) => v ? lbl + (v > 0 ? '↑' : '↓') + (Math.abs(v) > 1 ? Math.abs(v) : '') : '';
+  return [f('⚔', a), f('🛡', d)].filter(Boolean).join(' ');
 }
 function stageMult(sv) { return sv >= 0 ? (2 + sv) / 2 : 2 / (2 - sv); }
 const STAGE_NAMES = { patk: 'ההתקפה של בופי מן', pdef: 'ההגנה של בופי מן', eatk: 'ההתקפה של היריב', edef: 'ההגנה של היריב',
@@ -2905,6 +2905,7 @@ function challengeTrainer(key, tr, tx, ty) {
   heldDir = null;
   addJournal(tr.journal);
   addRing(tx * TILE + 20, ty * TILE + 20, { maxR: 40, color: '#fbbf24', life: 480, width: 3 });
+  spotPop = { x: tx * TILE + 20, y: ty * TILE + 20, t: clock }; sfx.ma(3); buzz(30);
   showDialogue(tr.intro, () => startEncounter(tr.enemy, { noFlee: true, trainer: key }));
 }
 function gymGuideLine() {
@@ -3549,28 +3550,6 @@ function drawGroundSurface(map, x, y, sx, sy) {
     }
   }
 }
-function drawWorldPerson(sx, sy, look, seed, facing) {
-  ctx.save();
-  ctx.fillStyle='rgba(4,12,20,.3)';ctx.beginPath();ctx.ellipse(sx+20,sy+37,10,3,0,0,Math.PI*2);ctx.fill();
-  const bob=player.reduceFx?0:Math.sin(clock/650+seed)*.5;
-  ctx.translate(sx+20,sy+bob);
-  const skin=['#e9bb96','#c89371','#b57f60','#efd1b0'][seed%4];
-  ctx.fillStyle='#202d40';ctx.fillRect(-6,27,5,9);ctx.fillRect(2,27,5,9);
-  ctx.fillStyle='#111c2d';roundRect(ctx,-7,34,7,3,1);ctx.fill();roundRect(ctx,1,34,7,3,1);ctx.fill();
-  ctx.fillStyle=look||'#738b98';roundRect(ctx,-8,17,16,14,4);ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,.12)';ctx.fillRect(-6,19,3,10);
-  ctx.fillStyle=look||'#738b98';roundRect(ctx,-10,19,4,11,2);ctx.fill();roundRect(ctx,6,19,4,11,2);ctx.fill();
-  ctx.fillStyle=skin;ctx.fillRect(-10,28,3,3);ctx.fillRect(7,28,3,3);ctx.fillRect(-2,14,4,5);
-  ctx.fillStyle='#d6d4c5';ctx.beginPath();ctx.moveTo(-4,17);ctx.lineTo(0,22);ctx.lineTo(4,17);ctx.fill();
-  ctx.fillStyle=skin;roundRect(ctx,-6.5,5,13,13,5);ctx.fill();
-  ctx.fillStyle=['#30313b','#49352f','#876445','#252b38'][seed%4];
-  ctx.beginPath();ctx.arc(0,9,7,Math.PI,Math.PI*2);ctx.lineTo(6,12);ctx.lineTo(3,8);ctx.lineTo(-4,9);ctx.lineTo(-6,13);ctx.closePath();ctx.fill();
-  const d=FACE_D[facing]||[0,0];ctx.fillStyle='#273044';ctx.fillRect(-3+d[0],11+d[1],1.5,1.5);ctx.fillRect(2+d[0],11+d[1],1.5,1.5);
-  ctx.fillStyle='rgba(105,48,41,.35)';ctx.fillRect(-1,15,3,1);
-  if(seed%3===0){ctx.strokeStyle='#4b5565';ctx.lineWidth=.8;ctx.strokeRect(-5,10,4,3);ctx.strokeRect(1,10,4,3);ctx.fillRect(-1,11,2,1);}
-  ctx.restore();
-}
-
 function drawTileDecor(map, x, y, sx, sy, t) {
   const time = clock / 1000, key = x + ',' + y;
   if (t === 'G' && map.cat === 'office') {
@@ -3801,13 +3780,8 @@ function drawTileDecor(map, x, y, sx, sy, t) {
     const mi = MAPS.indexOf(map), tr = trainerAt(mi, x + ',' + y) || {};
     const beaten = trainerBeaten(mi, x + ',' + y);
     ctx.save(); ctx.globalAlpha = beaten ? .7 : 1;
-    drawWorldPerson(sx, sy, beaten ? '#596576' : tr.look, x * 7 + y * 3, tr.face);
-    if (!beaten) {
-      const bob = Math.sin(time * 4) * 2;
-      ctx.fillStyle = '#fbbf24';
-      ctx.save(); setFont(15, true); ctx.textAlign = 'center'; ctx.direction = 'ltr';
-      ctx.fillText('!', sx + TILE / 2 + 12, sy + 12 + bob); ctx.restore();
-    }
+    drawWorldPerson(sx, sy, beaten ? '#596576' : tr.look, x * 7 + y * 3, tr.face, { fixed: !beaten });
+    if (!beaten) drawAlertBubble(sx + TILE / 2 + 13, sy + 2 + Math.sin(time * 4) * 2, 1, '#f59e0b');
     ctx.restore();
   } else if (t === 'E') {
     const mi = MAPS.indexOf(map);
@@ -4364,7 +4338,9 @@ function renderOverworld() {
   drawWorldSteps();
   drawHeroLayer(map);
   renderDepthPass(map, cx0, cx1, cy0, cy1);
+  drawCloudShadows(map);
   drawQuestMarkers(map);
+  drawSpotPop();
   stepAndDrawLife(map, true);
 }
 function drawHeroLayer(map) {
@@ -4432,7 +4408,7 @@ function drawHeroLayer(map) {
     ctx.restore();
   }
   drawHero(ctx, hero.x, hero.y + 4 - (running ? Math.abs(Math.sin(hero.walkPhase * 1.6)) * 2 : 0), 30,
-    { facing: hero.facing, phase: running ? hero.walkPhase * 1.6 : hero.walkPhase, walking: hero.moving, pose: worldHeroPose() });
+    { facing: hero.facing, phase: running ? hero.walkPhase * 1.6 : hero.walkPhase, walking: hero.moving, pose: worldHeroPose() || heroIdlePose(renderDt) });
 }
 
 /* =========================================================
@@ -4829,6 +4805,7 @@ function renderBattle() {
   }
   drawEnemy(ctx, e, fx, fy, (e.boss || e.finale ? 1.18 : e.master ? 1.08 : 1) * S);
   drawStatusFx(e, fx, fy, S);
+  drawIrkFx(e, fx, fy, S);
   const hp = heroBattlePos();
   if (inFlow()) {
     ctx.save();
@@ -4878,29 +4855,31 @@ function renderBattle() {
   roundRect(ctx, 242, 40, Math.max(0, display.ehp) * 220, 9, 4.5); ctx.fill();
   numText(Math.max(0, Math.round(e.hp)) + ' / ' + e.maxHp, 242, 58, { size: 10, color: '#cbd5e1' });
   if (e.level) numText('Lv.' + e.level, 462, 58, { size: 11, bold: true, align: 'right', color: e.level > player.level + 2 ? '#f87171' : '#fbbf24' });
-  if (weakType && TYPE_INFO[weakType]) heText('חלש ' + TYPE_INFO[weakType].icon, 378, 58,
+  if (weakType && TYPE_INFO[weakType]) heText('חלש ' + TYPE_INFO[weakType].icon, 392, 58,
     { size: 9.5, bold: true, color: '#4ade80', maxWidth: 66 });
-  if (e.irk > 0) {                                     // the nerves bar, under the plate
-    const k = clamp(e.irk / 100, 0, 1);
-    ctx.fillStyle = 'rgba(15,23,42,.85)'; roundRect(ctx, 240, 65, 200, 6, 3); ctx.fill();
-    ctx.fillStyle = k >= .5 ? '#ef4444' : '#fb923c'; roundRect(ctx, 240, 65, 200 * k, 6, 3); ctx.fill();
-    heText('😤', 462, 72, { size: 11, maxWidth: 20 });
+  {                                                   // the nerves bar, always under the plate
+    const k = clamp((e.irk || 0) / 100, 0, 1), hot = e.meltT > 0 || (e.stunTurns > 0 && e.meltdowns);
+    ctx.fillStyle = 'rgba(15,23,42,.9)'; roundRect(ctx, 240, 65, 200, 7, 3.5); ctx.fill();
+    if (k > 0) { ctx.fillStyle = hdLin(ctx, 240, 0, 440, 0, [[0, '#fbbf24'], [.5, '#f97316'], [1, '#dc2626']]); roundRect(ctx, 240, 65, Math.max(7, 200 * k), 7, 3.5); ctx.fill(); }
+    ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(339, 64, 1.5, 9);
+    if (hot) { ctx.save(); ctx.globalAlpha = .5 + .5 * Math.sin(clock / 90); ctx.strokeStyle = '#fca5a5'; ctx.lineWidth = 1.2; roundRect(ctx, 239, 64, 202, 9, 4); ctx.stroke(); ctx.restore(); }
+    heText(e.meltdowns ? '💢' + e.meltdowns : '😤', 462, 73, { size: 11, maxWidth: 24 });
   }
   const gmTxt = enemyGimmickText(e);
   const gmHint = enemyGimmickHint(e);
   if (gmHint) {
     ctx.fillStyle = 'rgba(15,23,42,.88)';
-    roundRect(ctx, 234, e.irk > 0 ? 74 : 64, 234, 28, 5); ctx.fill();
+    roundRect(ctx, 234, 76, 234, 28, 5); ctx.fill();
   }
-  if (gmTxt) heText(gmTxt, 462, e.irk > 0 ? 83 : 73, { size: 9.5, bold: true, color: '#fde68a', maxWidth: 220 });
-  if (gmHint) heText(gmHint, 462, e.irk > 0 ? 95 : 85, { size: 9, color: '#cbd5e1', maxWidth: 220 });
+  if (gmTxt) heText(gmTxt, 462, 85, { size: 9.5, bold: true, color: '#fde68a', maxWidth: 220 });
+  if (gmHint) heText(gmHint, 462, 97, { size: 9, color: '#cbd5e1', maxWidth: 220 });
   if (e.phase2) heText('זעם!', 462, 58, { size: 10, bold: true, color: '#fca5a5', maxWidth: 60 });
   const tags = [];
   if (e.exposedTurns > 0) tags.push(['חשוף', '#a3e635']);
   if (e.paintTurns > 0) tags.push(['צבוע', '#ff5c9d']);
   if (e.dazzleTurns > 0) tags.push(['מסונוור', '#7dd3fc']);
   const esTxt = stageText(battle.stages.eatk, battle.stages.edef);
-  if (esTxt) numText(esTxt, 300, 58, { size: 9, bold: true, color: '#fb923c' });
+  if (esTxt) numText(esTxt, 296, 58, { size: 8.5, bold: true, color: '#fb923c' });
   tags.slice(0, 2).forEach((tg, i) => heText(tg[0], 462 - i * 52, 58,
     { size: 10, bold: true, color: tg[1], maxWidth: 48 }));
   ctx.restore();
@@ -5491,7 +5470,7 @@ const CUTSCENES = {
     { art: 'street', who: 'בופי מן', text: "\"אם אני כבר תקוע פה, לפחות אגיע עם רעיון לציור.\"" },
     { art: 'street', who: "טיפ לקרב", text: "🎨 התז צבע חזק משרבוט. הגנה מחזירה AP ומקטינה את המכה הבאה. ובתיק יש בופיפן, לימים שהפילוסופיה לא מספיקה." },
     { art: 'street', who: "טיפ לקרב", text: "🌈 כל פגיעה, כל מכה שספגת וכל עקיצה טובה ממלאות זרימה. כשהמד מלא היא מחכה בטכניקות. כמו השראה: לא באה כשקוראים לה, אבל אפשר להתכונן." },
-    { art: 'street', who: "טיפ לקרב", text: "😤 לכל יריב יש משהו שמוציא אותו מדעתו. נסה דברים ותסתכל על מד העצבים. סבלנות היא נשק, וגם חוסר סבלנות, כשהוא של מישהו אחר." }
+    { art: 'street', who: "טיפ לקרב", text: "😤 לעצבן זה נשק שני: מחזיר אנרגיה, מקפיא, ומי שמתפרץ פעמיים פשוט הולך. ניצחון על מישהו עצבני משלם יותר. סבלנות היא נשק, וגם חוסר סבלנות, כשהוא של מישהו אחר." }
   ],
   office_first: [
     { art: 'office', text: "משרד, פלורסנטים ומעלית. מישהו חימם דג, והשעה עוד לא תשע." },
@@ -6498,19 +6477,14 @@ function stepAndDrawLife(map, over) {
         if (r) { const dir = Math.random() < .5 ? 1 : -1; Object.assign(c, { state: 'walk', y: r.y * TILE + 20, dir,
           x: (dir > 0 ? r.x0 : r.x1) * TILE + 20, end: (dir > 0 ? r.x1 : r.x0) * TILE + 20, a: 0,
           look: ['#f472b6', '#60a5fa', '#34d399', '#fbbf24', '#a78bfa', '#f87171'][Math.floor(Math.random() * 6)],
-          skin: ['#fde7d4', '#e7c29f', '#a97d5d'][Math.floor(Math.random() * 3)], bag: Math.random() < .5 }); } else c.hide = 3000; } return; }
+          skin: PERSON_SKIN[Math.floor(Math.random() * PERSON_SKIN.length)], bag: Math.random() < .5, seed: Math.floor(Math.random() * 1000) }); } else c.hide = 3000; } return; }
       const blocked = Math.abs(hero.y - c.y) < 26 && (hero.x - c.x) * c.dir > 0 && Math.abs(hero.x - c.x) < 34;
       if (!blocked) c.x += c.dir * 30 * dt;
       c.a = Math.min(1, Math.min(c.a + dt * 2, Math.abs(c.end - c.x) / 30));
       if ((c.end - c.x) * c.dir <= 0) { c.state = 'wait'; c.hide = 2500 + Math.random() * 4000; return; }
-      const step = blocked ? 0 : Math.sin(c.t * 9);
       ctx.save(); ctx.globalAlpha = c.a;
-      ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(c.x, c.y + 17, 10, 3.2, 0, 0, 6.28); ctx.fill();
-      ctx.fillStyle = '#1e293b'; ctx.fillRect(c.x - 5 + step * 2, c.y + 8, 3, 8); ctx.fillRect(c.x + 2 - step * 2, c.y + 8, 3, 8);
-      ctx.fillStyle = c.look; roundRect(ctx, c.x - 8, c.y - 4, 16, 14, 4); ctx.fill();
-      if (c.bag) { ctx.fillStyle = '#78350f'; ctx.fillRect(c.x - c.dir * 9 - 2, c.y + 1, 5, 7); }
-      ctx.fillStyle = c.skin; ctx.beginPath(); ctx.arc(c.x, c.y - 9, 6, 0, 6.28); ctx.fill();
-      ctx.fillStyle = '#1e293b'; ctx.fillRect(c.x + c.dir * 2 - 1, c.y - 10, 2, 2);
+      drawPersonHD(ctx, c.x, c.y + 17, .9, { seed: c.seed || 0, look: c.look, skin: c.skin, bag: c.bag, walking: !blocked,
+        phase: c.t * 9, facing: blocked ? 'down' : c.dir > 0 ? 'right' : 'left', blink: ((clock + (c.seed || 0) * 911) % 3900) < 120 });
       ctx.restore();
     }
   });
@@ -7821,6 +7795,7 @@ function enterFlow() {
 }
 
 function useTechnique(moveId) {
+  if (battle && moveId !== '__ma') battle.annoyStreak = 0;
   if (battle && blockedByStatus()) return;
   if (moveId === '__friend') { callFriend(); return; }
   if (moveId === '__ma') { doMa(); return; }
@@ -7880,7 +7855,7 @@ function useTechnique(moveId) {
   if (inFlow()) dmg = Math.round(dmg * BALANCE.flowDamage);
   if (battle.pstatus && battle.pstatus.tired > 0) dmg = Math.max(1, Math.round(dmg * BALANCE.tiredDamage));
   let forgetTag = '';
-  if (battle.enemy.meltT > 0) dmg = Math.round(dmg * 1.25);
+  if (battle.enemy.meltT > 0) dmg = Math.round(dmg * 1.5);
   if (battle.enemy.key === 'oblivion') {
     if (battle.lastType === mv.type) { dmg = Math.round(dmg * .45); forgetTag = ' השכחה כבר מכירה את הצבע הזה. זה כמעט לא נוגע בה.'; }
     else { dmg = Math.round(dmg * 1.15); forgetTag = battle.lastType ? ' צבע חדש! היא לא הספיקה לשכוח אותו.' : ''; }
@@ -7894,7 +7869,7 @@ function useTechnique(moveId) {
   let statusTag = '';
   if (mv.dazzle) { battle.enemy.dazzleTurns = BALANCE.dazzleTurns; statusTag = ' היריב מסונוור, והמכות שלו נחלשות!'; }
   statusTag += forgetTag;
-  if (crit) statusTag += irkAdd(10);
+  statusTag += irkAdd(crit ? 12 : eff > 1 ? 7 : 3);         // every blow gets on their nerves a little
   if (mv.stage) statusTag += ' ' + Object.keys(mv.stage).map(k => changeStage(k, mv.stage[k])).join(' ');
   else if (mv.type === 'vigor' && Math.random() < BALANCE.paintChance && !battle.enemy.paintTurns) {
     battle.enemy.paintTurns = BALANCE.paintTurns; statusTag = ' היריב ספוג בצבע. זה ימשיך לכאוב!';
@@ -8033,6 +8008,7 @@ function enemyLeaves(result) {
 }
 
 function doDefend() {
+  if (battle) battle.annoyStreak = 0;
   if (blockedByStatus()) return;
   sfx.guard();
   battle.maStreak = 0;
@@ -8293,10 +8269,14 @@ function winBattle() {
   const rGold = Math.max(1, Math.round((left ? e.gold / 2 : e.gold) * nightK * gM * (dayMod().gold || 1)));
   const loopBoost = (1 + .1 * Math.min(5, player.loopsInAct || 0)) * (1 + .2 * Math.min(4, player.ngPlus || 0));     // you know where the good fights are
   const rExp = Math.max(1, Math.round((left ? e.exp / 2 : e.exp) * nightK * xM * loopBoost));
-  player.gold += rGold; player.exp += rExp;
+  const irkK = left ? 1 : irkBonusFor(e);
+  const fGold = Math.round(rGold * irkK), fExp = Math.round(rExp * irkK);
+  player.gold += fGold; player.exp += fExp;
+  if (irkK > 1 && player.stats) player.stats.irkWins = (player.stats.irkWins || 0) + 1;
   player.bestiary = player.bestiary || {};
   if (!left) player.bestiary[e.key] = true;
-  let msg = (left ? 'הקרב נגמר בלי מנצח, רק עם מי שהלך. חצי פרס: ₪' : pickLine(WIN_LINES) + ' ₪') + rGold + ' · ' + rExp + ' נק\' ניסיון.';
+  let msg = (battle.irkWin ? 'הדלת עוד רועדת. ₪' : left ? 'הקרב נגמר בלי מנצח, רק עם מי שהלך. חצי פרס: ₪' : pickLine(WIN_LINES) + ' ₪') + fGold + ' · ' + fExp + ' נק\' ניסיון.' +
+    (irkK > 1 ? ' 😤 בונוס עצבים ×' + irkK + '.' : '');
   let leveled = false, learned = [], offered = [];
   while (player.exp >= player.nextExp) {
     player.exp -= player.nextExp; player.level++;
@@ -8616,7 +8596,7 @@ function annoyList() {
   return list;
 }
 function inCmdPhase() { return !!battle && (battle.phase === 'MENU' || battle.phase === 'MOVES' || battle.phase === 'ITEMS' || battle.phase === 'ANNOY'); }
-function irkAdd(amount) {
+function irkAdd(amount, fromAnnoy) {
   const e = battle && battle.enemy; if (!e || e.hp <= 0) return '';
   const before = e.irk || 0;
   e.irk = Math.min(100, before + amount * (dayMod().irk || 1));
@@ -8625,40 +8605,68 @@ function irkAdd(amount) {
     e.irkAngry = true;
     battle.stages.edef = Math.max(-BALANCE.stageMax, (battle.stages.edef || 0) - 1);
     battle.stages.eatk = Math.min(BALANCE.stageMax, (battle.stages.eatk || 0) + 1);
-    msg += ' ' + e.name + ' מתעצבן: מכה חזק יותר, אבל נפתח.';
+    msg += ' 😠 ' + e.name + ' מתעצבן: מכה חזק יותר, אבל פותח את עצמו ומפספס יותר.';
     addFloater(FOE_HOME.x + 30, FOE_HOME.y - 60, '😠', { size: 22, life: 1000 });
   }
   if (e.irk >= 100) {
-    e.irk = 25; e.stunTurns = (e.stunTurns || 0) + (e.boss || e.finale || e.master ? 2 : 1); e.meltT = 3;
-    battle.stages.edef = Math.max(-BALANCE.stageMax, (battle.stages.edef || 0) - 1);
-    const b = BOSS_IRK[e.key];
-    msg += ' 💢 ' + (b ? b.melt : e.name + ' יוצא מהכלים!') + ' הוא קפוא, וכל מכה בו כואבת יותר.';
-    shake = 320; e.shake = 500; sfx.crit();
-    addRing(FOE_HOME.x, FOE_HOME.y, { maxR: 120, color: '#f97316', width: 5, life: 700 });
-    addFloater(FOE_HOME.x, FOE_HOME.y - 72, '💢', { size: 30, life: 1300 });
+    e.meltdowns = (e.meltdowns || 0) + 1;
+    const big = e.boss || e.finale || e.master, story = big || (battle && battle.noFlee && !battle.trainer);
+    // the second meltdown is too much for an ordinary enemy: it storms off, and that is a full win
+    if (fromAnnoy && e.meltdowns >= 2 && !story && !battle.tower) {
+      e.stormOff = true;
+      msg += ' 🌋 ' + e.name + ' מאבד את זה לגמרי, זורק את הכול ויוצא בטריקת דלת. ניצחון, בלי מכה אחרונה.';
+    } else {
+      e.irk = 40; e.stunTurns = (e.stunTurns || 0) + 2; e.meltT = 3;
+      battle.stages.edef = Math.max(-BALANCE.stageMax, (battle.stages.edef || 0) - 1);
+      const b = BOSS_IRK[e.key];
+      msg += ' 💢 ' + (b ? b.melt : e.name + ' יוצא מהכלים!') + ' קפוא לשני תורות, וכל מכה בו חזקה בחצי.' + (!story && !battle.tower ? ' עוד התפרצות אחת, והוא הולך.' : '');
+    }
+    shake = 360; e.shake = 600; sfx.crit(); buzz([20, 40, 60]);
+    addRing(FOE_HOME.x, FOE_HOME.y, { maxR: 130, color: '#f97316', width: 6, life: 760 });
+    addParticles(FOE_HOME.x, FOE_HOME.y - 20, 26, { color: '#f97316', speed: 170, life: 800, size: 3.5, lift: 50 });
+    addFloater(FOE_HOME.x, FOE_HOME.y - 72, '💢', { size: 32, life: 1300, pop: true });
+    if (typeof fxHit === 'function') fxHit(true, '#f97316');
     addJournal('annoy');
   }
   return msg;
 }
 function doAnnoy(act) {
   const e = battle.enemy;
-  if (act.ma) { irkAdd(12); useTechnique('__ma'); return; }
+  if (act.ma) { irkAdd(12, true); useTechnique('__ma'); return; }
   battle.phase = 'ANIM'; battle.msg = '';
-  let mult = 1, tag = '', flowGain = 4;
+  battle.annoyStreak = (battle.annoyStreak || 0) + 1;
+  let mult = 1, tag = '', flowGain = 5;
   player.peeves = player.peeves || {};
-  if (act.boss) { mult = 2.4; flowGain = 16; }
-  else if (act.id === peeveOf(e)) { mult = 2.5; flowGain = 10; tag = ' זה בדיוק מה שמעצבן אותו!'; player.peeves[e.key + ':peeve'] = act.id; }
-  else if (act.id === unfazedOf(e)) { mult = .3; flowGain = 2; tag = ' זה לא מזיז לו.'; player.peeves[e.key + ':meh'] = act.id; }
+  const peeve = !act.boss && act.id === peeveOf(e);
+  if (act.boss) { mult = 2.6; flowGain = 16; }
+  else if (peeve) { mult = 2.6; flowGain = 12; tag = ' זה בדיוק מה שמעצבן אותו!'; player.peeves[e.key + ':peeve'] = act.id; }
+  else if (act.id === unfazedOf(e)) { mult = .35; flowGain = 2; tag = ' זה לא מזיז לו.'; player.peeves[e.key + ':meh'] = act.id; }
+  // a running gag: every annoyance in a row lands harder than the last
+  const streak = Math.min(3, battle.annoyStreak - 1);
+  if (streak > 0) { mult *= 1 + .3 * streak; tag += ' (רצף ×' + (1 + .3 * streak).toFixed(1) + ')'; }
   if (!act.boss) tag += counterEnemyGimmick(e, act.id);
-  const amount = 20 * mult * (e.boss || e.finale ? .75 : 1);
+  const amount = 22 * mult * (e.boss || e.finale ? .8 : 1);
+  // annoying someone is restful: בופי מן gets his breath back while they fume
+  const apBack = Math.min(player.maxAp - player.ap, Math.round(player.maxAp * .12));
+  if (apBack > 0) { player.ap += apBack; tag += ' (+' + apBack + ' AP)'; }
   addFlow(flowGain); updateHUD();
   if (act.heal) { const h = Math.round(player.maxHp * act.heal); player.hp = Math.min(player.maxHp, player.hp + h); tag += ' (+' + h + ' חיים)'; updateHUD(); }
   sfx.irk(act.boss);
-  addFloater(HERO_HOME.x + 30, HERO_HOME.y - 52, act.icon, { size: 24, life: 1000, vy: -22 });
+  addFloater(HERO_HOME.x + 30, HERO_HOME.y - 52, act.icon, { size: 26, life: 1000, vy: -22, pop: true });
   addFloater(HERO_HOME.x - 18, HERO_HOME.y - 42, '+' + flowGain + ' 🌈', { color: '#c4b5fd', size: 11, rtl: true, life: 900, vy: -14 });
-  addFloater(FOE_HOME.x, FOE_HOME.y - 50, '+' + Math.round(amount) + ' 😤', { color: '#fb923c', size: 14, rtl: true, life: 1100 });
-  const extra = irkAdd(amount);
+  addFloater(FOE_HOME.x, FOE_HOME.y - 50, '+' + Math.round(amount) + ' 😤', { color: '#fb923c', size: 15, rtl: true, life: 1100, pop: peeve || streak > 0 });
+  e.shake = Math.max(e.shake || 0, peeve ? 420 : 220);
+  const extra = irkAdd(amount, true);
   addJournal('annoy');
+  if (e.stormOff) {                                       // the door slams: a win with everything in it
+    battle.irkWin = true; e.leaving = { t: 0, dur: 850 };
+    battleMessage(act.line + tag + extra, 1500, winBattle);
+    return;
+  }
+  // hitting the sore spot can leave them too flustered to act
+  if (peeve && !e.stunTurns && !(e.boss || e.finale || e.master) && Math.random() < .4) {
+    e.stunTurns = 1; tag += ' הוא כל כך מתעצבן שהוא שוכח לתקוף.';
+  }
   battleMessage(act.line + tag + extra, 1200, () => enemyTurnSoon());
 }
 function battleNav(dx, dy) {
@@ -8960,7 +8968,7 @@ const MENU_HELP = [
   '<b>🛡️ הגנה</b><br>חוסם חצי מהמכה הבאה ומחזיר 15 AP. טוב כשהאנרגיה נגמרת.',
   '<b>🎒 פריט</b><br>משתמש במשהו מהתיק. זה לוקח תור.',
   '<b>🏃 בריחה</b><br>70% סיכוי להצליח. אי אפשר לברוח מבוס, מיריב מזומן או מדו-קרב.',
-  "<b>😤 לעצבן</b><br>לכל יריב יש נקודה רגישה. פעולה מתאימה ממלאת את מד העצבים מהר יותר ומוסיפה 🌈 Flow.",
+  "<b>😤 לעצבן</b><br>מחזיר AP וממלא Flow. בנקודה הרגישה: פי 2.6, ולפעמים היריב שוכח לתקוף. רצף מגביר. 50%: היריב פתוח ומפספס. 100%: קפוא 2 תורות ומקבל +50% נזק. התפרצות שנייה: יריב רגיל עוזב, ניצחון מלא. ניצחון על יריב עצבני: עד ×1.6 פרס.",
   '<b>🤖 אוטו</b><br>בופי מן בוחר לבד: הטכניקה החזקה מול היריב, תרופה כשהחיים נמוכים, זרימה כשהיא מוכנה. נגיעה במסך עוצרת.'
 ];
 const ITEM_HELP = {
@@ -10078,6 +10086,7 @@ const ACHIEVEMENTS = [
   ['brush', '🖌️', 'המכחול המוזהב', 'מצאת את המכחול המוזהב. הוא לא מצייר טוב יותר, אבל מרגיש ככה', () => hasFlag('golden_brush')],
   ['blank', '⬜', 'השכבה הראשונה', 'נצח את הקנבס הריק. האויב הכי גדול של כל צייר', () => hasFlag('blank_canvas')],
   ['loop', '🔁', 'עוד פעם מההתחלה', 'חזור בלולאה. כישלון הוא רק טיוטה עם תאריך', () => (player.loops || 0) >= 1],
+  ['irk10', '😤', 'מומחה לעצבים', 'נצח 10 אויבים כשהם עצבניים. מסתבר שזה כישרון', () => ((player.stats || {}).irkWins || 0) >= 10],
   ['ma', '🎲', 'מא???', 'גרום לאויב לעזוב בעצבים. ניצחון בלי מכה, הסוג האהוב על פילוסופים', () => (player.journal || []).indexOf('ma') >= 0],
   ['gear', '🦺', 'מצויד היטב', 'שריון ועדשות ברמה 3. לא מושלם, אבל מוכן', () => player.armorLevel >= 3 && player.atkLevel >= 3],
   ['rich', '💰', 'חיסכון', '₪2,000 בכיס. הכסף לא קונה השראה, אבל קונה צבעים', () => player.gold >= 2000],
@@ -11540,6 +11549,168 @@ MUSIC_TRACKS.opening = { bpm: 72, lead: { wave: 'sine', vol: .045, vib: 5 }, bas
   form: ['A', 'B', 'A', 'B'], sections: {
     A: [['Am', 'E5 - - - A5 - G5 E5'], ['F', 'F5 - - - C5 - - -'], ['C', 'E5 - - - G5 - - -'], ['G', 'D5 - - - B4 - - -']],
     B: [['F', 'A5 - G5 - F5 - E5 -'], ['G', 'D5 - - - G5 - - -'], ['Em', 'B4 - E5 - G5 - - -'], ['Am', 'A5 - - - - - . .']] } };
+
+
+/* =========================================================
+   V55 — a living world, and nerves that matter
+   ========================================================= */
+
+/* ---- people: the same drawing language as בופי מן. Feet at (x, y), about 34px tall at s = 1 ---- */
+const PERSON_PANTS = ['#273449', '#3b3f4a', '#1f3b57', '#4a3b2f', '#33263b'];
+const PERSON_HAIR = ['#2b2a33', '#4a3428', '#8a6240', '#1f2330', '#b8b2a7', '#6b3a2a'];
+const PERSON_SKIN = ['#f0c9a6', '#d6a17c', '#b27a58', '#f4d6b8', '#8d5b3e'];
+function shadeHex(h, k) { const n = parseInt(h.slice(1), 16), f = v => Math.max(0, Math.min(255, Math.round(v * k))); return 'rgb(' + f(n >> 16) + ',' + f((n >> 8) & 255) + ',' + f(n & 255) + ')'; }
+function drawPersonHD(c, x, y, s, o) {
+  o = o || {};
+  const seed = o.seed || 0, look = o.look && o.look[0] === '#' && o.look.length === 7 ? o.look : '#738b98';
+  const skin = o.skin || PERSON_SKIN[seed % PERSON_SKIN.length], hair = PERSON_HAIR[(seed >> 1) % PERSON_HAIR.length];
+  const pants = PERSON_PANTS[(seed >> 2) % PERSON_PANTS.length], style = o.hairStyle != null ? o.hairStyle : seed % 5;
+  const f = o.facing || 'down', side = f === 'left' ? -1 : f === 'right' ? 1 : 0, back = f === 'up';
+  const ph = o.phase || 0, sw = o.walking ? Math.sin(ph) : 0, OL = 'rgba(8,12,20,.8)';
+  const breathe = o.walking ? Math.abs(Math.sin(ph)) * 1.2 : Math.sin(clock / 700 + seed) * .45;
+  c.save(); c.translate(x, y); c.scale(s, s);
+  const sg = c.createRadialGradient(0, 0, 0, 0, 0, 10); sg.addColorStop(0, 'rgba(0,0,0,.32)'); sg.addColorStop(1, 'rgba(0,0,0,0)');
+  c.save(); c.scale(1, .32); c.fillStyle = sg; c.beginPath(); c.arc(0, 0, 10, 0, 6.28); c.fill(); c.restore();
+  c.translate(0, -breathe);
+  const limb = (x1, y1, len, rot, w, col) => { c.save(); c.translate(x1, y1); c.rotate(rot); hdCap(c, 0, 0, 0, len, w + 1.1, OL); hdCap(c, 0, 0, 0, len, w, col); c.restore(); };
+  // legs and shoes
+  [[-1, sw], [1, -sw]].forEach(([sd, k], i) => {
+    const lx = side ? sd * 1.2 : sd * 2.8, far = side && sd === -side;
+    limb(lx, -10, 8, k * .42, 4.2, far ? shadeHex(pants, .7) : pants);
+    c.save(); c.translate(lx, -10); c.rotate(k * .42); c.fillStyle = '#10141c'; c.beginPath(); c.ellipse(side * 1.3, 8.6, 3.2, 1.8, 0, 0, 6.28); c.fill(); c.restore();
+  });
+  // far arm behind the body in profile
+  const armRot = sw * .5, wave = o.wave || 0;
+  if (side) limb(-side * 2, -19.5, 9.6, -armRot * side, 3.4, shadeHex(look, .65));
+  // torso
+  c.beginPath(); const tw = side ? 6 : 7.6;
+  c.moveTo(-tw, -20.5); c.quadraticCurveTo(-tw - .6, -14, -tw + 1.2, -9); c.lineTo(tw - 1.2, -9); c.quadraticCurveTo(tw + .6, -14, tw, -20.5); c.quadraticCurveTo(0, -22.5, -tw, -20.5); c.closePath();
+  c.fillStyle = hdLin(c, -tw, -21, tw, -9, [[0, shadeHex(look, 1.18)], [.5, look], [1, shadeHex(look, .7)]]); c.fill();
+  c.strokeStyle = OL; c.lineWidth = .65; c.stroke();
+  if (!back) { c.fillStyle = 'rgba(255,255,255,.55)'; c.beginPath(); c.moveTo(-2.4 + side * 2, -20.6); c.lineTo(side * 2, -17.6); c.lineTo(2.4 + side * 2, -20.6); c.fill(); }
+  if (o.bag) { c.fillStyle = '#7c4a24'; roundRect(c, side ? -side * 7 - 2.5 : 6, -16, 5, 7, 1.5); c.fill(); c.strokeStyle = 'rgba(60,30,10,.8)'; c.lineWidth = .6; c.beginPath(); c.moveTo(-5, -20); c.lineTo(5, -13); c.stroke(); }
+  // arms (the right one waves when asked)
+  const hand = (hx, hy) => { c.fillStyle = OL; c.beginPath(); c.arc(hx, hy, 2.2, 0, 6.28); c.fill(); c.fillStyle = skin; c.beginPath(); c.arc(hx, hy, 1.7, 0, 6.28); c.fill(); };
+  const arm = (sd, rot) => { c.save(); c.translate(sd * (side ? 1.5 : 8.2), -19.5); c.rotate(rot); hdCap(c, 0, 0, 0, 9.4, 4.5, OL); hdCap(c, 0, 0, 0, 9.4, 3.4, hdLin(c, -2, 0, 2, 0, [[0, shadeHex(look, 1.1)], [1, shadeHex(look, .78)]])); hand(0, 10.4); c.restore(); };
+  if (side) arm(side, armRot * side);
+  else { arm(-1, armRot + .1); arm(1, wave > 0 ? -2.7 * wave + Math.sin(clock / 80) * .3 * wave : -armRot - .1); }
+  // head
+  if (style === 1 && !back) { c.fillStyle = hair; c.beginPath(); c.ellipse(side * -1, -25, 7.4, 8.4, 0, 0, 6.28); c.fill(); }     // long hair falls behind
+  c.fillStyle = skin; c.fillRect(-1.6, -23.5, 3.2, 3);
+  c.beginPath(); c.ellipse(side * .8, -28.2, 6.4, 6.9, 0, 0, 6.28);
+  c.fillStyle = hdLin(c, -5, -34, 5, -22, [[0, shadeHex(skin.length === 7 ? skin : '#f0c9a6', 1.08)], [1, shadeHex(skin.length === 7 ? skin : '#f0c9a6', .86)]]); c.fill();
+  c.strokeStyle = OL; c.lineWidth = .65; c.stroke();
+  // hair styles
+  c.fillStyle = hair;
+  if (back) { c.beginPath(); c.ellipse(side * .8, -28.6, 6.6, 7, 0, 0, 6.28); c.fill(); if (style === 2) { c.beginPath(); c.arc(0, -35.2, 2.6, 0, 6.28); c.fill(); } }
+  else if (style === 3) { c.beginPath(); c.ellipse(-5.4 + side, -27.6, 1.6, 3, 0, 0, 6.28); c.ellipse(5.4 + side, -27.6, 1.6, 3, 0, 0, 6.28); c.fill(); }
+  else if (style === 4) { for (let i = 0; i < 7; i++) { const a = Math.PI + i / 6 * Math.PI; c.beginPath(); c.arc(side * .8 + Math.cos(a) * 5.6, -29.4 + Math.sin(a) * 5.4, 2.6, 0, 6.28); c.fill(); } }
+  else { c.beginPath(); c.ellipse(side * .8, -31.2, 6.6, 4.2, 0, Math.PI * .98, Math.PI * 2.02); c.lineTo(5.6 + side * 2, -28.4); c.quadraticCurveTo(side * 2, -30.8, -5.6 + side * 2, -28.2); c.fill();
+    if (style === 2) { c.beginPath(); c.arc(-side * 2.5, -35.2, 2.6, 0, 6.28); c.fill(); } }
+  if (!back) {
+    const ex = side * 2.4, blink = o.blink;
+    c.fillStyle = '#1e2433'; c.strokeStyle = '#1e2433'; c.lineWidth = .7;
+    (side ? [ex + side * 1.4] : [-2.3, 2.3]).forEach(px0 => {
+      if (blink) { c.beginPath(); c.moveTo(px0 - 1, -28.2); c.lineTo(px0 + 1, -28.2); c.stroke(); }
+      else { c.beginPath(); c.ellipse(px0, -28.4, .85, 1.05, 0, 0, 6.28); c.fill(); }
+    });
+    if (side) { c.fillStyle = shadeHex(skin.length === 7 ? skin : '#f0c9a6', .88); c.beginPath(); c.ellipse(side * 6.6, -27.3, 1.2, 1, 0, 0, 6.28); c.fill(); }
+    if (o.talk) { c.fillStyle = '#5b1d24'; c.beginPath(); c.ellipse(ex * .6, -24.9, 1.3, .5 + Math.abs(Math.sin(clock / 70)) * 1, 0, 0, 6.28); c.fill(); }
+    else { c.strokeStyle = 'rgba(105,48,41,.7)'; c.beginPath(); c.moveTo(ex * .6 - 1.2, -25); c.quadraticCurveTo(ex * .6, -24.4, ex * .6 + 1.2, -25); c.stroke(); }
+    if (o.glasses) { c.strokeStyle = '#334155'; c.lineWidth = .7; (side ? [ex + side * 1.4] : [-2.3, 2.3]).forEach(gx => { c.beginPath(); c.arc(gx, -28.4, 1.9, 0, 6.28); c.stroke(); }); }
+  }
+  c.restore();
+}
+
+/* the town's people: they breathe, blink, look at you, wave hello, and talk when you talk to them */
+const npcAnim = {};
+function personFacing(cx, cy, fallback, seed, near) {
+  const dx = hero.x - cx, dy = hero.y - cy;
+  if (near) return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+  const k = Math.floor(clock / 3800 + seed) % 6;                // look around now and then
+  return k === 2 ? 'left' : k === 4 ? 'right' : fallback || 'down';
+}
+function drawWorldPerson(sx, sy, look, seed, facing, opts) {
+  opts = opts || {};
+  const cx = sx + 20, cy = sy + 20, key = currentMap + ':' + sx + ',' + sy;
+  const dist = Math.hypot(hero.x - cx, hero.y - cy) / TILE, near = dist <= 3.2 && !opts.fixed;
+  const st = npcAnim[key] = npcAnim[key] || { near: false, waveT: 0 };
+  if (near && !st.near && dist <= 2.4) st.waveT = clock;
+  st.near = near;
+  const waveK = clock - st.waveT < 1300 && st.waveT ? Math.sin((clock - st.waveT) / 1300 * Math.PI) : 0;
+  const talking = !!dialogue && dist <= 1.3;
+  const f = opts.fixed ? facing : personFacing(cx, cy, facing, seed, near);
+  const blink = ((clock + seed * 997) % 4200) < 130;
+  drawPersonHD(ctx, cx, sy + 37 + (talking ? -Math.abs(Math.sin(clock / 160)) * .8 : 0), 1, {
+    seed, look, facing: f, blink, talk: talking, wave: f === 'down' ? waveK : 0, glasses: seed % 3 === 0 });
+}
+
+/* the trainer's alert: a proper bubble, and a pop when they spot you */
+let spotPop = null;
+function drawAlertBubble(x, y, k, col) {
+  const s = k < 1 ? easeBack(k) : 1;
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.arc(1, 1.5, 8, 0, 6.28); ctx.fill();
+  ctx.fillStyle = col || '#ef4444'; ctx.strokeStyle = 'rgba(9,19,33,.9)'; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.arc(0, 0, 8, 0, 6.28); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-3, 6.5); ctx.lineTo(0, 12); ctx.lineTo(3, 6.5); ctx.fill();
+  ctx.fillStyle = '#fff'; roundRect(ctx, -1.3, -5, 2.6, 6.4, 1.2); ctx.fill(); ctx.beginPath(); ctx.arc(0, 3.6, 1.4, 0, 6.28); ctx.fill();
+  ctx.restore();
+}
+function drawSpotPop() {
+  if (!spotPop) return;
+  const k = (clock - spotPop.t) / 700;
+  if (k > 1.6) { spotPop = null; return; }
+  drawAlertBubble(spotPop.x, spotPop.y - 22 - Math.min(1, k) * 6, Math.min(1, k * 2.2), '#ef4444');
+  if (k < .5) { ctx.save(); ctx.globalAlpha = 1 - k * 2; ctx.strokeStyle = '#fde68a'; ctx.lineWidth = 2;
+    for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28; ctx.beginPath(); ctx.moveTo(spotPop.x + Math.cos(a) * 12, spotPop.y - 28 + Math.sin(a) * 12); ctx.lineTo(spotPop.x + Math.cos(a) * (16 + k * 20), spotPop.y - 28 + Math.sin(a) * (16 + k * 20)); ctx.stroke(); }
+    ctx.restore(); }
+}
+
+/* cloud shadows drift over the outdoor maps, so even a quiet street is never quite still */
+const CLOUD_CATS = { street: 1, park: 1, hill: 1, art: 1, harbor: 1, market: 1, roof: 1, transit: 1, sea: 1 };
+function drawCloudShadows(map) {
+  if (player.lowPower || player.evening || !CLOUD_CATS[map.cat] || dayTheme().weather === 'rain') return;
+  const W = map.grid[0].length * TILE, H = map.grid.length * TILE, t = clock / 1000;
+  ctx.save();
+  for (let i = 0; i < 3; i++) {
+    const x = ((t * (9 + i * 3) + i * 380) % (W + 400)) - 200, y = ((i * 211) % H) + Math.sin(t * .05 + i) * 40;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, 150 + i * 30);
+    g.addColorStop(0, 'rgba(10,20,40,.16)'); g.addColorStop(1, 'rgba(10,20,40,0)');
+    ctx.fillStyle = g; ctx.save(); ctx.translate(x, y); ctx.scale(1.6, .8); ctx.translate(-x, -y); ctx.fillRect(x - 200, y - 200, 400, 400); ctx.restore();
+  }
+  ctx.restore();
+}
+
+/* בופי מן himself: after a few seconds standing still he stretches, then looks around */
+let heroIdleMs = 0;
+function heroIdlePose(dt) {
+  if (hero.moving || moveAnim || dialogue || player.reduceFx) { heroIdleMs = 0; return null; }
+  heroIdleMs += dt;
+  const cyc = heroIdleMs % 9000;
+  if (heroIdleMs > 5000 && cyc > 5000 && cyc < 6400) { const k = Math.sin((cyc - 5000) / 1400 * Math.PI); return { arm: -2.7 * k, sy: 1 + .05 * k, rot: 0 }; }
+  return null;
+}
+
+/* ---- nerves: the second weapon ---- */
+function irkBonusFor(e) { return battle && battle.irkWin ? 1.6 : e.meltdowns ? 1.5 : e.irkAngry ? 1.2 : 1; }
+function drawIrkFx(e, fx, fy, S) {
+  if (!e || e.hp <= 0) return;
+  const t = clock / 1000;
+  if (e.irkAngry) {                                       // steam off the top of an annoyed enemy
+    ctx.save();
+    for (let i = 0; i < 3; i++) { const k = (t * .9 + i / 3) % 1, sx = fx + (i - 1) * 16 * S;
+      ctx.globalAlpha = (1 - k) * .55; ctx.fillStyle = '#e2e8f0'; ctx.beginPath(); ctx.arc(sx + Math.sin(t * 3 + i) * 4, fy - 48 * S - k * 26 * S, (4 + k * 6) * S, 0, 6.28); ctx.fill(); }
+    ctx.restore();
+  }
+  if (e.meltT > 0 || e.stunTurns > 0 && e.meltdowns) {     // a pulsing vein, and a red heat around it
+    const p = .6 + .4 * Math.sin(t * 9);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(fx, fy, 0, fx, fy, 70 * S); g.addColorStop(0, 'rgba(239,68,68,' + (.22 * p) + ')'); g.addColorStop(1, 'rgba(239,68,68,0)');
+    ctx.fillStyle = g; ctx.fillRect(fx - 70 * S, fy - 70 * S, 140 * S, 140 * S); ctx.restore();
+    heText('💢', fx + 34 * S, fy - 40 * S + Math.sin(t * 6) * 2, { align: 'center', size: 22 * S * (1 + .12 * p), maxWidth: 40 });
+  }
+}
 
 resizeCanvas();
 setupControls();
