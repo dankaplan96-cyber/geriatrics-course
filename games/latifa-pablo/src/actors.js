@@ -56,7 +56,7 @@ class Cat {
  }
  setCosmetic(index) { const look = CAT_LOOK[this.kind]; this.collarMaterial.color.set(look.collar[index] || look.collar[0]); }
  update(dt, position, state, lookAt = null) {
-  this.root.position.set(position.x, position.y - .395 * this.scale, position.z); this.root.visible = state.invulnerable <= 0 || Math.floor(state.simTime * 13) % 2 === 0;
+  this.root.position.set(position.x, position.y - .395 * this.scale, position.z); this.root.visible = !(state.flash > 0) || Math.floor(state.simTime * 13) % 2 === 0;
   this.yaw += angleDelta(this.yaw, state.facing) * (1 - Math.exp(-14 * dt)); this.root.rotation.y = this.yaw;
   const t = state.simTime; this.run = damp(this.run, Math.min(state.speed / 3.6, 1), 10, dt); const r = this.run;
   if (state.grounded && !this.wasGrounded) this.squash = Math.min(.32, .06 + Math.max(0, -this.lastVy) * .022);

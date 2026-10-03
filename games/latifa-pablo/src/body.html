@@ -30,17 +30,11 @@
 
 <header id="hud" hidden>
  <div class="hud-row">
-  <div class="hud-left">
-   <button id="pause-button" class="round-btn" aria-label="השהיה"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
-   <button id="recenter" class="round-btn" aria-label="יישור מצלמה"><svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><circle cx="12" cy="12" r="3"/></svg></button>
-  </div>
-  <div class="hud-right">
-   <div class="cat-card"><span class="portrait" id="hud-portrait"></span><div><strong id="cat-name">לטיפה</strong><div id="health" class="hearts" aria-label="סיבולת"></div></div></div>
-   <div class="chaos"><div class="chaos-top"><span>מד כאוס</span><b id="chaos-score">0</b></div><div class="chaos-track"><span id="chaos-fill"></span><i class="tick" id="tick1" style="left:83.3%">★</i><i class="tick" id="tick2" style="left:100%">★</i></div></div>
-   <div id="task-card"><div class="task-text"><strong id="task-title"></strong><small id="task-help"></small></div><b id="task-progress">0/3</b></div>
-  </div>
+  <button id="pause-button" class="round-btn" aria-label="השהיה"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
+  <div class="timer-pill" id="timer"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M10 2h4"/></svg><span id="time-left" dir="ltr">4:00</span><i class="sep"></i><i class="pot"></i><span id="plants-count" dir="ltr">0/3</span></div>
+  <div class="cat-chip"><span class="portrait" id="hud-portrait"></span><div class="chip-body"><div class="chip-top"><strong id="cat-name">לטיפה</strong><div id="health" class="hearts" aria-label="סיבולת"></div></div><div class="chaos-track"><span id="chaos-fill"></span><i class="tick" id="tick1" style="left:83.3%">★</i><i class="tick" id="tick2" style="left:100%">★</i></div><b id="chaos-score">0</b></div></div>
  </div>
- <div class="hud-center"><div class="timer-pill" id="timer"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M10 2h4"/></svg><span id="time-left" dir="ltr">4:00</span></div><div class="plants-pill"><i></i><span id="plants-count"></span></div></div>
+ <div id="task-card" hidden><div class="task-text"><strong id="task-title"></strong><small id="task-help"></small></div><b id="task-progress">0/3</b></div>
 </header>
 
 <div id="game-feedback" hidden>
@@ -56,14 +50,14 @@
 <div id="controls" hidden>
  <div id="move-zone" aria-label="אזור תנועה"><div id="joystick"><div id="stick"></div></div></div>
  <div id="action-cluster">
-  <button id="switch" class="action" aria-label="החלפת חתול"><span class="portrait" id="switch-portrait"></span><span id="switch-label">פאבלו</span></button>
+  <button id="switch" class="action" aria-label="החלפת חתול"><span class="portrait" id="switch-portrait"></span><span id="switch-label" hidden></span></button>
   <button id="special" class="action" aria-label="יכולת מיוחדת"><svg viewBox="0 0 40 40"><path d="m22 5-12 18h10l-2 12 12-20H20z"/></svg><span id="special-label">יכולת</span><b id="cooldown"></b></button>
-  <button id="jump" class="action" aria-label="קפיצה"><svg viewBox="0 0 40 40"><path d="M20 30V10M11 19l9-9 9 9"/></svg><span id="jump-label">קפיצה</span></button>
+  <button id="jump" class="action" aria-label="קפיצה"><svg viewBox="0 0 40 40"><path d="M20 30V10M11 19l9-9 9 9"/></svg><span id="jump-label" hidden></span></button>
   <button id="paw" class="action" aria-label="מכת כפה"><svg viewBox="0 0 40 40"><ellipse cx="20" cy="26" rx="8.5" ry="7"/><ellipse cx="8.5" cy="17" rx="3.3" ry="4.2"/><ellipse cx="15.5" cy="10.5" rx="3.3" ry="4.4"/><ellipse cx="24.5" cy="10.5" rx="3.3" ry="4.4"/><ellipse cx="31.5" cy="17" rx="3.3" ry="4.2"/></svg><span id="paw-label">כפה</span></button>
  </div>
 </div>
 
-<div id="pause-screen" class="veil" hidden><section class="panel"><span class="eyebrow">הפסקת ליקוק</span><h2>הבית יכול לחכות.</h2><p id="pause-reason">לטיפה שומרת לך על המקום.</p><button id="resume" class="btn btn-primary">▶ &nbsp;חזרה לבלאגן</button><button id="restart" class="btn btn-ghost">התחלת החדר מחדש</button><div class="menu-row"><button id="pause-settings" class="btn btn-ghost">הגדרות</button><button id="fullscreen" class="btn btn-ghost">מסך מלא</button></div><button id="exit-menu" class="btn btn-text">לתפריט הראשי</button></section></div>
+<div id="pause-screen" class="veil" hidden><section class="panel"><span class="eyebrow">הפסקת ליקוק</span><h2>הבית יכול לחכות.</h2><p id="pause-reason">לטיפה שומרת לך על המקום.</p><button id="resume" class="btn btn-primary">▶ &nbsp;חזרה לבלאגן</button><button id="restart" class="btn btn-ghost">התחלת החדר מחדש</button><p id="pause-task" class="pause-task"></p><div class="menu-row"><button id="recenter" class="btn btn-ghost">יישור מצלמה</button><button id="pause-settings" class="btn btn-ghost">הגדרות</button></div><button id="fullscreen" class="btn btn-text">מסך מלא</button><button id="exit-menu" class="btn btn-text">לתפריט הראשי</button></section></div>
 <div id="story" hidden><button id="skip-story">דלג ›</button><div class="subtitle-box"><div class="bubble" id="bubble"><strong id="speaker"></strong><p id="subtitle-text"></p></div><button id="next-line" aria-label="המשך">‹</button></div></div>
 <div id="summary-screen" class="veil" hidden><section class="panel summary"><span class="eyebrow" id="summary-eyebrow">דוח נזק</span><div id="stars"><i>★</i><i>★</i><i>★</i></div><h2 id="summary-title"></h2><p id="summary-text"></p><div class="result-stats"><div><strong id="result-score">0</strong><span>נקודות כאוס</span></div><div><strong id="result-broken">0</strong><span>חפצים נשברו</span></div><div><strong id="result-fish">0</strong><span>חטיפי דג</span></div></div><button id="next-level" class="btn btn-primary">לחדר הבא ›</button><button id="retry-level" class="btn btn-ghost">עוד סיבוב</button><button data-home class="btn btn-text">לתפריט הראשי</button></section></div>
 <div id="toast" role="status" hidden></div><div id="diagnostics" hidden></div>

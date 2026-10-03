@@ -134,7 +134,7 @@ class PhysicsWorld {
   const size = id === 'pablo' ? 1.22 : 1; const body = this.world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased());
   const collider = this.world.createCollider(RAPIER.ColliderDesc.capsule(.15 * size, .23 * size).setFriction(0), body);
   const controller = this.world.createCharacterController(.015); controller.enableSnapToGround(.12); controller.enableAutostep(.16, .14, false); controller.setApplyImpulsesToDynamicBodies(true); controller.setCharacterMass(id === 'pablo' ? 14 : 3);
-  return { id, size, body, collider, controller, position: { x: 0, y: .4, z: 0 }, previous: { x: 0, y: .4, z: 0 }, velocity: { x: 0, y: 0, z: 0 }, grounded: false, coyote: 0, jumpBuffer: 0, jumps: 0, jumpsLeft: id === 'latifa' ? 2 : 1, facing: 0, speed: 0, simTime: 0, health: 3, invulnerable: 0, specialCooldown: 0, pawCooldown: 0, slam: false, climb: null, attackTime: 0, boosted: 0, dash: 0, dashDir: { x: 0, z: 0 }, landed: 0, airTime: 0 };
+  return { id, size, body, collider, controller, position: { x: 0, y: .4, z: 0 }, previous: { x: 0, y: .4, z: 0 }, velocity: { x: 0, y: 0, z: 0 }, grounded: false, coyote: 0, jumpBuffer: 0, jumps: 0, jumpsLeft: id === 'latifa' ? 2 : 1, facing: 0, speed: 0, simTime: 0, health: 3, invulnerable: 0, specialCooldown: 0, pawCooldown: 0, slam: false, climb: null, attackTime: 0, boosted: 0, dash: 0, flash: 0, dashDir: { x: 0, z: 0 }, landed: 0, airTime: 0 };
  }
  get player() { return this.cats[this.active]; }
  get companion() { return this.cats[1 - this.active]; }
@@ -144,7 +144,7 @@ class PhysicsWorld {
   this.time += dt;
   for (let i = 0; i < 2; i++) {
    const c = this.cats[i]; c.previous = { ...c.position }; c.simTime = this.time;
-   for (const k of ['invulnerable', 'specialCooldown', 'pawCooldown', 'attackTime', 'boosted']) c[k] = Math.max(0, c[k] - dt);
+   for (const k of ['invulnerable', 'flash', 'specialCooldown', 'pawCooldown', 'attackTime', 'boosted']) c[k] = Math.max(0, c[k] - dt);
    let dx = 0, dz = 0, jump = false;
    if (i === this.active) { let mx = input.move.x, mz = input.move.y; const n = Math.hypot(mx, mz); if (n > 1) { mx /= n; mz /= n; } dx = mx * Math.cos(yaw) - mz * Math.sin(yaw); dz = -mx * Math.sin(yaw) - mz * Math.cos(yaw); jump = input.consumeJump(); }
    else { const p = this.player.position; const vx = p.x - c.position.x, vz = p.z - c.position.z, d = Math.hypot(vx, vz); if (d > 1.4) { dx = vx / d * Math.min(1, (d - 1.4)); dz = vz / d * Math.min(1, (d - 1.4)); } if (d > 9 && this.player.grounded) { this.place(c, p.x + .7, p.z + .5, p.y / c.size); } }
