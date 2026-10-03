@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- בופי מן RPG V56 -->
+<!-- בופי מן RPG V57 -->
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -19,13 +19,9 @@
 *{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-user-select:none;touch-action:manipulation}
 :root{color-scheme:dark;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
-body,html{width:100%;height:100%;overflow:hidden;background:#0f172a;color:#fff;
-  font-family:"Arial Hebrew","Noto Sans Hebrew",Arial,"Segoe UI",sans-serif}
-#game-container{position:relative;width:100%;height:100%;display:flex;flex-direction:column;
-  justify-content:space-between;align-items:center;background:#1e293b;max-width:760px;margin:0 auto;
-  border-left:3px solid #334155;border-right:3px solid #334155}
-#hud{width:100%;padding:8px 14px;background:rgba(15,23,42,.95);border-bottom:3px solid #38bdf8;
-  display:flex;justify-content:space-between;align-items:center;z-index:10;font-size:12px;font-weight:bold;gap:8px}
+body,html{width:100%;height:100%;overflow:hidden;background:#0f172a;color:#fff;font-family:"Arial Hebrew","Noto Sans Hebrew",Arial,"Segoe UI",sans-serif}
+#game-container{position:relative;width:100%;height:100%;display:flex;flex-direction:column;justify-content:space-between;align-items:center;background:#1e293b;max-width:760px;margin:0 auto;border-left:3px solid #334155;border-right:3px solid #334155}
+#hud{width:100%;padding:8px 14px;display:flex;justify-content:space-between;align-items:center;z-index:10;font-size:12px;font-weight:bold;gap:8px}
 .hud-item{display:flex;flex-direction:column;gap:3px}
 .hud-vitals{min-width:0;gap:4px}
 .hud-name{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:11px;color:#cbd5e1}
@@ -35,77 +31,39 @@ body,html{width:100%;height:100%;overflow:hidden;background:#0f172a;color:#fff;
 .flow-chip.ready{color:#fde68a;border-color:#fbbf24;background:rgba(120,78,12,.32);box-shadow:0 0 10px rgba(251,191,36,.28)}
 .hud-bars{display:grid;grid-template-columns:auto 76px auto 76px;align-items:center;gap:4px}
 .bar-tag{font-size:8px;letter-spacing:.05em;color:#94a3b8}
-.mini-bar{width:76px;height:6px;background:#172033;border-radius:999px;overflow:hidden;border:1px solid #475569}
-.mini-bar-fill{height:100%;background:#22c55e;width:100%;transition:width .25s ease-out}
-.ap-fill{background:#38bdf8}
+.mini-bar{width:76px;height:6px;border-radius:999px;overflow:hidden}
+.mini-bar-fill{height:100%;width:100%;transition:width .25s ease-out}
 .hud-buttons{display:flex;flex-direction:row;gap:4px;align-items:center}
 .hud-buttons .system-btn{padding:5px 9px;font-size:12px}
 .menu-btn{min-width:72px;border-radius:999px!important;background:#202c45!important;border-color:#64748b!important}
 .menu-btn span{font-size:11px}
-#screen-area{position:relative;width:100%;flex-grow:1;min-height:0;background:#0f172a;overflow:hidden;
-  display:flex;justify-content:center;align-items:center}
+#screen-area{position:relative;width:100%;flex-grow:1;min-height:0;background:#0f172a;overflow:hidden;display:flex;justify-content:center;align-items:center}
 canvas{display:block;width:100%;height:100%;object-fit:contain;background:#0f172a}
-#move-info{position:absolute;top:auto;bottom:110px;left:50%;transform:translateX(-50%);max-width:72%;background:rgba(8,13,24,.94);border:1px solid rgba(56,189,248,.75);
-  border-radius:10px;padding:5px 8px;font-size:10px;line-height:1.45;color:#e2e8f0;pointer-events:none;z-index:15;display:none}
+#move-info{position:absolute;top:auto;bottom:110px;left:50%;transform:translateX(-50%);max-width:72%;padding:5px 8px;font-size:10px;line-height:1.45;pointer-events:none;z-index:15;display:none}
 #move-info b{color:#fde047}
 #move-info .mi-stats{color:#7dd3fc}
 #move-info .mi-desc{color:#94a3b8;font-style:italic}
-#quest-box{position:absolute;top:9px;right:9px;display:flex;align-items:flex-start;gap:6px;background:rgba(8,13,24,.82);
-  border:1px solid rgba(251,191,36,.7);border-radius:999px;padding:5px 10px;font-size:10px;max-width:min(300px,58%);
-  pointer-events:none;z-index:15;transition:opacity .3s;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+#quest-box{position:absolute;top:9px;right:9px;display:flex;align-items:flex-start;gap:6px;background:rgba(8,13,24,.82);border:1px solid rgba(251,191,36,.7);border-radius:999px;padding:5px 10px;font-size:10px;max-width:min(300px,58%);pointer-events:none;z-index:15;transition:opacity .3s;box-shadow:0 4px 16px rgba(0,0,0,.25)}
 #quest-box strong{color:#fbbf24;flex:0 0 auto}
 #quest-text{color:#e2e8f0;line-height:1.35}
-#gba-controls{width:100%;height:170px;background:#0f172a;border-top:3px solid #334155;display:flex;
-  justify-content:space-between;align-items:center;padding:10px 20px;z-index:20;flex-shrink:0}
-.dpad{position:relative;width:130px;height:130px}
-.dpad-btn{position:absolute;background:#334155;border:2px solid #64748b;color:#fff;display:flex;
-  justify-content:center;align-items:center;font-weight:bold;font-size:20px;box-shadow:0 4px 8px rgba(0,0,0,.4);
-  transition:background .08s,transform .08s}
-.dpad-btn.pressed{background:#38bdf8;color:#0f172a;transform:scale(.93)}
-#d-up{top:0;left:42px;width:46px;height:42px;border-radius:6px 6px 0 0}
-#d-down{bottom:0;left:42px;width:46px;height:42px;border-radius:0 0 6px 6px}
-#d-left{left:0;top:42px;width:42px;height:46px;border-radius:6px 0 0 6px}
-#d-right{right:0;top:42px;width:42px;height:46px;border-radius:0 6px 6px 0}
-.dpad-center{position:absolute;top:42px;left:42px;width:46px;height:46px;background:#1e293b}
-.action-group{display:flex;gap:16px;align-items:center}
-.action-col{display:flex;flex-direction:column;gap:10px;align-items:center}
-.gba-btn{width:58px;height:58px;border-radius:50%;background:#e11d48;border:3px solid #fda4af;color:#fff;
-  font-size:20px;font-weight:bold;display:flex;justify-content:center;align-items:center;
-  box-shadow:0 6px 12px rgba(0,0,0,.5);transition:transform .08s,background .08s}
-.gba-btn.pressed{background:#fb7185;transform:scale(.92)}
-#btn-b{background:#2563eb;border-color:#93c5fd}
-#btn-b.pressed{background:#3b82f6}
-.system-btn{padding:6px 12px;background:#475569;border:1px solid #94a3b8;border-radius:6px;font-size:11px;
-  color:#fff;cursor:pointer}
-.modal{position:absolute;inset:0;background:rgba(15,23,42,.97);display:flex;flex-direction:column;
-  justify-content:center;align-items:center;z-index:50;padding:24px;text-align:center}
-.modal h1{color:#fbbf24;font-size:22px;margin-bottom:10px;text-shadow:0 2px 8px rgba(251,191,36,.4)}
-.modal p{color:#cbd5e1;font-size:13px;margin-bottom:16px;line-height:1.6}
-.btn-main{background:#22c55e;color:#fff;border:none;padding:12px 30px;font-size:16px;font-weight:bold;
-  border-radius:30px;cursor:pointer;box-shadow:0 4px 15px rgba(34,197,94,.4);margin-top:8px}
-.btn-main:active{transform:scale(.96)}
-.btn-secondary{background:#64748b;box-shadow:0 4px 15px rgba(100,116,139,.4)}
-.panel{position:absolute;top:16px;bottom:16px;left:16px;right:16px;background:#1e293b;border:3px solid #38bdf8;
-  border-radius:12px;z-index:40;padding:16px;flex-direction:column;display:none}
-.panel-header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #334155;
-  padding-bottom:8px;margin-bottom:12px;font-size:15px;color:#fbbf24}
+.system-btn{padding:6px 12px;font-size:11px;cursor:pointer}
+.modal{position:absolute;inset:0;background:rgba(15,23,42,.97);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:50;padding:24px;text-align:center}
+.modal h1{font-size:22px;margin-bottom:10px}
+.modal p{color:#cbd5e1;font-size:13px;margin-bottom:16px}
+.btn-main{padding:12px 30px;font-size:16px;cursor:pointer;margin-top:8px}
+.panel{position:absolute;top:16px;bottom:16px;left:16px;right:16px;z-index:40;flex-direction:column;display:none}
+.panel-header{display:flex;justify-content:space-between;align-items:center;padding-bottom:8px;margin-bottom:12px;font-size:15px}
 .panel-list{flex-grow:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
-.panel-item{background:#0f172a;border:1px solid #475569;padding:10px;border-radius:8px;display:flex;
-  justify-content:space-between;align-items:center;font-size:12px;gap:8px}
-.close-btn{background:#ef4444;color:#fff;border:none;padding:8px 14px;border-radius:6px;font-weight:bold;
-  cursor:pointer;margin-top:10px}
-.game-menu-panel{left:50%!important;right:auto!important;top:50%!important;bottom:auto!important;transform:translate(-50%,-50%);
-  width:min(560px,88%);height:auto;max-height:88%;padding:14px}
-.game-menu-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
-.game-menu-card{min-height:78px;background:linear-gradient(180deg,#1b2641,#111a30);border:2px solid #2c3a5c;border-bottom:4px solid #09101f;
-  border-radius:12px;color:#fff;padding:10px 8px;cursor:pointer;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:5px}
-.game-menu-card:active{transform:translateY(2px);border-bottom-width:2px}
-.game-menu-card b{font-size:13px;color:#fde68a}.game-menu-card small{font-size:9px;line-height:1.35;color:#94a3b8}
+.panel-item{padding:10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.close-btn{padding:8px 14px;font-weight:bold;cursor:pointer;margin-top:10px}
+.game-menu-panel{left:50%!important;right:auto!important;top:50%!important;bottom:auto!important;transform:translate(-50%,-50%);width:min(560px,88%);height:auto;padding:14px}
+.game-menu-grid{display:grid;gap:9px}
+.game-menu-card{border-bottom:4px solid #09101f;color:#fff;padding:10px 8px;cursor:pointer;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:5px}
+.game-menu-card small{line-height:1.35}
 .menu-footer{display:flex;justify-content:space-between;gap:12px;margin-top:10px;padding:7px 4px 2px;color:#94a3b8;font-size:9px}
-.menu-footer span:first-child{color:#fde68a;font-weight:800}.menu-close{margin-top:8px;background:#334155}
+.menu-footer span:first-child{color:#fde68a;font-weight:800}
 @media(max-width:640px){.game-menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.game-menu-card{min-height:62px}}
-.title-modal{background:linear-gradient(to bottom,rgba(6,9,20,0) 0%,rgba(6,9,20,0) 58%,rgba(6,9,20,.55) 80%,rgba(6,9,20,.85) 100%);
-  justify-content:flex-end;padding:0 16px 12px}
+.title-modal{background:linear-gradient(to bottom,rgba(6,9,20,0) 0%,rgba(6,9,20,0) 58%,rgba(6,9,20,.55) 80%,rgba(6,9,20,.85) 100%);justify-content:flex-end;padding:0 16px 12px}
 .title-tag{color:#94a3b8;font-size:11px;margin-top:8px;text-shadow:0 2px 6px #000;opacity:.8}
 .title-btns{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
 .title-btns .btn-main{margin-top:0;padding:11px 26px;font-size:16px;min-width:150px}
@@ -117,48 +75,35 @@ body.on-cutscene #hud,body.on-cutscene #quest-box{display:none!important}
 body.on-cutscene #skip-btn{top:10px;bottom:auto}
 .diff-row{display:flex;flex-direction:row;gap:6px;margin-bottom:10px}
 .diff-opt{opacity:.6}
-.diff-opt.diff-sel{opacity:1;background:#38bdf8;color:#0f172a;border-color:#7dd3fc;font-weight:bold}
+.diff-opt.diff-sel{opacity:1;font-weight:bold}
 .settings-row{flex-direction:column;align-items:stretch;gap:6px}
 .settings-row .diff-row{margin-bottom:0}
 .settings-desc{font-size:10px;color:#94a3b8}
-.danger-btn{background:#7f1d1d;border-color:#ef4444}
 .learn-new{background:#0b1120;border:2px solid #fbbf24;border-radius:8px;padding:10px;font-size:12px;line-height:1.6}
 .learn-new b{color:#fbbf24}
 .learn-old{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.journal-entry{background:#0f172a;border:1px solid #475569;border-right:3px solid #fbbf24;padding:10px;
-  border-radius:8px;font-size:12px;line-height:1.6}
+.journal-entry{background:#0f172a;border:1px solid #475569;border-right:3px solid #fbbf24;padding:10px;border-radius:8px;font-size:12px;line-height:1.6}
 .journal-entry b{color:#fbbf24;display:block;margin-bottom:4px}
-.stock-out{opacity:.45}
 @keyframes modalIn{from{opacity:0;transform:scale(.965) translateY(8px)}to{opacity:1;transform:none}}
 .modal{animation:modalIn .34s cubic-bezier(.2,.8,.3,1.1)}
 /* ---------------- MAE STUDIO splash (reusable) ---------------- */
-.mae-splash{position:fixed;inset:0;z-index:400;display:none;flex-direction:column;align-items:center;justify-content:center;
-  background:radial-gradient(ellipse at 50% 46%,#1c1628 0%,#0c0914 52%,#040308 100%);overflow:hidden;cursor:pointer;
-  -webkit-user-select:none;user-select:none}
+.mae-splash{position:fixed;inset:0;z-index:400;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 46%,#1c1628 0%,#0c0914 52%,#040308 100%);overflow:hidden;cursor:pointer;-webkit-user-select:none;user-select:none}
 .mae-splash .mae-stage{position:relative;width:min(50vmin,280px);height:min(50vmin,280px)}
 .mae-splash svg{width:100%;height:100%;overflow:visible}
-.mae-ring{fill:none;stroke:url(#maeGold);stroke-width:7.5;stroke-linecap:round;stroke-dasharray:490;stroke-dashoffset:490;
-  transform-origin:100px 100px;transform:rotate(-100deg);filter:url(#maeGlow)}
-.mae-bristle{fill:none;stroke:#f9d67a;stroke-width:1.6;stroke-linecap:round;stroke-dasharray:470;stroke-dashoffset:470;opacity:.55;
-  transform-origin:100px 100px;transform:rotate(-96deg)}
+.mae-ring{fill:none;stroke:url(#maeGold);stroke-width:7.5;stroke-linecap:round;stroke-dasharray:490;stroke-dashoffset:490;transform-origin:100px 100px;transform:rotate(-100deg);filter:url(#maeGlow)}
+.mae-bristle{fill:none;stroke:#f9d67a;stroke-width:1.6;stroke-linecap:round;stroke-dasharray:470;stroke-dashoffset:470;opacity:.55;transform-origin:100px 100px;transform:rotate(-96deg)}
 .mae-bristle.b2{stroke-width:1;opacity:.35;transform:rotate(-104deg)}
 .mae-ring2{fill:none;stroke:rgba(249,214,122,.25);stroke-width:1.2;stroke-dasharray:4 7;opacity:0;transform-origin:100px 100px}
 .mae-l{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:62px;fill:#fff7e6;stroke:#f9d67a;stroke-width:.8;opacity:0}
 .mae-under{fill:none;stroke:url(#maeGold);stroke-width:3;stroke-linecap:round;stroke-dasharray:90;stroke-dashoffset:90}
 .mae-dot{fill:#f9d67a;opacity:0}
 .mae-spl{fill:#f9d67a;opacity:0;transform-box:fill-box;transform-origin:center}
-.mae-studio{margin-top:2.2vmin;color:#e8d7b0;font-family:'Segoe UI',Arial,sans-serif;font-size:min(3.4vmin,15px);font-weight:600;
-  letter-spacing:.2em;opacity:0;direction:ltr;text-transform:uppercase}
-.mae-drop{position:absolute;left:50%;top:-6%;width:12px;height:16px;margin-left:-6px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;
-  background:#f9d67a;opacity:0;box-shadow:0 0 12px rgba(249,214,122,.8)}
-.mae-ripple{position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;
-  border:2px solid rgba(249,214,122,.7);opacity:0}
+.mae-studio{margin-top:2.2vmin;color:#e8d7b0;font-family:'Segoe UI',Arial,sans-serif;font-size:min(3.4vmin,15px);font-weight:600;letter-spacing:.2em;opacity:0;direction:ltr;text-transform:uppercase}
+.mae-drop{position:absolute;left:50%;top:-6%;width:12px;height:16px;margin-left:-6px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:#f9d67a;opacity:0;box-shadow:0 0 12px rgba(249,214,122,.8)}
+.mae-ripple{position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;border:2px solid rgba(249,214,122,.7);opacity:0}
 .mae-ripple.r2{border-color:rgba(249,214,122,.35)}
-.mae-shine{position:absolute;inset:0;pointer-events:none;opacity:0;
-  background:linear-gradient(105deg,transparent 35%,rgba(255,244,214,.18) 48%,rgba(255,255,255,.32) 50%,rgba(255,244,214,.18) 52%,transparent 65%);
-  background-size:260% 100%;background-position:120% 0}
-.mae-bloom{position:absolute;left:50%;top:50%;width:70%;height:70%;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
-  background:radial-gradient(circle,rgba(249,214,122,.28),rgba(249,214,122,0) 70%);opacity:0}
+.mae-shine{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(105deg,transparent 35%,rgba(255,244,214,.18) 48%,rgba(255,255,255,.32) 50%,rgba(255,244,214,.18) 52%,transparent 65%);background-size:260% 100%;background-position:120% 0}
+.mae-bloom{position:absolute;left:50%;top:50%;width:70%;height:70%;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(249,214,122,.28),rgba(249,214,122,0) 70%);opacity:0}
 .mae-dust{position:absolute;bottom:-4%;width:3px;height:3px;border-radius:50%;background:#f9d67a;opacity:0;box-shadow:0 0 6px rgba(249,214,122,.9)}
 .mae-hint{position:absolute;bottom:4vmin;color:rgba(232,215,176,.35);font-size:11px;letter-spacing:.1em;opacity:0}
 .mae-run .mae-drop{animation:maeDrop .5s cubic-bezier(.55,0,.9,.4) .05s forwards}
@@ -169,11 +114,16 @@ body.on-cutscene #skip-btn{top:10px;bottom:auto}
 .mae-run .mae-bristle.b2{animation-delay:.74s}
 .mae-run .mae-ring2{animation:maeRing2 2.6s ease-out 1.2s forwards}
 .mae-run .mae-l{animation:maeLetter .55s cubic-bezier(.2,.9,.3,1.3) forwards}
-.mae-run .mae-l.l1{animation-delay:1.55s}.mae-run .mae-l.l2{animation-delay:1.7s}.mae-run .mae-l.l3{animation-delay:1.85s}
+.mae-run .mae-l.l1{animation-delay:1.55s}
+.mae-run .mae-l.l2{animation-delay:1.7s}
+.mae-run .mae-l.l3{animation-delay:1.85s}
 .mae-run .mae-under{animation:maeUnder .5s ease-out 2.05s forwards}
 .mae-run .mae-dot{animation:maeDot .5s ease-out 2.2s forwards}
 .mae-run .mae-spl{animation:maeSpl .45s cubic-bezier(.2,.9,.3,1.4) forwards}
-.mae-run .mae-spl.s1{animation-delay:1.84s}.mae-run .mae-spl.s2{animation-delay:1.9s}.mae-run .mae-spl.s3{animation-delay:1.96s}.mae-run .mae-spl.s4{animation-delay:2.02s}
+.mae-run .mae-spl.s1{animation-delay:1.84s}
+.mae-run .mae-spl.s2{animation-delay:1.9s}
+.mae-run .mae-spl.s3{animation-delay:1.96s}
+.mae-run .mae-spl.s4{animation-delay:2.02s}
 .mae-run .mae-studio{animation:maeStudio 1s cubic-bezier(.2,.8,.2,1) 2.1s forwards}
 .mae-run .mae-bloom{animation:maeBloom 1.4s ease-out 2.1s forwards}
 .mae-run .mae-shine{animation:maeShine 1.1s ease-in-out 2.55s forwards}
@@ -196,15 +146,11 @@ body.on-cutscene #skip-btn{top:10px;bottom:auto}
 @keyframes maeHint{to{opacity:1}}
 @keyframes maeOut{to{opacity:0;transform:scale(1.04)}}
 @media (prefers-reduced-motion:reduce){.mae-run *{animation-duration:.01s!important;animation-delay:0s!important}}
-
 /* ---------------- boot gate: one tap wakes the sound (browsers require it) ---------------- */
-#boot-gate{position:fixed;inset:0;z-index:410;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:#050409;color:#e8d7b0;cursor:pointer;-webkit-user-select:none;user-select:none}
-#boot-gate .gate-ring{width:54px;height:54px;border-radius:50%;border:2px solid rgba(249,214,122,.55);
-  animation:gatePulse 1.8s ease-in-out infinite}
+#boot-gate{position:fixed;inset:0;z-index:410;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#050409;color:#e8d7b0;cursor:pointer;-webkit-user-select:none;user-select:none}
+#boot-gate .gate-ring{width:54px;height:54px;border-radius:50%;border:2px solid rgba(249,214,122,.55);animation:gatePulse 1.8s ease-in-out infinite}
 #boot-gate .gate-text{margin-top:18px;font-size:14px;letter-spacing:.06em;opacity:.8}
 @keyframes gatePulse{0%,100%{transform:scale(.9);opacity:.45}50%{transform:scale(1.08);opacity:1}}
-
 /* ---------------- the title menu rises in after the title animation ---------------- */
 .title-modal{transition:opacity .7s ease,transform .7s cubic-bezier(.2,.8,.2,1)}
 .title-modal.title-hidden{opacity:0;transform:translateY(26px);pointer-events:none}
@@ -218,62 +164,42 @@ body.on-cutscene #skip-btn{top:10px;bottom:auto}
 /* panels open with a small lift instead of popping */
 @keyframes panelIn{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
 .panel{animation:panelIn .24s cubic-bezier(.2,.8,.3,1.1)}
-
 @keyframes lowPulse{0%,100%{opacity:1}50%{opacity:.45}}
 .mini-bar-fill.low{background:#ef4444;animation:lowPulse .9s ease-in-out infinite}
 /* The game is landscape-only. The controls sit on the sides and the game gets the whole
    middle, close to its native 3:2. If the device is held upright, the whole game is turned
    90° (body.rotated) so it is still shown sideways — this works everywhere, including where
    the browser refuses a real orientation lock. --vw/--vh are set from JS (exact, unlike vh). */
-body.force-land #game-container{max-width:none;display:grid;grid-template-columns:minmax(0,1fr);
-  grid-template-rows:auto minmax(0,1fr);grid-template-areas:"hud" "screen";border:none}
+body.force-land #game-container{max-width:none;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);grid-template-areas:"hud" "screen";border:none}
 body.force-land #hud{grid-area:hud;padding:4px 10px;border-bottom-width:1px}
 body.force-land #hud .mini-bar{height:5px}
 body.force-land #screen-area{grid-area:screen;min-height:0;min-width:0;height:100%}
-body.force-land #gameCanvas{position:absolute;inset:0;width:100%;height:100%}   /* never lets its pixel size feed the layout */
-body.force-land #gba-controls{display:contents}
+body.force-land #gameCanvas{position:absolute;inset:0;width:100%;height:100%}
+/* never lets its pixel size feed the layout */
 /* floating controls, vertically centred on the sides — clear of the battle's command box
    (bottom centre) and the plates (top), semi-transparent over the world */
-body.force-land .dpad{position:absolute;right:10px;top:55%;transform:translateY(-50%);z-index:25;opacity:.82}
-body.force-land .action-group{position:absolute;left:10px;top:55%;transform:translateY(-50%);z-index:25;
-  flex-direction:column-reverse;gap:12px;opacity:.88}
 body.force-land .panel{top:8px;bottom:8px;left:12%;right:12%}
 /* the explanation panel starts after the floating A/B column and stops before the enemy plate */
 /* touch-first: no on-screen pad. The canvas takes every gesture itself. */
-#gba-controls{display:none!important}
 #gameCanvas{touch-action:none}
 input.vol{width:130px;accent-color:#38bdf8}
 body.in-battle #hud{display:none!important}
-#run-btn.run-on{background:#0e7490;border-color:#67e8f9;box-shadow:0 0 10px rgba(103,232,249,.5)}
-#skip-btn{position:absolute;left:10px;bottom:10px;z-index:16;display:none;opacity:.85;font-size:13px;padding:8px 14px}
-body.force-land.rotated #game-container{position:fixed;top:0;left:0;margin:0;
-  width:var(--vh,100vh);height:var(--vw,100vw);transform-origin:0 0;
-  transform:translateX(var(--vw,100vw)) rotate(90deg)}
-@media (prefers-reduced-motion: reduce){.mini-bar-fill{transition:none}
- .modal{animation:none}.mini-bar-fill.low{animation:none}}
-
+#skip-btn{position:absolute;left:10px;bottom:10px;z-index:16;display:none;font-size:13px;padding:8px 14px}
+body.force-land.rotated #game-container{position:fixed;top:0;left:0;margin:0;width:var(--vh,100vh);height:var(--vw,100vw);transform-origin:0 0;transform:translateX(var(--vw,100vw)) rotate(90deg)}
+@media (prefers-reduced-motion: reduce){.mini-bar-fill{transition:none}.modal{animation:none}.mini-bar-fill.low{animation:none}}
 /* ---------------- GAME SKIN: framed panels and chunky buttons, so the menus look like part of the game ---------------- */
-body,button,input{font-family:'Rubik','Segoe UI',system-ui,sans-serif}
-.panel{background:linear-gradient(160deg,#18223a 0%,#0c1325 100%);border:3px solid #fbbf24;border-radius:16px;
-  box-shadow:inset 0 0 0 3px #0a0f1e,inset 0 0 0 5px rgba(125,211,252,.3),0 14px 40px rgba(0,0,0,.65)}
-.panel::before{content:'';position:absolute;inset:6px;border-radius:12px;pointer-events:none;
-  background:repeating-linear-gradient(135deg,rgba(255,255,255,.02) 0 6px,rgba(0,0,0,0) 6px 12px)}
-.panel-header{background:linear-gradient(90deg,rgba(251,191,36,.2),rgba(251,191,36,0));border-bottom:2px solid rgba(251,191,36,.4);
-  border-radius:10px 10px 0 0;padding:8px 12px;font-weight:800;color:#fde68a;text-shadow:0 2px 0 #000}
+.panel::before{content:'';position:absolute;inset:6px;border-radius:12px;pointer-events:none;background:repeating-linear-gradient(135deg,rgba(255,255,255,.02) 0 6px,rgba(0,0,0,0) 6px 12px)}
+.panel-header{font-weight:800}
 .panel-item{background:linear-gradient(180deg,#1b2641,#111a30);border:2px solid #2c3a5c;border-radius:12px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.35)}
 .modal:not(.title-modal){background:radial-gradient(ellipse at 50% 40%,rgba(24,34,58,.97),rgba(6,9,20,.98))}
-.modal h1{font-weight:900;text-shadow:0 3px 0 #7c2d12,0 0 18px rgba(251,191,36,.45)}
-.system-btn{background:linear-gradient(180deg,#3b4a6b,#26324d);border:2px solid #5b6f99;border-bottom:4px solid #151d33;border-radius:10px;
-  color:#e2e8f0;font-weight:700;transition:transform .06s}
-.system-btn:active{transform:translateY(2px);border-bottom-width:2px}
-.btn-main{background:linear-gradient(180deg,#34d399,#16a34a);border:2px solid #86efac;border-bottom:5px solid #14532d;
-  box-shadow:0 6px 18px rgba(34,197,94,.35);text-shadow:0 2px 0 rgba(0,0,0,.35);font-weight:800}
-.btn-main:active{transform:translateY(3px);border-bottom-width:2px}
-.btn-secondary{background:linear-gradient(180deg,#64748b,#475569);border-color:#94a3b8;border-bottom-color:#1e293b;box-shadow:0 6px 18px rgba(0,0,0,.35)}
-#hud{background:linear-gradient(180deg,#151e35,#0a1122);border-bottom:3px solid #fbbf24;box-shadow:0 4px 0 rgba(0,0,0,.35)}
-#move-info{background:linear-gradient(180deg,#18223a,#0c1325);border:2px solid #fbbf24;border-radius:12px}
-.panel-list::-webkit-scrollbar{width:6px}.panel-list::-webkit-scrollbar-thumb{background:#3b4a6b;border-radius:3px}
-
+.modal h1{font-weight:900}
+.system-btn{border-bottom:4px solid #151d33;font-weight:700;transition:transform .06s}
+.btn-main{border-bottom:5px solid #14532d;font-weight:800}
+.btn-secondary{border-bottom-color:#1e293b}
+#hud{border-bottom:3px solid #fbbf24}
+#move-info{border-radius:12px}
+.panel-list::-webkit-scrollbar{width:6px}
+.panel-list::-webkit-scrollbar-thumb{background:#3b4a6b;border-radius:3px}
 /* v43 — a quieter, consistent game interface. */
 :root{--ink:#091321;--surface:#122235;--surface-raised:#1c3046;--line:#3a5369;--paper:#edf3f5;--muted:#a3b4c5;--accent:#72d1ed;--gold:#e9c17c}
 body,button,input{font-family:'Arial Hebrew','Noto Sans Hebrew','Segoe UI',Arial,sans-serif}
@@ -281,26 +207,24 @@ body,button,input{font-family:'Arial Hebrew','Noto Sans Hebrew','Segoe UI',Arial
 .mini-bar{border:0;background:#060e19;box-shadow:inset 0 0 0 1px #354356}
 .mini-bar-fill{background:linear-gradient(90deg,#299b75,#68cf9c)}
 .ap-fill{background:linear-gradient(90deg,#258fbb,#7edcf0)}
-.panel{background:linear-gradient(145deg,#172a3e,#0b1727);border:1px solid #728596;border-radius:14px;
- box-shadow:0 20px 60px #0009,inset 0 1px 0 #b2d6e820;padding:14px}
+.panel{background:linear-gradient(145deg,#172a3e,#0b1727);border:1px solid #728596;border-radius:14px;box-shadow:0 20px 60px #0009,inset 0 1px 0 #b2d6e820;padding:14px}
 .panel::before{display:none}
-.panel-header{background:none;border-bottom:1px solid #55708566;border-radius:0;color:var(--gold);text-shadow:none;padding:5px 2px 11px;gap:10px}
+.panel-header{background:none;border-bottom:1px solid #55708566;border-radius:0;color:var(--gold);text-shadow:none;padding:5px 2px 11px}
 .panel-list{min-height:0;overscroll-behavior:contain;scrollbar-color:#557085 #0b1727}
 .panel-item,.journal-entry{background:#101f31;border:1px solid #385168;border-radius:8px;box-shadow:none;color:var(--paper)}
 .journal-entry{border-inline-start:3px solid var(--gold)}
 .game-menu-panel{overflow-y:auto;animation:menuIn .2s ease-out}
-.game-menu-card{background:linear-gradient(150deg,#20364c,#17283b);border:1px solid #465e73;border-radius:9px;
- box-shadow:inset 0 1px 0 #c4dfeb0c,0 3px 8px #0002;min-height:70px;transition:background .15s,border-color .15s,transform .1s}
-.game-menu-card b{color:var(--paper);font-size:14px}.game-menu-card small{color:var(--muted);font-size:10px}
+.game-menu-card{background:linear-gradient(150deg,#20364c,#17283b);border:1px solid #465e73;border-radius:9px;box-shadow:inset 0 1px 0 #c4dfeb0c,0 3px 8px #0002;min-height:70px;transition:background .15s,border-color .15s,transform .1s}
+.game-menu-card b{color:var(--paper);font-size:14px}
+.game-menu-card small{color:var(--muted);font-size:10px}
 .game-menu-card:active{border-bottom-width:1px;background:#27485f;transform:translateY(1px)}
 .system-btn{background:#22374c;border:1px solid #627b91;border-radius:8px;box-shadow:0 2px 6px #03091250;color:var(--paper)}
 .system-btn:active{border-bottom-width:1px;transform:translateY(1px);background:#34546e}
-.btn-main{background:linear-gradient(180deg,#f1d49b,#d5ab62);border:1px solid #ffe5b5;border-radius:10px;color:#182331;
- box-shadow:0 5px 20px #02091566,inset 0 1px 0 #fff5;text-shadow:none;letter-spacing:.01em}
+.btn-main{background:linear-gradient(180deg,#f1d49b,#d5ab62);border:1px solid #ffe5b5;border-radius:10px;color:#182331;box-shadow:0 5px 20px #02091566,inset 0 1px 0 #fff5;text-shadow:none;letter-spacing:.01em}
 .btn-main:active{border-bottom-width:1px;transform:translateY(1px)}
 .btn-secondary{background:linear-gradient(180deg,#2b435b,#1c3047);color:var(--paper);border-color:#7b92a8;box-shadow:0 5px 20px #02091566}
 .close-btn{background:#294059;color:var(--paper);border:1px solid #627b91;border-radius:8px}
-.menu-close{background:#22374c}.danger-btn{background:#67313b;border-color:#be7480}
+.danger-btn{background:#67313b;border-color:#be7480}
 .diff-opt.diff-sel{background:#2d667e;border-color:#8ad8ee;color:#f0fafc}
 #move-info{background:#0e1e30f5;border:1px solid #8295a7;color:var(--paper);box-shadow:0 5px 18px #0006}
 .modal h1{color:var(--gold);text-shadow:0 2px 10px #0007}
@@ -310,18 +234,19 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 @media(max-height:420px){.game-menu-card{min-height:54px;padding:7px}.game-menu-grid{gap:6px}.game-menu-panel{padding:10px}.panel-header{margin-bottom:8px}.menu-footer{margin-top:6px}}
 @keyframes menuIn{from{opacity:0;transform:translate(-50%,-48%)}to{opacity:1;transform:translate(-50%,-50%)}}
 @media(prefers-reduced-motion:reduce){.panel,.modal,.game-menu-panel,.title-modal .title-btns .btn-main{animation:none!important;transition:none!important}.title-modal:not(.title-hidden) .btn-main,.title-modal:not(.title-hidden) .diff-row{opacity:1;transform:none}}
-
 /* v44: reading, navigation and short landscape screens */
 .menu-context{padding:8px 10px;margin-bottom:10px;border-inline-start:3px solid var(--gold);background:#09172780;border-radius:6px;text-align:start}
-.menu-context small{color:var(--muted);font-size:11px}.menu-context div{font-size:13px;line-height:1.5;color:var(--paper)}
-.panel-item{font-size:14px;line-height:1.5}.panel-item small{font-size:12px}
+.menu-context small{color:var(--muted);font-size:11px}
+.menu-context div{font-size:13px;line-height:1.5;color:var(--paper)}
+.panel-item{font-size:14px;line-height:1.5}
+.panel-item small{font-size:12px}
 .panel-item .system-btn,.close-btn{min-height:40px;flex-shrink:0}
 .panel-item .system-btn:disabled{opacity:.5;cursor:default;box-shadow:none}
 .modal:not(.title-modal){overflow-y:auto;justify-content:safe center;padding:18px 24px}
-.modal p{max-width:660px;line-height:1.65}.modal .btn-main{flex-shrink:0}
+.modal p{max-width:660px;line-height:1.65}
+.modal .btn-main{flex-shrink:0}
 #inventory-note:not(:empty){color:var(--gold);font-size:13px;padding:6px 2px}
 @media(max-height:420px){.menu-context{padding:5px 8px;margin-bottom:7px}.panel-item{padding:8px}.modal h1{font-size:19px}.modal p{margin-bottom:10px}}
-
 /* v49: progression — chapters, achievements, the tower, save slots */
 .title-modal:not(.title-hidden) .title-btns .btn-main:nth-child(3){animation-delay:.2s}
 .cont-sub{display:block;font-size:10px;font-weight:600;opacity:.75;margin-top:2px;letter-spacing:0}
@@ -329,7 +254,8 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 .pg-bar>div{height:100%;border-radius:99px;transition:width .4s ease-out}
 .pg-hero{display:flex;gap:14px;align-items:center;padding:12px;border:1px solid #4d6a82;border-radius:10px;background:linear-gradient(120deg,#1d3550,#101f31)}
 .pg-pct{font-size:30px;font-weight:900;color:var(--gold);min-width:92px;text-align:center;font-family:Rubik,inherit}
-.pg-hero-txt{flex:1;min-width:0}.pg-hero-txt b{display:block;font-size:15px;color:var(--paper)}
+.pg-hero-txt{flex:1;min-width:0}
+.pg-hero-txt b{display:block;font-size:15px;color:var(--paper)}
 .pg-hero-txt small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
 .pg-ch{padding:10px 12px;border:1px solid #385168;border-radius:9px;background:#101f31;border-inline-start:4px solid #385168}
 .pg-ch.current{border-inline-start-color:var(--gold);background:linear-gradient(90deg,#101f31,#1b2a3a)}
@@ -338,32 +264,40 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 .pg-ch-head b{font-size:14px;color:var(--paper)}
 .pg-sub{display:block;color:var(--muted);font-size:11px;line-height:1.45;margin-top:3px}
 .pg-tag{font-size:10px;padding:2px 8px;border-radius:99px;border:1px solid #567089;color:var(--muted);white-space:nowrap}
-.pg-tag.done{border-color:#68cf9c;color:#9be8bf}.pg-tag.cur{border-color:var(--gold);color:var(--gold)}.pg-tag.lock{border-color:#46586a}
+.pg-tag.done{border-color:#68cf9c;color:#9be8bf}
+.pg-tag.cur{border-color:var(--gold);color:var(--gold)}
+.pg-tag.lock{border-color:#46586a}
 .pg-steps{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:4px}
-.pg-steps span{font-size:11px;color:#8195a8}.pg-steps span.ok{color:#bfe9d2}
+.pg-steps span{font-size:11px;color:#8195a8}
+.pg-steps span.ok{color:#bfe9d2}
 .pg-section{color:var(--gold);font-size:12px;margin:8px 2px 0;font-weight:700}
 .pg-row{display:grid;grid-template-columns:minmax(110px,auto) 1fr auto;gap:10px;align-items:center;padding:6px 10px;background:#0d1b2b;border-radius:7px;font-size:12px;color:var(--paper)}
-.pg-row b{color:var(--paper);font-weight:700;white-space:nowrap}.pg-row-bar .pg-bar{margin:0}
-#ach-toast{position:absolute;top:52px;left:50%;transform:translate(-50%,-30px);opacity:0;pointer-events:none;z-index:95;
- display:flex;gap:10px;align-items:center;padding:8px 16px 8px 12px;border-radius:12px;border:1px solid var(--gold);
- background:linear-gradient(120deg,#2a2210f2,#14202ff2);box-shadow:0 10px 30px #0008,0 0 18px #e9c17c44;transition:opacity .35s,transform .35s cubic-bezier(.2,.8,.3,1.2);max-width:90%}
+.pg-row b{color:var(--paper);font-weight:700;white-space:nowrap}
+.pg-row-bar .pg-bar{margin:0}
+#ach-toast{position:absolute;top:52px;left:50%;transform:translate(-50%,-30px);opacity:0;pointer-events:none;display:flex;gap:10px;align-items:center;padding:8px 16px 8px 12px;border-radius:12px;border:1px solid var(--gold);background:linear-gradient(120deg,#2a2210f2,#14202ff2);box-shadow:0 10px 30px #0008,0 0 18px #e9c17c44;transition:opacity .35s,transform .35s cubic-bezier(.2,.8,.3,1.2);max-width:90%}
 #ach-toast.show{opacity:1;transform:translate(-50%,0)}
 #ach-toast .ach-ico{font-size:26px}
 #ach-toast small{display:block;font-size:9px;color:var(--gold);letter-spacing:.04em}
-#ach-toast b{display:block;font-size:14px;color:#fff}#ach-toast em{display:block;font-size:10px;color:var(--muted);font-style:normal}
+#ach-toast b{display:block;font-size:14px;color:#fff}
+#ach-toast em{display:block;font-size:10px;color:var(--muted);font-style:normal}
 .ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:7px}
 .ach-card{display:flex;gap:9px;align-items:center;padding:8px 10px;border-radius:9px;background:#0d1b2b;border:1px solid #2b4258;opacity:.6}
 .ach-card.got{opacity:1;border-color:#a8894f;background:linear-gradient(120deg,#2a2414,#101f31)}
 .ach-card .ach-ico{font-size:22px;width:28px;text-align:center;flex-shrink:0}
-.ach-card b{display:block;font-size:12px;color:var(--paper)}.ach-card small{display:block;font-size:10px;color:var(--muted);line-height:1.35}
+.ach-card b{display:block;font-size:12px;color:var(--paper)}
+.ach-card small{display:block;font-size:10px;color:var(--muted);line-height:1.35}
 .tw-note{padding:8px 12px;border-radius:8px;background:#2a2214;border:1px solid #a8894f;color:#fde68a;font-size:12px;line-height:1.6}
 .tw-next{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:10px;border:1px solid #6d5aa8;background:linear-gradient(120deg,#2a1f4a,#101f31)}
-.tw-next.elite{border-color:#e9c17c}.tw-next.guard{border-color:#f472b6;background:linear-gradient(120deg,#4a1f3f,#101f31)}
-.tw-next-floor{text-align:center;min-width:58px}.tw-next-floor small{display:block;font-size:10px;color:var(--muted)}
+.tw-next.elite{border-color:#e9c17c}
+.tw-next.guard{border-color:#f472b6;background:linear-gradient(120deg,#4a1f3f,#101f31)}
+.tw-next-floor{text-align:center;min-width:58px}
+.tw-next-floor small{display:block;font-size:10px;color:var(--muted)}
 .tw-next-floor b{font-size:30px;color:var(--gold);font-family:Rubik,inherit;line-height:1}
-.tw-next-info b{display:block;font-size:15px;color:#fff}.tw-next-info small{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.tw-next-info b{display:block;font-size:15px;color:#fff}
+.tw-next-info small{display:block;font-size:11px;color:var(--muted);margin-top:2px}
 .tw-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.tw-actions .btn-main{margin:0;padding:9px 20px;font-size:14px}.tw-actions .system-btn{padding:8px 14px;min-height:40px}
+.tw-actions .btn-main{margin:0;padding:9px 20px;font-size:14px}
+.tw-actions .system-btn{padding:8px 14px;min-height:40px}
 .tw-map{display:flex;flex-direction:column;gap:5px;padding:8px;border-radius:10px;background:#0a1522;border:1px solid #2b4258}
 .tw-tier small{font-size:10px;font-weight:700}
 .tw-cells{display:grid;grid-template-columns:repeat(10,1fr);gap:3px;direction:ltr}
@@ -371,50 +305,61 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 .tw-cell.done{background:#3b3216;border-color:#a8894f;color:#fde68a}
 .tw-cell.next{border-color:#72d1ed;color:#bfeaf6}
 .tw-cell.cur{background:#1d4058;border-color:#72d1ed;color:#fff;box-shadow:0 0 8px #72d1ed88;animation:twPulse 1.2s ease-in-out infinite}
-.tw-cell.guard{font-size:13px}.tw-cell.elite{font-size:11px}
+.tw-cell.guard{font-size:13px}
+.tw-cell.elite{font-size:11px}
 @keyframes twPulse{50%{box-shadow:0 0 2px #72d1ed44}}
 .slot-card{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:10px;background:#101f31;border:1px solid #385168}
 .slot-card.current{border-color:var(--gold)}
 .slot-num{font-size:26px;font-weight:900;color:var(--gold);width:34px;text-align:center;font-family:Rubik,inherit}
-.slot-info{flex:1;min-width:0}.slot-info b{display:block;font-size:14px;color:var(--paper)}
+.slot-info{flex:1;min-width:0}
+.slot-info b{display:block;font-size:14px;color:var(--paper)}
 .slot-info small{display:block;font-size:11px;color:var(--muted)}
 .slot-btns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
-.slot-btns .btn-main{margin:0;padding:8px 14px;font-size:13px}.slot-btns .system-btn{min-height:38px;padding:6px 12px}
+.slot-btns .btn-main{margin:0;padding:8px 14px;font-size:13px}
+.slot-btns .system-btn{min-height:38px;padding:6px 12px}
 .game-menu-panel{max-height:calc(100% - 16px)}
-body.force-land .game-menu-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}body.force-land .game-menu-card{min-height:50px;padding:6px}body.force-land .menu-context{padding:5px 8px;margin-bottom:7px}
+body.force-land .game-menu-grid{gap:6px}
+body.force-land .game-menu-card{min-height:50px;padding:6px}
+body.force-land .menu-context{padding:5px 8px;margin-bottom:7px}
 @media(prefers-reduced-motion:reduce){#ach-toast{transition:none}.tw-cell.cur{animation:none}}
-
 /* v50: cleaner character sheet, journal tabs */
 .st-top{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:10px;background:linear-gradient(120deg,#1d3550,#101f31);border:1px solid #4d6a82}
-.st-lv{text-align:center;min-width:64px}.st-lv small{display:block;font-size:10px;color:var(--muted)}.st-lv b{font-size:32px;color:var(--gold);font-family:Rubik,inherit;line-height:1}
+.st-lv{text-align:center;min-width:64px}
+.st-lv small{display:block;font-size:10px;color:var(--muted)}
+.st-lv b{font-size:32px;color:var(--gold);font-family:Rubik,inherit;line-height:1}
 .st-meters{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0}
 .st-meter{display:grid;grid-template-columns:52px 1fr auto;gap:8px;align-items:center;font-size:11px;color:var(--muted)}
-.st-meter .pg-bar{margin:0}.st-meter b{color:var(--paper);font-size:11px;white-space:nowrap}
+.st-meter .pg-bar{margin:0}
+.st-meter b{color:var(--paper);font-size:11px;white-space:nowrap}
 .st-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
 .st-stat{padding:8px 6px;border-radius:9px;background:#101f31;border:1px solid #385168;text-align:center}
-.st-stat small{display:block;font-size:10px;color:var(--muted)}.st-stat b{display:block;font-size:20px;color:var(--paper);font-family:Rubik,inherit}
+.st-stat small{display:block;font-size:10px;color:var(--muted)}
+.st-stat b{display:block;font-size:20px;color:var(--paper);font-family:Rubik,inherit}
 .st-stat em{display:block;font-size:9px;color:var(--gold);font-style:normal}
 .st-chips{display:flex;flex-wrap:wrap;gap:5px}
 .st-chips span{font-size:11px;padding:3px 9px;border-radius:99px;background:#0d1b2b;border:1px solid #2b4258;color:var(--paper)}
-.j-tabs{display:flex;gap:5px}.j-tabs .system-btn{padding:4px 10px;font-size:12px;min-height:30px}.j-tabs small{opacity:.7;font-size:10px}
+.j-tabs{display:flex;gap:5px}
+.j-tabs .system-btn{padding:4px 10px;font-size:12px;min-height:30px}
+.j-tabs small{opacity:.7;font-size:10px}
 @media(max-width:640px){.st-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-
 /* v52: daily card, settings sections, text size, high contrast, gamepad focus */
 .dl-card{display:flex;flex-direction:column;gap:7px;padding:10px 12px;border-radius:10px;border:1px solid #c2410c;background:linear-gradient(120deg,#3a1d0e,#101f31)}
 .dl-card.done{border-color:#385168;background:#101f31;opacity:.85}
-.dl-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.dl-head b{color:#fdba74;font-size:14px}.dl-head small{color:var(--muted);font-size:11px}
-.dl-body{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--paper)}.dl-mod{color:#fca5a5}
+.dl-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.dl-head b{color:#fdba74;font-size:14px}
+.dl-head small{color:var(--muted);font-size:11px}
+.dl-body{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--paper)}
+.dl-mod{color:#fca5a5}
 .dl-card .btn-main{margin:0;align-self:flex-start;padding:8px 18px;font-size:14px}
-.set-sec{color:var(--gold);font-size:12px;font-weight:700;margin:8px 2px 0;letter-spacing:.02em}
 .panel-list,.menu-context,.game-menu-grid,#quest-box,.modal p{zoom:var(--ui-zoom,1)}
 body.hc .panel,body.hc .game-menu-panel{background:#05090f;border-color:#e2e8f0}
 body.hc .panel-item,body.hc .journal-entry,body.hc .pg-ch,body.hc .ach-card,body.hc .slot-card,body.hc .game-menu-card{background:#000;border-color:#cbd5e1;color:#fff;opacity:1}
 body.hc small,body.hc .settings-desc,body.hc .pg-sub{color:#e2e8f0!important}
-body.hc #quest-box{background:#000;border-color:#fde047}body.hc #hud{background:#000}
+body.hc #quest-box{background:#000;border-color:#fde047}
+body.hc #hud{background:#000}
 button:focus-visible,button:focus{outline:3px solid var(--accent);outline-offset:2px}
 button:focus:not(:focus-visible){outline:none}
 body.pad-on button:focus,body.pad-on input:focus{outline:3px solid var(--accent)!important;outline-offset:2px}
-
 /* v56: the corner shop */
 .shop-wallet{background:#2a2214;border:1px solid #a8894f;border-radius:99px;padding:3px 12px;color:#fde68a;font-size:14px}
 .shop-counter{display:flex;gap:12px;align-items:flex-end;padding:8px;border-radius:12px;background:linear-gradient(120deg,#2b2140,#122235);border:1px solid #4d3f66}
@@ -423,26 +368,64 @@ body.pad-on button:focus,body.pad-on input:focus{outline:3px solid var(--accent)
 .shop-bubble b{display:block;color:#be185d;font-size:11px}
 .shop-bubble::after{content:'';position:absolute;right:-7px;bottom:14px;border:7px solid transparent;border-left-color:#f8fafc;border-right:0}
 .shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
-.shop-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:start;padding:10px 10px 8px;border-radius:12px;cursor:pointer;
- background:linear-gradient(160deg,color-mix(in srgb,var(--tint) 22%,#132235),#0d1a2a 70%);border:1px solid color-mix(in srgb,var(--tint) 45%,#2b4258);color:var(--paper);
- font-family:inherit;transition:transform .12s,box-shadow .15s,border-color .15s;overflow:hidden;min-height:118px}
+.shop-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:start;padding:10px 10px 8px;border-radius:12px;cursor:pointer;background:linear-gradient(160deg,color-mix(in srgb,var(--tint) 22%,#132235),#0d1a2a 70%);border:1px solid color-mix(in srgb,var(--tint) 45%,#2b4258);color:var(--paper);font-family:inherit;transition:transform .12s,box-shadow .15s,border-color .15s;overflow:hidden;min-height:118px}
 .shop-card:hover{border-color:var(--tint);box-shadow:0 6px 18px #0006,0 0 0 1px var(--tint) inset}
 .shop-card:active{transform:scale(.97)}
 .shop-ico{font-size:30px;line-height:1;filter:drop-shadow(0 3px 4px #0008)}
-.shop-name{font-weight:800;font-size:13px}.shop-name em{font-style:normal;font-size:10px;color:var(--gold);font-weight:600}
+.shop-name{font-weight:800;font-size:13px}
+.shop-name em{font-style:normal;font-size:10px;color:var(--gold);font-weight:600}
 .shop-fx{font-size:10.5px;color:var(--muted);line-height:1.35}
 .shop-foot{display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:auto;gap:6px}
-.shop-dots{display:flex;gap:3px}.shop-dots i{width:7px;height:7px;border-radius:50%;background:#2b4258;display:block}.shop-dots i.on{background:var(--tint);box-shadow:0 0 6px var(--tint)}
+.shop-dots{display:flex;gap:3px}
+.shop-dots i{width:7px;height:7px;border-radius:50%;background:#2b4258;display:block}
+.shop-dots i.on{background:var(--tint);box-shadow:0 0 6px var(--tint)}
 .shop-own{font-size:10px;color:var(--muted)}
 .shop-price{position:absolute;top:8px;left:8px;background:#fde68a;color:#3a2a0a;font-weight:900;font-size:13px;padding:2px 9px;border-radius:99px;box-shadow:0 2px 6px #0007}
 .shop-card.poor .shop-price{background:#3a1d22;color:#fca5a5}
-.shop-card.out{opacity:.55;cursor:default}.shop-card.out .shop-price{background:#334155;color:#cbd5e1;font-size:10px}
+.shop-card.out{opacity:.55;cursor:default}
+.shop-card.out .shop-price{background:#334155;color:#cbd5e1;font-size:10px}
 .shop-stamp{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%) rotate(-14deg);border:3px solid #ef4444;color:#ef4444;font-weight:900;font-size:20px;padding:0 10px;border-radius:6px;opacity:.85}
 .shop-card.bought{animation:shopPop .5s ease}
 .shop-plus{position:absolute;top:40%;right:14px;font-weight:900;color:#4ade80;font-size:22px;animation:shopPlus .7s ease forwards;text-shadow:0 2px 6px #000}
 @keyframes shopPop{30%{transform:scale(1.05);box-shadow:0 0 22px var(--tint)}}
 @keyframes shopPlus{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-26px)}}
 @media(prefers-reduced-motion:reduce){.shop-card.bought,.shop-plus{animation:none}}
+/* v57: one window language: header ✕, dimmed world behind, centered on wide screens */
+#scrim{position:absolute;inset:0;z-index:39;display:none;background:rgba(3,8,16,.55);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+body.panel-open #scrim{display:block;animation:scrimIn .2s ease-out}
+@keyframes scrimIn{from{opacity:0}}
+.panel{max-width:760px;margin:0 auto}
+.panel-header{gap:10px}
+.panel-header>span:first-child{flex:1;font-weight:800;font-size:16px}
+.x-btn{flex-shrink:0;width:34px;height:34px;border-radius:50%;border:1px solid #627b91;background:#1c3046;color:var(--paper);font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,transform .1s}
+.x-btn:hover{background:#2a455e}
+.x-btn:active{transform:scale(.92)}
+.btn-main:disabled,.system-btn:disabled{opacity:.5;cursor:default;filter:grayscale(.4)}
+#ach-toast.mini{padding:6px 14px 6px 10px;border-color:#55708a;background:#0e1e30f2}
+#ach-toast.mini .ach-ico{font-size:18px}
+#ach-toast.mini b{font-size:12px}
+#ach-toast.mini em{font-size:9.5px}
+#ach-toast.quest{border-color:#4ade80;background:linear-gradient(120deg,#0f2a1c,#14202ff2)}
+#ach-toast.quest small{color:#86efac}
+.ng-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.ng-card{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;border-radius:12px;background:#101f31;border:1px solid #385168;color:var(--paper);cursor:pointer;font-family:inherit;text-align:center;transition:border-color .15s,transform .1s}
+.ng-card:active{transform:scale(.97)}
+.ng-card.sel{border-color:var(--gold);background:linear-gradient(160deg,#2a2214,#101f31);box-shadow:0 0 0 1px var(--gold) inset}
+.ng-ico{font-size:28px}
+.ng-card b{font-size:15px}
+.ng-card small{font-size:10.5px;color:var(--muted);line-height:1.35}
+.ng-toggle{width:100%;cursor:pointer;font-family:inherit;color:var(--paper);text-align:start}
+.ng-switch{width:42px;height:24px;border-radius:99px;background:#2b4258;position:relative;flex-shrink:0;transition:background .15s}
+.ng-switch::after{content:'';position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:#cbd5e1;transition:right .15s}
+.ng-switch.on{background:#2d667e}
+.ng-switch.on::after{right:21px;background:#fff}
+.ng-foot{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+.ng-foot .btn-main{margin:0;padding:10px 28px}
+.newgame-panel{top:10%!important;bottom:auto!important;max-height:80%;width:min(560px,90%);left:50%!important;right:auto!important;transform:translateX(-50%)}
+#ach-toast{z-index:38}
+.game-menu-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+body.force-land .game-menu-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:640px){.game-menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 
 </head>
@@ -466,6 +449,7 @@ body.pad-on button:focus,body.pad-on input:focus{outline:3px solid var(--accent)
     <button id="skip-btn" class="system-btn" onclick="cutsceneSkip()">⏭ דלג</button>
     <input type="file" id="save-file" accept=".json,application/json" style="display:none" onchange="importSaveFile(this)">
   </div>
+  <div id="scrim" onclick="scrimTap()"></div>
   <div id="boot-gate"><div class="gate-ring"></div><div class="gate-text">הקש כדי להתחיל</div></div>
   <div id="mae-splash" class="mae-splash">
     <div class="mae-drop"></div><div class="mae-ripple"></div><div class="mae-ripple r2"></div>
@@ -496,11 +480,6 @@ body.pad-on button:focus,body.pad-on input:focus{outline:3px solid var(--accent)
     <div class="mae-hint">הקש לדילוג</div>
   </div>
   <div id="start-modal" class="modal title-modal title-hidden">
-    <div class="diff-row" id="title-diff-row">
-      <button class="system-btn diff-opt" data-d="easy" onclick="selectStartDifficulty('easy')">קליל</button>
-      <button class="system-btn diff-opt diff-sel" data-d="normal" onclick="selectStartDifficulty('normal')">רגיל</button>
-      <button class="system-btn diff-opt" data-d="hard" onclick="selectStartDifficulty('hard')">קשוח</button>
-    </div>
     <div class="title-btns">
       <button id="continue-btn" class="btn-main" style="display:none" onclick="continueGame()">המשך 💾</button>
       <button class="btn-main btn-secondary" onclick="titleNewGame()">סיפור חדש 🚀</button>
@@ -526,9 +505,8 @@ body.pad-on button:focus,body.pad-on input:focus{outline:3px solid var(--accent)
   </div>
 
   <div id="journal-panel" class="panel">
-    <div class="panel-header"><span>📖 יומן</span><span id="journal-count"></span></div>
+    <div class="panel-header"><span>📖 יומן</span><span id="journal-count"></span><button class="x-btn" aria-label="סגירה" onclick="closeJournal()">✕</button></div>
     <div class="panel-list" id="journal-list"></div>
-    <button class="close-btn" onclick="closeJournal()">חזרה למשחק</button>
   </div>
 
   <div id="gameover-modal" class="modal" style="display:none">
@@ -537,16 +515,14 @@ body.pad-on button:focus,body.pad-on input:focus{outline:3px solid var(--accent)
   </div>
 
   <div id="inventory-panel" class="panel">
-    <div class="panel-header"><span>🎒 תיק פריטים</span><span id="inv-gold">₪120</span></div>
+    <div class="panel-header"><span>🎒 תיק פריטים</span><span id="inv-gold">₪120</span><button class="x-btn" aria-label="סגירה" onclick="closeInventory()">✕</button></div>
     <div id="inventory-note" role="status" aria-live="polite"></div>
     <div class="panel-list" id="inv-list"></div>
-    <button class="close-btn" onclick="closeInventory()">חזרה למשחק</button>
   </div>
 
   <div id="shop-panel" class="panel shop-panel">
-    <div class="panel-header"><span>🛒 חנות הפינה של ניצן</span><span class="shop-wallet">💰 ₪<span id="shop-gold">120</span></span></div>
+    <div class="panel-header"><span>🛒 חנות הפינה של ניצן</span><span class="shop-wallet">💰 ₪<span id="shop-gold">120</span></span><button class="x-btn" aria-label="סגירה" onclick="closeShop()">✕</button></div>
     <div class="panel-list" id="shop-list"></div>
-    <button class="close-btn" onclick="closeShop()">צא מהחנות</button>
   </div>
 
   <div id="learn-panel" class="panel" style="z-index:60">
@@ -556,25 +532,22 @@ body.pad-on button:focus,body.pad-on input:focus{outline:3px solid var(--accent)
   </div>
 
   <div id="townmap-panel" class="panel">
-    <div class="panel-header"><span>🗺️ מפת העיר</span><span id="townmap-day"></span></div>
+    <div class="panel-header"><span>🗺️ מפת העיר</span><span id="townmap-day"></span><button class="x-btn" aria-label="סגירה" onclick="closeTownMap()">✕</button></div>
     <div class="panel-list" id="townmap-body"></div>
-    <button class="close-btn" onclick="closeTownMap()">חזרה</button>
   </div>
 
   <div id="settings-panel" class="panel">
-    <div class="panel-header"><span>⚙️ הגדרות</span></div>
+    <div class="panel-header"><span>⚙️ הגדרות</span><button class="x-btn" aria-label="סגירה" onclick="closeSettings()">✕</button></div>
     <div class="panel-list" id="settings-body"></div>
-    <button class="close-btn" onclick="closeSettings()">חזרה</button>
   </div>
 
   <div id="status-panel" class="panel">
-    <div class="panel-header"><span>📋 בופי מן</span></div>
+    <div class="panel-header"><span>📋 בופי מן</span><button class="x-btn" aria-label="סגירה" onclick="closeStatus()">✕</button></div>
     <div class="panel-list" id="status-body"></div>
-    <button class="close-btn" onclick="closeStatus()">חזרה</button>
   </div>
 
   <div id="game-menu-panel" class="panel game-menu-panel">
-    <div class="panel-header"><span>🐶 בופי מן</span><span>יום <span id="menu-day">1</span></span></div>
+    <div class="panel-header"><span>🐶 בופי מן</span><span>יום <span id="menu-day">1</span></span><button class="x-btn" aria-label="סגירה" onclick="closeGameMenu()">✕</button></div>
     <div class="menu-context"><small id="menu-location"></small><div id="menu-objective"></div></div>
     <div class="game-menu-grid">
       <button class="game-menu-card" onclick="launchGameMenu('status')"><b>🐶 בופי מן</b><small>רמה, נתונים וטכניקות</small></button>
@@ -583,36 +556,35 @@ body.pad-on button:focus,body.pad-on input:focus{outline:3px solid var(--accent)
       <button class="game-menu-card" onclick="launchGameMenu('map')"><b>🗺️ מפה</b><small>העיר והמקומות שנפתחו</small></button>
       <button class="game-menu-card" onclick="launchGameMenu('progress')"><b>📈 התקדמות</b><small id="menu-progress-sub">פרקים, שלבים ואחוז השלמה</small></button>
       <button class="game-menu-card" onclick="launchGameMenu('achievements')"><b>🏆 הישגים</b><small id="menu-ach-sub">יעדים לכל אורך הדרך</small></button>
-      <button class="game-menu-card" id="menu-tower-card" onclick="launchGameMenu('tower')"><b>🗼 מגדל ואתגר יומי</b><small id="menu-tower-sub">50 קומות של אתגר</small></button>
-      <button class="game-menu-card" onclick="toggleRunFromMenu()"><b id="menu-run-label">🏃 ריצה</b><small>לרוץ גם במגע קרוב לדמות</small></button>
+      <button class="game-menu-card" id="menu-tower-card" onclick="launchGameMenu('tower')"><b>🗼 מגדל</b><small id="menu-tower-sub">50 קומות של אתגר</small></button>
       <button class="game-menu-card" onclick="launchGameMenu('settings')"><b>⚙️ הגדרות</b><small>צליל, קושי ונגישות</small></button>
     </div>
-    <div class="menu-footer"><span><span dir="ltr">V56</span> · ⏱️ <span id="menu-time"></span></span><span>₪<span id="ui-gold">120</span></span></div>
-    <button class="close-btn menu-close" onclick="closeGameMenu()">חזרה למשחק</button>
+    <div class="menu-footer"><span><span dir="ltr">V57</span> · ⏱️ <span id="menu-time"></span></span><span>₪<span id="ui-gold">120</span></span></div>
   </div>
 
   <div id="progress-panel" class="panel">
-    <div class="panel-header"><span>📈 התקדמות</span><span id="progress-title"></span></div>
+    <div class="panel-header"><span>📈 התקדמות</span><span id="progress-title"></span><button class="x-btn" aria-label="סגירה" onclick="closeProgress()">✕</button></div>
     <div class="panel-list" id="progress-body"></div>
-    <button class="close-btn" onclick="closeProgress()">חזרה</button>
   </div>
 
   <div id="ach-panel" class="panel">
-    <div class="panel-header"><span>🏆 הישגים</span><span id="ach-count"></span></div>
+    <div class="panel-header"><span>🏆 הישגים</span><span id="ach-count"></span><button class="x-btn" aria-label="סגירה" onclick="closeAchievements()">✕</button></div>
     <div class="panel-list" id="ach-body"></div>
-    <button class="close-btn" onclick="closeAchievements()">חזרה</button>
   </div>
 
   <div id="tower-panel" class="panel">
-    <div class="panel-header"><span>🗼 מגדל ההשראה</span><span id="tower-best"></span></div>
+    <div class="panel-header"><span>🗼 מגדל ההשראה</span><span id="tower-best"></span><button class="x-btn" aria-label="סגירה" onclick="closeTower()">✕</button></div>
     <div class="panel-list" id="tower-body"></div>
-    <button class="close-btn" onclick="closeTower()">חזרה</button>
   </div>
 
   <div id="slots-panel" class="panel" style="z-index:80">
-    <div class="panel-header"><span>📂 שמירות</span><span>3 מקומות לסיפורים</span></div>
+    <div class="panel-header"><span>📂 שמירות</span><span>3 מקומות לסיפורים</span><button class="x-btn" aria-label="סגירה" onclick="closeSlots()">✕</button></div>
     <div class="panel-list" id="slots-body"></div>
-    <button class="close-btn" onclick="closeSlots()">חזרה</button>
+  </div>
+
+  <div id="newgame-panel" class="panel newgame-panel" style="z-index:82">
+    <div class="panel-header"><span>🚀 סיפור חדש</span><button class="x-btn" aria-label="סגירה" onclick="closeNewGame()">✕</button></div>
+    <div class="panel-list" id="newgame-body"></div>
   </div>
 
   <div id="ach-toast" role="status" aria-live="polite"></div>
@@ -620,7 +592,7 @@ body.pad-on button:focus,body.pad-on input:focus{outline:3px solid var(--accent)
 
 <script>
 /* =========================================================
-   בופי מן RPG V56 (Hebrew dialogue, character voices and situational humor)
+   בופי מן RPG V57 (Hebrew dialogue, character voices and situational humor)
    ========================================================= */
 const canvas = document.getElementById('gameCanvas');
 let ctx = canvas.getContext('2d'); // Temporarily redirected only while building a map layer.
@@ -635,11 +607,6 @@ let pendingEncounter = null;
 let runHeld = false;   // Gen-3 running shoes: hold B / Shift to move twice as fast
 // running = the button held, or the 🏃 toggle on (for phones)
 function isRunning() { return runHeld || (!!player && !!player.autoRun && gameState === 'OVERWORLD'); }
-function toggleRun() {
-  player.autoRun = !player.autoRun; saveGame(); sfx.select();
-  const b = document.getElementById('run-btn'); if (b) b.classList.toggle('run-on', player.autoRun);
-  addFloater(hero.x, hero.y - 40, player.autoRun ? '🏃 ריצה' : '🚶 הליכה', { size: 14, rtl: true, life: 900 });
-}
 let cam = { z: 1, tx: 0, ty: 0 }; // overworld camera, written by renderOverworld each frame
 const camS = { map: -1, z: 0, tx: 0, ty: 0 };
 /* Screen-space panels (command box, dialogue, subtitles, plates) are scaled up by UIS
@@ -1923,7 +1890,6 @@ function addFlow(v) {
 // determination only ever helps a player who is losing; it resets every morning
 function gritMult() { return 1 + BALANCE.gritPerLoss * Math.min(player.grit || 0, BALANCE.gritMax); }
 function playerAtk() { return player.atk * gritMult(); }
-function playerDef() { return player.def * gritMult(); }
 // ⚡ vigor and ◇ neutral are "כוח" (physical); 🎯 focus and 🍃 calm are "יצירה" (special)
 function isSpecial(type) { return type === 'focus' || type === 'calm'; }
 function playerOffense(type) {
@@ -2217,14 +2183,6 @@ function curePlayer(which) {
 const STATUS_SWAP = { deadline: 'burn', spiceCloud: 'burn', flicker: 'burn', stormCloud: 'burn', thorn: 'burn',
   cloudShadow: 'freeze', champagne: 'freeze', pressRelease: 'freeze', hermit: 'freeze', oblivion: 'freeze' };
 /* Gen-3 abilities: one passive trait per foe that has one. It shows when the fight starts. */
-const ABILITIES = {
-  sturdy:     { name: 'עקשנות', desc: 'בחיים מלאים, מכה אחת לא תפיל אותו.' },
-  intimidate: { name: 'מבט מאיים', desc: 'בתחילת הקרב ההתקפה של בופי מן יורדת.' },
-  static:     { name: 'חשמל סטטי', desc: 'מכת כוח בו עלולה לשתק את בופי מן.' },
-  roughSkin:  { name: 'עור מחוספס', desc: 'מכת כוח בו פוצעת גם את בופי מן.' },
-  speedBoost: { name: 'מאיץ', desc: 'נהיה מהיר יותר בסוף כל תור שלו.' },
-  shellArmor: { name: 'שריון', desc: 'מכות קריטיות לא עובדות עליו.' }
-};
 const ENEMY_ABILITY = { hana: 'shellArmor', yonatan: 'intimidate', shira: 'sturdy', noa: 'speedBoost', expectation: 'shellArmor',
   omri: 'static', leah: 'intimidate', victor: 'roughSkin', market: 'shellArmor', dorit: 'sturdy', amnon: 'roughSkin', oblivion: 'speedBoost',
   burnout: 'intimidate', alarmClock: 'speedBoost', copier: 'sturdy', teamLead: 'intimidate', notification: 'static', rat: 'static',
@@ -2352,86 +2310,6 @@ function counterEnemyGimmick(e, actId) {
    edge; each person, trainer or thing stands in one cell of its block. Every place that refers to a
    position — doors, people, items, flags in old saves — goes through SK()/SKxy() to find its new spot.
    ============================================================================================ */
-const WORLD_SCALE = 2;
-// hand fixes where the doubled grid opened a way around something
-const MAP_FIXES = {
-  // the tower's purple vault: the gate moves to the cell you reach it from, and its corner is sealed
-  18: (out, keyMap) => {
-    out[10][32] = '#'; out[10][33] = '#'; out[11][32] = 'Q'; out[11][33] = '.'; out[12][33] = '#'; out[11][34] = '.';
-    keyMap['16,5'] = '32,11';
-  }
-};
-const ENTITY_TILES = 'NTIKhDSXWCRBEZFMOPQYdu';
-function upscaleWorld() {
-  const oldGrids = MAPS.map(m => m.grid.slice());
-  MAPS.forEach((m, mi) => {
-    const g = oldGrids[mi], H = g.length, W = g[0].length;
-    const wallAt = (x, y) => x < 0 || y < 0 || x >= W || y >= H || g[y][x] === '#';
-    const out = Array.from({ length: H * 2 }, () => new Array(W * 2).fill('#'));
-    const keyMap = {};
-    const groundOf = (x, y, t) => {
-      const tr = (m.trainers || {})[x + ',' + y];
-      if (t === 'T' && tr && tr.on) return tr.on;
-      if (t === 'd') return 'w';
-      if (t === 'K' || t === 'h' || t === 'Y' || t === 'u') return '.';
-      const cnt = {};
-      [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => {
-        const c = (g[y + dy] || '')[x + dx];
-        if (c && c !== '#' && ENTITY_TILES.indexOf(c) < 0) cnt[c] = (cnt[c] || 0) + 1;
-      });
-      let best = '.', bn = 0; Object.keys(cnt).forEach(c => { if (cnt[c] > bn) { bn = cnt[c]; best = c; } });
-      return best === 'G' ? '.' : best;
-    };
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const t = g[y][x];
-      if (t === '#') continue;
-      const ent = ENTITY_TILES.indexOf(t) >= 0;
-      const fill = ent ? groundOf(x, y, t) : t;
-      for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) out[2 * y + j][2 * x + i] = fill;
-      const vNarrow = wallAt(x - 1, y) && wallAt(x + 1, y), hNarrow = wallAt(x, y - 1) && wallAt(x, y + 1);
-      let ax = 2 * x, ay = 2 * y;
-      if (t === 'D' && x === W - 1) ax = 2 * x + 1;
-      if (t === 'D' && y === H - 1) ay = 2 * y + 1;
-      if (vNarrow) { const wx = ax === 2 * x ? 2 * x + 1 : 2 * x; out[2 * y][wx] = '#'; out[2 * y + 1][wx] = '#'; }
-      if (hNarrow) { const wy = ay === 2 * y ? 2 * y + 1 : 2 * y; out[wy][2 * x] = '#'; out[wy][2 * x + 1] = '#'; }
-      if (ent) {
-        out[ay][ax] = t;
-        // a door on the edge: its partner cell on the edge is wall, so the doorway stays one door wide
-        if (t === 'D') {
-          if (y === 0 || y === H - 1) out[ay][ax === 2 * x ? 2 * x + 1 : 2 * x] = '#';
-          if (x === 0 || x === W - 1) out[ay === 2 * y ? 2 * y + 1 : 2 * y][ax] = '#';
-        }
-      }
-      keyMap[x + ',' + y] = ax + ',' + ay;
-    }
-    if (MAP_FIXES[mi]) MAP_FIXES[mi](out, keyMap);
-    m.grid = out.map(r => r.join(''));
-    m.keyMap = keyMap; m.oldW = W; m.oldH = H;
-    const remap = obj => { if (!obj) return obj; const n = {}; Object.keys(obj).forEach(k => { n[keyMap[k] || k] = obj[k]; }); return n; };
-    ['doors', 'npc', 'trainers', 'items', 'hidden', 'hotspots', 'gym', 'elevator', 'roadblocks', 'slabs', 'paintDoors', 'sleepers', 'gates', 'vats', 'dives', 'surface']
-      .forEach(f => { if (m[f]) m[f] = remap(m[f]); });
-    if (typeof m.finale === 'string') m.finale = keyMap[m.finale] || m.finale;
-    Object.values(m.trainers || {}).forEach(tr => { if (tr.sight) tr.sight *= 2; });
-    Object.values(m.gym || {}).forEach(sl => { if (sl.sight) sl.sight *= 2; });
-  });
-  // arrivals: the old tile's block, at the cell nearest to a door back (so you step out beside it)
-  const arrive = (mi, x, y, fromMi) => {
-    const m = MAPS[mi], cells = [[2 * x, 2 * y], [2 * x + 1, 2 * y], [2 * x, 2 * y + 1], [2 * x + 1, 2 * y + 1]];
-    const open = cells.filter(([cx, cy]) => { const c = (m.grid[cy] || '')[cx]; return c && '.GwLV<>^vY'.indexOf(c) >= 0; });
-    if (!open.length) return [2 * x, 2 * y];
-    const back = Object.keys(m.doors || {}).concat(Object.keys(m.elevator || {}), Object.keys(m.paintDoors || {}))
-      .map(k => k.split(',').map(Number));
-    open.sort((a, b) => {
-      const da = Math.min(...back.map(d => Math.abs(d[0] - a[0]) + Math.abs(d[1] - a[1])), 99);
-      const db = Math.min(...back.map(d => Math.abs(d[0] - b[0]) + Math.abs(d[1] - b[1])), 99);
-      return da - db;
-    });
-    return open[0];
-  };
-  MAPS.forEach((m, mi) => ['doors', 'elevator', 'paintDoors', 'dives', 'surface'].forEach(f => {
-    Object.values(m[f] || {}).forEach(d => { if (d.toMap != null && d.x != null) { const [nx, ny] = arrive(d.toMap, d.x, d.y, mi); d.x = nx; d.y = ny; } });
-  }));
-}
 // where an original "x,y" ended up on map mi (as a key, or as [x, y])
 /* The ×2 world was tried in versions 22–23 and taken back: the maps are their original size again.
    SK()/SKxy() stay as identity, and saves made in the doubled world are brought back down below. */
@@ -3067,7 +2945,7 @@ function handleQuestTalk(mi, key, npc) {
   if (turnIn) {
     const q = QUESTS[turnIn];
     flag('q_' + turnIn + '_done'); q.reward(); sfx.questDone(); saveGame(); updateHUD();
-    addFloater(VW / 2, 90, '📜 משימה הושלמה!', { color: '#4ade80', size: 16, life: 1600, vy: -10, rtl: true, screen: true });
+    toast('📜', q.title, 'משימה הושלמה', 'quest');
     showDialogue(name + q.thanks);
     return true;
   }
@@ -5080,66 +4958,7 @@ function activateCmdCell(c) {
   battleConfirm();
 }
 
-function drawBattleMenu() {
-  const cell = MENU_CELLS[battle.menuIndex];
-  display.menuX = lerp(display.menuX || cell.rightX, cell.rightX, .35);
-  display.menuY = lerp(display.menuY || cell.y, cell.y, .35);
-  // moving highlight
-  ctx.save();
-  ctx.fillStyle = 'rgba(56,189,248,.16)';
-  roundRect(ctx, CX(display.menuX - 206), display.menuY - 15, CW(208), 20, 5); ctx.fill();
-  ctx.restore();
 
-  MENU_CELLS.forEach((c, i) => {
-    const sel = i === battle.menuIndex;
-    heText(c.label, CX(c.rightX - 16), c.y,
-      { size: 14, bold: sel, maxWidth: CW(176), color: sel ? '#7dd3fc' : '#e2e8f0' });
-    if (sel) {
-      const nudge = Math.sin(clock / 160) * 2;
-      heText('◀', CX(c.rightX + nudge), c.y, { size: 13, color: '#38bdf8', maxWidth: CW(20) });
-    }
-  });
-}
-
-function drawMoveMenu() {
-  const moves = battleMoveList();
-  const eType = battle.enemy.type;
-  // The box has room for three rows. From the 4th technique on (level 5) the list
-  // switches to two columns of three — before, rows 4 and 5 were drawn below the box.
-  const twoCol = moves.length > 3;
-  const rows = moves.length > 6 ? 4 : 3;                  // flow + "מא??" + a friend can push it past six
-  const rowH = rows === 4 ? 13 : 18, y0 = rows === 4 ? 267 : 268;
-  const fs = rows === 4 ? 11 : 12.5;
-  moves.forEach((mv, i) => {
-    const col = twoCol ? Math.floor(i / rows) : 0, row = twoCol ? i % rows : i;
-    const y = y0 + row * rowH, sel = i === battle.moveIndex;
-    const R = col === 0 ? 452 : 232;                 // right edge of this column
-    const hiW = twoCol ? 206 : 410, labelW = twoCol ? 110 : 195;
-    const costX = twoCol ? R - 196 : 240;
-    const canUse = mv.flow || mv.ma || mv.friend || ((inFlow() || player.ap >= mv.cost) && ppOf(mv.id) > 0);
-    if (sel) {
-      ctx.save(); ctx.fillStyle = 'rgba(56,189,248,.16)';
-      roundRect(ctx, CX(R + 2 - hiW), y - (rows === 4 ? 10 : 13), CW(hiW), rows === 4 ? 13 : 17, 5); ctx.fill(); ctx.restore();
-      const nudge = Math.sin(clock / 160) * 2;
-      heText('◀', CX(R + nudge), y, { size: 12, color: '#38bdf8', maxWidth: CW(18) });
-    }
-    const ti = TYPE_INFO[mv.type] || TYPE_INFO.none;
-    const eff = typeEffectiveness(mv.type, eType);
-    const effColor = eff > 1 ? '#4ade80' : eff < 1 ? '#f87171' : '#64748b';
-    const maTag = mv.ma && battle.maStreak ? ' (' + battle.maStreak + '/3)' : '';
-    heText((mv.flow || mv.ma || mv.friend ? mv.icon : ti.icon) + ' ' + mv.name + maTag, CX(R - 16), y,
-      { size: fs, bold: sel || mv.flow || mv.friend, maxWidth: CW(labelW),
-        color: mv.flow ? '#fde047' : mv.friend ? '#fbbf24' : (canUse ? (sel ? '#7dd3fc' : '#e2e8f0') : '#64748b') });
-    if (mv.flow) heText('מוכן!', CX(costX + 34), y, { size: 10, bold: true, color: '#fde047', maxWidth: CW(40) });
-    else if (mv.ma) heText((battle.enemy.boss || battle.enemy.master || battle.enemy.finale) ? '🎲 בוס' : '🎲', CX(costX + 34), y, { size: 10, color: '#fbbf24', maxWidth: CW(40) });
-    else if (mv.friend) heText('פעם אחת', CX(costX + 40), y, { size: 9, color: '#fbbf24', maxWidth: CW(46) });
-    else numText('PP ' + ppOf(mv.id) + '/' + mv.pp, CX(costX - 6), y,
-      { size: 10, color: ppOf(mv.id) <= 0 ? '#ef4444' : ppOf(mv.id) <= mv.pp / 4 ? '#fbbf24' : '#38bdf8' });
-    if (eff !== 1 && !mv.flow && !mv.ma && !mv.friend) numText(eff > 1 ? '▲' : '▼', CX(twoCol ? costX + 36 : 216), y, { size: 11, bold: true, color: effColor });
-  });
-  // only where the third row is free: it used to sit on top of row 3's AP cost
-  if (moves.length <= 2) heText('B לחזרה', CX(232), 303, { size: 10, color: '#64748b', maxWidth: CW(80) });
-}
 
 function availableBattleItems() {
   const l = [];
@@ -5149,27 +4968,6 @@ function availableBattleItems() {
   if (player.inventory.headphones > 0) l.push({ key: 'headphones', label: '🎧 אוזניות', n: player.inventory.headphones });
   if (player.inventory.sketchbook > 0) l.push({ key: 'sketchbook', label: '📓 מחברת סקיצות', n: player.inventory.sketchbook });
   return l;
-}
-function drawItemMenu() {
-  const items = availableBattleItems();
-  if (!items.length) {
-    heText('התיק ריק! (B לחזרה)', CX(452), 288, { size: 14, maxWidth: CW(424), color: '#fca5a5' });
-    return;
-  }
-  // three item types (with the emergency kit) need tighter rows, or the third falls out of the box
-  const tight = items.length > 2;
-  items.forEach((it, i) => {
-    const y = tight ? 268 + i * 18 : 280 + i * 23, sel = i === battle.itemIndex;
-    if (sel) {
-      ctx.save(); ctx.fillStyle = 'rgba(56,189,248,.16)';
-      roundRect(ctx, CX(246), y - (tight ? 13 : 15), CW(208), tight ? 17 : 20, 5); ctx.fill(); ctx.restore();
-      const nudge = Math.sin(clock / 160) * 2;
-      heText('◀', CX(452 + nudge), y, { size: 13, color: '#38bdf8', maxWidth: CW(20) });
-    }
-    heText(it.label, CX(436), y, { size: tight ? 12.5 : 14, bold: sel, maxWidth: CW(170), color: sel ? '#7dd3fc' : '#e2e8f0' });
-    numText('x' + it.n, CX(246), y, { size: 12, color: '#fbbf24', bold: true });
-  });
-  heText('B לחזרה', CX(232), 303, { size: 10, color: '#64748b', maxWidth: CW(80) });
 }
 
 /* =========================================================
@@ -5316,9 +5114,7 @@ function addJournal(id) {
   if (!player.journal) player.journal = [];
   if (player.journal.indexOf(id) < 0 && JOURNAL[id]) {
     player.journal.push(id);
-    // in battle the top of the screen belongs to the enemy's plate, so the toast uses the open space mid-arena
-    const toastY = (gameState === 'BATTLE' && battle) ? (FOE_HOME.y + HERO_HOME.y) / 2 + 40 : 60;
-    addFloater(VW / 2, toastY, '📖 נוסף ליומן', { color: '#fbbf24', size: 15, life: 1500, vy: -12, rtl: true, screen: true });
+    toast('📖', JOURNAL[id].t, 'נוסף ליומן', 'mini');
   }
 }
 const JOURNAL = {
@@ -5467,19 +5263,8 @@ const JOURNAL = {
     x: "השחיקה מציעה לדחות את הציור למחר. עדיף לזכור שגם מנוחה צריכה מקום ביום, לפני שמתרסקים." }
 };
 
-const DAY_LINES = {
-  2: "הציור מאתמול מתייבש ליד המיטה. בופי מן כמעט נוגע בו עם השרוול בדרך החוצה.",
-  3: "יום שלישי. בתיק יש מכחולים, במשרד מחכה דדליין. צריך להספיק את שניהם.",
-  4: 'אמצע השבוע. עבודות חוסמות את הרחוב ליד התחנה, והדרך היום עוברת מתחת לאדמה.',
-  5: "יום התערוכה. המעלית מושבתת, אז עולים עשרים קומות ברגל. בערב צריך להשלים את הציור החמישי."
-};
 
 const CUTSCENES = {
-  opening_cinematic: [
-    { art: 'alarm', text: "05:30. השעון מצלצל. הוא היחיד בחדר שמרגיש רענן.", auto: 2300 },
-    { art: 'room', text: "ליד המיטה מחכה קנבס חצי מצויר. על הטלפון כבר יש הודעה מהעבודה.", auto: 2600 },
-    { art: 'mirror', text: "בופי מן מרכיב את מסכת הכלב ומחפש את המשקפיים. הם על המסכה.", auto: 2700 }
-  ],
   prologue: [
     { art: 'dawn', text: "חמש וחצי בבוקר. למטה משאית מפנה פחים. מישהו צועק עליה לעשות את זה בשקט." },
     { art: 'smog', text: "מעל המשרדים מרחפת השחיקה. היא מתחילה מוקדם, גם בלי להחתים כרטיס." },
@@ -5802,111 +5587,7 @@ function drawArt(kind) {
     ctx.restore(); return;
   }
   const pan = (VW - 480) / 2;
-  if (kind === 'alarm') {
-    ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, VW, VH);
-    const glow = ctx.createRadialGradient(VW / 2, 158, 12, VW / 2, 158, 220);
-    glow.addColorStop(0, 'rgba(239,68,68,.18)'); glow.addColorStop(1, 'rgba(17,24,39,0)');
-    ctx.fillStyle = glow; ctx.fillRect(0, 0, VW, VH);
-    ctx.fillStyle='#202b3d';ctx.fillRect(0,0,VW,100);
-    ctx.fillStyle='rgba(133,162,196,.06)';
-    for(let i=0;i<Math.ceil(VW/54);i++)ctx.fillRect(i*54,0,1,100);
-    ctx.fillStyle='#3e3537';ctx.fillRect(0,216,VW,104);
-    ctx.fillStyle='#726055';ctx.fillRect(0,216,VW,4);
-    ctx.fillStyle='rgba(8,12,22,.42)';ctx.beginPath();ctx.ellipse(VW/2,224,114,13,0,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#718295';roundRect(ctx,VW/2-95,103,190,117,18);ctx.fill();
-    ctx.fillStyle = '#334155'; roundRect(ctx, VW / 2 - 95, 106, 190, 116, 18); ctx.fill();
-    ctx.fillStyle = '#0b1120'; roundRect(ctx, VW / 2 - 84, 116, 168, 88, 10); ctx.fill();
-    ctx.save(); ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 20;
-    heText('05:30', VW / 2, 176, { align: 'center', size: 48, bold: true, color: '#fb7185' }); ctx.restore();
-    for (let i = 0; i < 3; i++) {
-      ctx.strokeStyle = `rgba(251,113,133,${.38 - i * .09})`; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(VW / 2, 164, 112 + i * 24 + Math.sin(t * 14) * 3, -2.3, -.85); ctx.stroke();
-    }
-  } else if (kind === 'dawn') {
-    const g = ctx.createLinearGradient(0, 0, 0, VH);
-    g.addColorStop(0, '#1e1b4b'); g.addColorStop(.55, '#4c1d95'); g.addColorStop(1, '#7c2d12');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
-    for (let i = 0; i < 40; i++) {
-      const a = Math.abs(Math.sin(t * .8 + i)) * .5 + .15;
-      ctx.globalAlpha = a; ctx.fillStyle = '#fff';
-      ctx.fillRect((i * 53) % VW, (i * 37) % 140, 1.6, 1.6);
-    }
-    ctx.globalAlpha = 1;
-    const sunY = 214 - Math.sin(t * .35) * 6;
-    ctx.save(); ctx.shadowColor = 'rgba(251,191,36,.8)'; ctx.shadowBlur = 40;
-    ctx.fillStyle = '#fbbf24'; ctx.beginPath(); ctx.arc(VW / 2, sunY, 26, 0, 6.28); ctx.fill(); ctx.restore();
-    drawSkyline(250, '#1e293b', 1, 0);
-    drawSkyline(262, '#0f172a', .8, 7);
-  } else if (kind === 'smog') {
-    const g = ctx.createLinearGradient(0, 0, 0, VH);
-    g.addColorStop(0, '#111827'); g.addColorStop(1, '#374151');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
-    drawSkyline(268, '#1f2937', 1.15, 3);
-    ctx.save(); ctx.translate(pan, 0);
-    // the tower
-    ctx.fillStyle = '#0b1220'; ctx.fillRect(196, 96, 84, 172);
-    for (let r = 0; r < 7; r++) for (let c = 0; c < 4; c++) {
-      const on = Math.sin(t * 1.3 + r * 2 + c) > -.3;
-      ctx.fillStyle = on ? 'rgba(148,163,184,.55)' : 'rgba(30,41,59,.9)';
-      ctx.fillRect(206 + c * 18, 108 + r * 22, 11, 13);
-    }
-    for (let i = 0; i < 5; i++) {
-      const y = 60 + i * 16 + Math.sin(t * .6 + i) * 6;
-      ctx.globalAlpha = .16 + .08 * Math.sin(t + i);
-      ctx.fillStyle = '#dc2626';
-      ctx.beginPath(); ctx.ellipse(238 + Math.sin(t * .4 + i) * 40, y, 120 - i * 10, 16, 0, 0, 6.28); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-    ctx.restore();
-  } else if (kind === 'room') {
-    ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, VW, VH);
-    ctx.fillStyle = '#1f2937'; ctx.fillRect(0, 236, VW, 84);
-    ctx.save(); ctx.translate(pan, 0);
-    // window
-    ctx.fillStyle = '#0b1120'; ctx.fillRect(292, 56, 128, 104);
-    ctx.fillStyle = 'rgba(148,197,255,' + (.22 + .1 * Math.sin(t)) + ')'; ctx.fillRect(292, 56, 128, 104);
-    ctx.strokeStyle = '#475569'; ctx.lineWidth = 3;
-    ctx.strokeRect(292, 56, 128, 104);
-    ctx.beginPath(); ctx.moveTo(356, 56); ctx.lineTo(356, 160); ctx.stroke();
-    // bed + sleeper
-    ctx.fillStyle = '#334155'; roundRect(ctx, 48, 178, 210, 62, 8); ctx.fill();
-    ctx.fillStyle = '#475569'; roundRect(ctx, 56, 160, 66, 30, 6); ctx.fill();
-    ctx.fillStyle = '#1e293b';
-    const br = Math.sin(t * 1.6) * 2;
-    roundRect(ctx, 96, 168 - br, 150, 34 + br, 14); ctx.fill();
-    // alarm clock ringing
-    const jit = Math.sin(t * 24) * 3;
-    ctx.save(); ctx.translate(300 + jit, 214);
-    ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(0, 0, 18, 0, 6.28); ctx.fill();
-    ctx.fillStyle = '#fef3c7'; ctx.beginPath(); ctx.arc(0, 0, 13, 0, 6.28); ctx.fill();
-    ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(t * 7) * 9, Math.sin(t * 7) * 9); ctx.stroke();
-    ctx.restore();
-    for (let i = 1; i <= 3; i++) {
-      ctx.globalAlpha = Math.max(0, .55 - ((t * 2 + i * .33) % 1));
-      ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(300, 214, 22 + ((t * 2 + i * .33) % 1) * 40, -1, 1); ctx.stroke();
-      ctx.beginPath(); ctx.arc(300, 214, 22 + ((t * 2 + i * .33) % 1) * 40, 2.1, 4.1); ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-    ctx.restore();
-  } else if (kind === 'mirror') {
-    ctx.fillStyle = '#0f172a'; ctx.fillRect(0, 0, VW, VH);
-    const rg = ctx.createRadialGradient(VW / 2, 150, 20, VW / 2, 150, 240);
-    rg.addColorStop(0, 'rgba(56,189,248,.16)'); rg.addColorStop(1, 'rgba(15,23,42,0)');
-    ctx.fillStyle = rg; ctx.fillRect(0, 0, VW, VH);
-    ctx.save(); ctx.translate(pan, 0);
-    ctx.fillStyle = '#1e293b'; roundRect(ctx, 150, 40, 180, 230, 90); ctx.fill();
-    ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 5; roundRect(ctx, 150, 40, 180, 230, 90); ctx.stroke();
-    ctx.save(); ctx.beginPath(); roundRect(ctx, 154, 44, 172, 222, 86); ctx.clip();
-    ctx.fillStyle = '#0b1120'; ctx.fillRect(154, 44, 172, 222);
-    drawHero(ctx, 240, 210, 96, { facing: 'down' });
-    ctx.globalAlpha = .12; ctx.fillStyle = '#e2e8f0';
-    const sh = ((t * 60) % 320) - 60;
-    ctx.save(); ctx.translate(sh, 0); ctx.rotate(.3); ctx.fillRect(140, -60, 40, 420); ctx.restore();
-    ctx.restore();
-    ctx.restore();
-  } else if (kind === 'street') {
+  if (kind === 'street') {
     // seven in the morning: a peach sky, the sun just over the roofs, windows still lit
     const g = ctx.createLinearGradient(0, 0, 0, 230);
     g.addColorStop(0, '#93c5fd'); g.addColorStop(.6, '#fed7aa'); g.addColorStop(1, '#fdba74');
@@ -8989,7 +8670,6 @@ function openGameMenu() {
   if (ts) ts.textContent = towerUnlocked() ? (!dailyDone() ? '📅 אתגר יומי מחכה · ' : '') + (towerData().run ? '▶ ריצה פעילה: קומה ' + towerData().run.floor : 'שיא: קומה ' + towerData().best + ' / ' + TOWER_FLOORS) : '🔒 נפתח אחרי היום הראשון';
   if (tc) tc.style.opacity = towerUnlocked() ? '' : '.55';
   const d = document.getElementById('menu-day'); if (d) d.innerText = player.day;
-  updateGameMenuRunLabel();
   document.getElementById('game-menu-panel').style.display = 'flex';
   sfx.open();
 }
@@ -8997,13 +8677,6 @@ function closeGameMenu(silent) {
   const p = document.getElementById('game-menu-panel'); if (p) p.style.display = 'none';
   if (gameState === 'PAUSE_MENU') gameState = 'OVERWORLD';
   if (!silent) sfx.close();
-}
-function updateGameMenuRunLabel() {
-  const el = document.getElementById('menu-run-label');
-  if (el) el.innerText = player.autoRun ? '🚶 ריצה אוטומטית: פעילה' : '🏃 ריצה אוטומטית: כבויה';
-}
-function toggleRunFromMenu() {
-  player.autoRun = !player.autoRun; saveGame(); updateGameMenuRunLabel(); sfx.select();
 }
 function launchGameMenu(where) {
   closeGameMenu(true); menuReturn = true;
@@ -9108,12 +8781,6 @@ function updateMoveInfo() {
     el.style.bottom = Math.max(6, Math.round(ch - ((ch - VH * sc) / 2 + BL.cmdTop * sc) + 6)) + 'px';
   }
 }
-function techniquesHelpHTML() {
-  return '<div style="color:#94a3b8;font-size:11px;margin:10px 2px 4px">מה כל טכניקה עושה</div>' +
-    knownMoves().map(m => '<div class="journal-entry"><b>' + m.icon + ' ' + m.name + '</b>' +
-      '<small style="color:#7dd3fc">' + moveStatsLine(m) + '</small><br>' + moveEffectText(m, null) +
-      (m.desc ? '<br><small style="color:#94a3b8">' + m.desc + '</small>' : '') + '</div>').join('');
-}
 
 function openStatus() {
   heldDir = null; gameState = 'STATUS';
@@ -9189,7 +8856,6 @@ function closeJournal() { document.getElementById('journal-panel').style.display
 function toggleSound() {
   player.soundOn = !player.soundOn;
   applyVolumes();
-  { const sb = document.getElementById('sound-btn'); if (sb) sb.innerText = player.soundOn ? '🔊' : '🔇'; }
   saveGame();
 }
 
@@ -9256,7 +8922,7 @@ function renderSettingsBody() {
     '<button class="system-btn diff-opt' + (player.difficulty === id ? ' diff-sel' : '') + '" ' +
     'onclick="setDifficulty(\'' + id + '\')">' + DIFFICULTY[id].label + '</button>').join('');
   const active = DIFFICULTY[player.difficulty] || DIFFICULTY.normal;
-  const sec = t => '<div class="set-sec">' + t + '</div>';
+  const sec = t => '<div class="pg-section">' + t + '</div>';
   const ts = { 1: 'רגיל', 1.15: 'גדול', 1.3: 'גדול מאוד' }[player.textScale || 1];
   document.getElementById('settings-body').innerHTML =
     sec('🎮 משחק') +
@@ -9265,6 +8931,7 @@ function renderSettingsBody() {
     '<div class="settings-desc">' + active.daySkip + '. משפיע על אויבים חדשים ומלאי החנות מהיום הבא.</div></div>' +
     optRow('assist', '🫶 מצב סיוע', 'כל מכה של אויב פוגעת בחצי. בשביל מי שבא בשביל הסיפור, בלי בושה') +
     optRow('autoBattle', '🤖 קרב אוטומטי', 'בופי מן בוחר לבד בקרבות. נגיעה במסך עוצרת. אפשר גם מתפריט הקרב') +
+    optRow('autoRun', '🏃 ריצה אוטומטית', 'בופי מן רץ תמיד, גם בהליכה קצרה') +
     optRow('fastBattle', '⚡ קרבות מהירים', 'ההודעות בקרב מתקדמות מהר יותר. הקשה עדיין מדלגת מיד') +
     sec('♿ נגישות ותצוגה') +
     '<div class="panel-item"><div>🔠 גודל טקסט<br><small style="color:#94a3b8">חלונות, דיאלוגים ושורת המשימה</small></div>' +
@@ -9592,9 +9259,7 @@ function finishBoot() {
   sfx.init();
   music.init(sfx.ctx); music.start(); applyVolumes(); keepScreenOn();
   resizeCanvas();
-  { const sb = document.getElementById('sound-btn'); if (sb) sb.innerText = player.soundOn ? '🔊' : '🔇'; }
   document.getElementById('start-modal').style.display = 'none';
-  const rb = document.getElementById('run-btn'); if (rb) rb.classList.toggle('run-on', !!player.autoRun);
   document.getElementById('ending-modal').style.display = 'none';
   gameState = 'OVERWORLD';
   hero.x = px * TILE + 20; hero.y = py * TILE + 20;
@@ -9696,11 +9361,16 @@ function pressA() {
   if (gameState === 'BATTLE') { battleConfirm(); return; }
   if (gameState === 'OVERWORLD') interactFacing();
 }
+function scrimTap() { if (gameState !== 'LEARN') pressB(); }
 function pressB() {
   if (film) { filmTap(); return; }
   const back = {PAUSE_MENU:closeGameMenu,INVENTORY:closeInventory,STATUS:closeStatus,JOURNAL:closeJournal,TOWNMAP:closeTownMap,SETTINGS:closeSettings,SHOP:closeShop,
     PROGRESS:closeProgress,ACHIEVEMENTS:closeAchievements,TOWER:closeTower};
-  { const sp = document.getElementById('slots-panel'); if (gameState === 'TITLE' && sp && sp.style.display === 'flex') { closeSlots(); return; } }
+  if (gameState === 'TITLE') {
+    const np = document.getElementById('newgame-panel'), sp = document.getElementById('slots-panel');
+    if (np && np.style.display === 'flex') { closeNewGame(); return; }
+    if (sp && sp.style.display === 'flex') { closeSlots(); return; }
+  }
   if (back[gameState]) { back[gameState](); return; }
   if (gameState === 'BATTLE' && player.autoBattle) { setAutoBattle(false); return; }
   if (powerGet) { closePowerGet(); return; }
@@ -9902,15 +9572,6 @@ function setupTouch() {
   canvas.addEventListener('contextmenu', e => e.preventDefault());
 }
 
-function bindHold(el, onDown, onUp) {
-  if (!el) return;
-  const down = ev => { ev.preventDefault(); el.classList.add('pressed'); onDown(); };
-  const up = ev => { if (ev) ev.preventDefault(); el.classList.remove('pressed'); if (onUp) onUp(); };
-  el.addEventListener('pointerdown', down);
-  el.addEventListener('pointerup', up);
-  el.addEventListener('pointerleave', up);
-  el.addEventListener('pointercancel', up);
-}
 
 function setupControls() {
   setupTouch();
@@ -10192,13 +9853,15 @@ function showNextAch() {
   if (achShowing || !achQueue.length) return;
   const el = document.getElementById('ach-toast'); if (!el) return;
   if (battle || cutscene || transition || gameState !== 'OVERWORLD') { clearTimeout(showNextAch.t); showNextAch.t = setTimeout(showNextAch, 1200); return; }
-  const a = achQueue.shift(); achShowing = true;
-  el.innerHTML = '<span class="ach-ico">' + a[0] + '</span><span><small>🏆 הישג חדש</small><b>' + a[1] + '</b><em>' + a[2] + '</em></span>';
-  el.classList.add('show');
-  sfx.achieve();
-  buzz && buzz(30);
-  setTimeout(() => { el.classList.remove('show'); setTimeout(() => { achShowing = false; showNextAch(); }, 380); }, 2800);
+  const a = achQueue.shift(), kind = a[3] || ''; achShowing = true;
+  const label = kind === 'mini' ? '' : kind === 'quest' ? '📜 משימה' : '🏆 הישג חדש';
+  el.innerHTML = '<span class="ach-ico">' + a[0] + '</span><span>' + (label ? '<small>' + label + '</small>' : '') + '<b>' + a[1] + '</b><em>' + a[2] + '</em></span>';
+  el.className = 'show' + (kind ? ' ' + kind : '');
+  if (kind !== 'mini' && kind !== 'quest') { sfx.achieve(); buzz(30); }        // a finished quest already rang at the counter
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => { achShowing = false; showNextAch(); }, 380); }, kind === 'mini' ? 1700 : 2800);
 }
+// every notification goes through one queue: it waits for a calm moment in the world and never stacks
+function toast(icon, title, sub, kind) { achQueue.push([icon, title, sub || '', kind || '']); showNextAch(); }
 function stepAchievements(dt) {
   achT += dt;
   if (achT < 1200) return;
@@ -10376,7 +10039,7 @@ function closeSlots() { slotArm = null; document.getElementById('slots-panel').s
 function slotPlay(n) { setSaveSlot(n); closeSlots(); continueGame(); }
 function slotNew(n) {
   if (slotSave(n) && !(slotArm && slotArm.n === n && slotArm.what === 'new')) { slotArm = { n, what: 'new' }; sfx.bump(); renderSlots(); return; }
-  setSaveSlot(n); closeSlots(); newGame();
+  closeSlots(); openNewGame(n);
 }
 function slotDelete(n) {
   if (!(slotArm && slotArm.n === n && slotArm.what === 'del')) { slotArm = { n, what: 'del' }; sfx.bump(); renderSlots(); return; }
@@ -10386,7 +10049,30 @@ function slotDelete(n) {
 function anySave() { for (let n = 1; n <= SLOT_COUNT; n++) if (slotSave(n)) return true; return false; }
 function titleNewGame() {
   if (hasSave()) { openSlots(); return; }
+  openNewGame(saveSlot);
+}
+/* the new-game screen: how hard, and whether to soften the blows */
+const NG_DIFF = { easy: ['🌱', 'בשביל הסיפור, עם מרווח לטעויות'], normal: ['⚖️', 'האיזון שהמשחק נבנה סביבו'], hard: ['🔥', 'אויבים חזקים, פחות ציוד בחנות'] };
+let ngSlot = 1, ngAssist = false;
+function openNewGame(slot) {
+  ngSlot = slot || saveSlot; ngAssist = false; renderNewGame();
+  document.getElementById('newgame-panel').style.display = 'flex'; sfx.open();
+}
+function renderNewGame() {
+  document.getElementById('newgame-body').innerHTML =
+    '<div class="settings-desc">חמישה ימי עבודה, חמישה ציורים, ועיר שלמה אחריהם. אפשר לשנות את הקושי בכל רגע מההגדרות.</div>' +
+    '<div class="ng-grid">' + ['easy', 'normal', 'hard'].map(id => '<button class="ng-card' + (pendingDifficulty === id ? ' sel' : '') + '" onclick="pickNewGameDiff(\'' + id + '\')">' +
+      '<span class="ng-ico">' + NG_DIFF[id][0] + '</span><b>' + DIFFICULTY[id].label + '</b><small>' + NG_DIFF[id][1] + '</small></button>').join('') + '</div>' +
+    '<button class="panel-item ng-toggle" onclick="ngAssist = !ngAssist; renderNewGame()"><div><strong>🫶 מצב סיוע</strong><br><small>כל מכה של אויב פוגעת בחצי</small></div><span class="ng-switch' + (ngAssist ? ' on' : '') + '"></span></button>' +
+    '<div class="ng-foot"><small>📂 שמירה ' + ngSlot + '</small><button class="btn-main" onclick="startNewGameFromPanel()">להתחיל ←</button></div>';
+}
+function pickNewGameDiff(id) { selectStartDifficulty(id); renderNewGame(); }
+function closeNewGame() { document.getElementById('newgame-panel').style.display = 'none'; sfx.close(); }
+function startNewGameFromPanel() {
+  const assist = ngAssist; setSaveSlot(ngSlot);
+  document.getElementById('newgame-panel').style.display = 'none';
   newGame();
+  if (assist) { player.assist = true; saveGame(); }
 }
 function refreshTitleButtons() {
   const cb = document.getElementById('continue-btn'), sb = document.getElementById('slots-btn');
@@ -10396,6 +10082,7 @@ function refreshTitleButtons() {
     if (s) cb.innerHTML = 'המשך 💾<small class="cont-sub">' + s.ch + ' · רמה ' + s.level + ' · ⏱️ ' + s.time + '</small>';
   }
   if (sb) sb.style.display = anySave() ? 'inline-block' : 'none';
+  const nb = document.querySelector('.title-btns [onclick="titleNewGame()"]'); if (nb) nb.classList.toggle('btn-secondary', !!s);
 }
 try { const n = +localStorage.getItem(SLOT_PREF); if (n >= 1 && n <= SLOT_COUNT) setSaveSlot(n); else setSaveSlot(1); } catch (e) { setSaveSlot(1); }
 
@@ -10710,7 +10397,7 @@ function pollGamepads() {
   const gps = navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean) : [];
   if (!gps.length) { if (pad.connected) { pad.connected = false; } return; }
   if (!pad.connected) { pad.connected = true; lastInput = 'key'; document.body.classList.add('pad-on');
-    addFloater(VW / 2, 70, '🎮 בקר מחובר', { color: '#7edcf0', size: 14, life: 1500, vy: -8, rtl: true, screen: true }); }
+    toast('🎮', 'בקר מחובר', 'A פעולה · B חזרה · Start תפריט', 'mini'); }
   const now = padButtons(gps[0]), was = pad.prev, down = k => now[k] && !was[k];
   const panel = activePanelEl() && gameState !== 'BATTLE' && gameState !== 'OVERWORLD';
   const dir = now.up ? [0, -1] : now.down ? [0, 1] : now.left ? [-1, 0] : now.right ? [1, 0] : null;
@@ -11782,7 +11469,8 @@ function drawIrkFx(e, fx, fy, S) {
     const mark = el => { el._shownAt = performance.now(); };
     const obs = new MutationObserver(list => list.forEach(m => { const el = m.target;
       const vis = el.style.display === 'flex' || el.style.display === 'block';
-      if (vis && !el._vis) mark(el); el._vis = vis; }));
+      if (vis && !el._vis) mark(el); el._vis = vis;
+      document.body.classList.toggle('panel-open', [...document.querySelectorAll('.panel')].some(p => p._vis)); }));
     document.querySelectorAll('.panel, .modal').forEach(el => { el._vis = el.style.display === 'flex'; obs.observe(el, { attributes: true, attributeFilter: ['style'] }); });
     document.addEventListener('click', ev => {
       const box = ev.target && ev.target.closest && ev.target.closest('.panel, .modal');
