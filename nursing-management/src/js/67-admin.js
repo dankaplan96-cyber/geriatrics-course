@@ -123,7 +123,7 @@ App.views.settings = {
     const D = db();
     const S = D.settings;
     const depts = deptList(D);
-    const yearsField = (k, label) => fieldHTML(label, `<input class="inp" data-act="setyears" data-k="${k}" value="${esc(S.years[k].join(', '))}">`, { hint: 'שנים מופרדות בפסיק — קובע את העמודות בגיליון ובדוח' });
+    const yearsField = (k, label) => fieldHTML(label, `<div class="chips">${S.years[k].slice().sort().map((y) => `<span class="chip">${y}<button class="chip-x" data-act="yeardel" data-k="${k}" data-y="${y}" title="הסרת השנה">×</button></span>`).join('')}<button class="btn sm" data-act="yearadd" data-k="${k}">${icon('plus', 14)} הוספת שנה</button></div>`);
     const num = (path, label, hint = '') => fieldHTML(label, `<input class="inp num" data-act="setnum" data-path="${path}" value="${esc(getPath2(S, path))}">`, { hint });
     return `<div class="card" style="margin-bottom:16px"><div class="hd"><h3>מחלקות</h3><span class="muted small">כל מחלקה מופקת כקובץ Excel נפרד</span><div style="flex:1"></div><button class="btn pri" data-act="deptadd">${icon('plus', 16)} מחלקה חדשה</button></div>
       <div class="bd flush tbl-wrap"><table class="tbl"><thead><tr><th>שם המחלקה (כותרת הדוח)</th><th>אגף</th><th>תמהיל חולים</th><th class="c">מיטות</th><th>אחראי/ת</th><th class="c">עובדים</th><th></th></tr></thead><tbody>
@@ -138,10 +138,12 @@ App.views.settings = {
       <div class="grid g2" style="align-items:start">
         <div class="card"><div class="hd"><h3>כללי</h3></div><div class="bd stack">
           ${fieldHTML('שם הארגון', `<input class="inp" data-act="settext" data-path="orgName" value="${esc(S.orgName)}">`)}
-          ${fieldHTML('אגפים', `<input class="inp" data-act="setdivs" value="${esc(S.divisions.join(', '))}">`, { hint: 'מופרדים בפסיק, לדוגמה: אגף גריאטריה, אגף שיקום' })}
           <div class="grid g2">${num('alerts.shiftWarnDays', 'התראה לפני פקיעת מינוי אחראי/ת משמרת (ימים)')}${num('alerts.bloodWarnDays', 'התראה לפני פקיעת הרשאת מתן דם (ימים)')}</div>
         </div></div>
-        <div class="card"><div class="hd"><h3>שנים בגיליונות ובדוחות</h3></div><div class="bd stack">
+        <div class="card"><div class="hd"><h3>אגפים</h3><div style="flex:1"></div><button class="btn sm pri" data-act="divadd">${icon('plus', 14)} אגף חדש</button></div><div class="bd flush"><table class="tbl"><tbody>
+          ${S.divisions.map((x, i) => { const n = depts.filter((d) => d.division === x).length; return `<tr><td class="b">${esc(x)}</td><td class="muted small">${n} מחלקות</td><td class="nowrap" style="text-align:left"><button class="iconbtn" data-act="divrename" data-i="${i}" title="שינוי שם">${icon('edit', 15)}</button><button class="iconbtn" data-act="divdel" data-i="${i}" title="מחיקה">${icon('trash', 15)}</button></td></tr>`; }).join('') || '<tr><td class="faint">אין אגפים</td></tr>'}
+        </tbody></table></div></div>
+        <div class="card"><div class="hd"><h3>שנים בגיליונות ובדוחות</h3><span class="muted small">קובע את עמודות השנים בגיליון ובדוח</span></div><div class="bd stack">
           ${yearsField('safety', 'בטיחות הטיפול')}${yearsField('conversations', 'שיחות משוב')}${yearsField('evaluations', 'הערכות עובדים')}
         </div></div>
         <div class="card"><div class="hd"><h3>מקדמי תקינה (תקן מקוצר)</h3></div><div class="bd grid g2">
@@ -153,13 +155,36 @@ App.views.settings = {
   },
 };
 Object.assign(ACT, {
-  deptadd: async () => {
-    const name = await promptBox('מחלקה חדשה', 'שם המחלקה (כפי שיופיע בכותרת הדוח)', '', { placeholder: "לדוגמה: שיקום ה'" });
-    if (!name) return;
-    if (findDeptByName(db(), name)) return toast('מחלקה בשם זה כבר קיימת', 'err');
-    const d = newDept(name, { order: Object.keys(db().depts).length, division: db().settings.divisions[0] || '' });
-    Store.update((x) => { x.depts[d.id] = d; }, ['מחלקה חדשה', name]);
-    render();
+  deptadd: () => {
+    const S = db().settings;
+    const m = openModal({
+      title: 'מחלקה חדשה', size: 'lg',
+      body: `<div class="grid g3">
+        ${fieldHTML('שם המחלקה *', '<input class="inp" id="nd-name" placeholder="לדוגמה: שיקום ה\'" autofocus>', { hint: 'כפי שיופיע בכותרת הדוח' })}
+        ${fieldHTML('אגף', selectHTML('id="nd-div"', [...S.divisions.map((x) => [x, x]), ['__new', '+ אגף חדש…']], S.divisions[0] || '__new'))}
+        ${fieldHTML('שם האגף החדש', '<input class="inp" id="nd-newdiv">', { cls: 'nd-newdiv' })}
+        ${fieldHTML('תמהיל חולים', '<input class="inp" id="nd-mix" placeholder="לדוגמה: צעירים">')}
+        ${fieldHTML('מספר מיטות', '<input class="inp num" id="nd-beds" inputmode="numeric">')}
+        ${fieldHTML('אחראי/ת מחלקה', '<input class="inp" id="nd-head">')}
+        ${fieldHTML('סגן/ית', '<input class="inp" id="nd-dep">')}
+      </div><div id="nd-err" class="small" style="color:var(--crit);margin-top:8px"></div>`,
+      footer: '<button class="btn pri" id="nd-save">הוספת המחלקה</button><button class="btn" data-act="closemodal">ביטול</button>',
+    });
+    const sel = m.querySelector('#nd-div'), nw = m.querySelector('.nd-newdiv');
+    const sync = () => { nw.style.visibility = sel.value === '__new' ? 'visible' : 'hidden'; };
+    sel.addEventListener('change', sync); sync();
+    m.querySelector('#nd-save').addEventListener('click', () => {
+      const v = (id) => m.querySelector(id).value.trim();
+      const err = (t) => { m.querySelector('#nd-err').textContent = t; };
+      const name = v('#nd-name');
+      if (!name) return err('יש להזין שם מחלקה');
+      if (findDeptByName(db(), name)) return err('מחלקה בשם זה כבר קיימת');
+      let div = sel.value;
+      if (div === '__new') { div = v('#nd-newdiv'); if (!div) return err('יש להזין שם לאגף החדש'); }
+      const d = newDept(name, { order: Object.keys(db().depts).length, division: div, mix: v('#nd-mix'), beds: U.num(v('#nd-beds')), headNurse: v('#nd-head'), deputy: v('#nd-dep') });
+      Store.update((x) => { if (!x.settings.divisions.includes(div)) x.settings.divisions.push(div); x.depts[d.id] = d; }, ['מחלקה חדשה', `${name} · ${div}`]);
+      closeModal(); render(); toast('המחלקה נוספה', 'ok');
+    });
   },
   deptset: (el) => {
     const v = el.dataset.type === 'num' ? (U.num(el.value) ?? null) : el.value.trim();
@@ -189,17 +214,59 @@ Object.assign(ACT, {
     if (n == null) { toast('יש להזין מספר', 'err'); return; }
     Store.update((d) => { setPath(d.settings, el.dataset.path, n); }, ['הגדרות', `${el.dataset.path} = ${n}`]);
   },
-  setdivs: (el) => {
-    const v = el.value.split(/[,،]/).map((x) => x.trim()).filter(Boolean);
-    if (!v.length) return;
-    Store.update((d) => { d.settings.divisions = v; }, ['הגדרות', 'אגפים']);
+  divadd: async () => {
+    const name = await promptBox('אגף חדש', 'שם האגף', '', { placeholder: 'לדוגמה: אגף שיקום', ok: 'הוספה' });
+    if (!name) return;
+    if (db().settings.divisions.includes(name)) return toast('אגף בשם זה כבר קיים', 'err');
+    Store.update((d) => { d.settings.divisions.push(name); }, ['אגף חדש', name]);
     render();
   },
-  setyears: (el) => {
-    const ys = [...new Set(el.value.split(/[^\d]+/).map(Number).filter((y) => y > 2000 && y < 2100))].sort();
-    if (!ys.length) { toast('יש להזין לפחות שנה אחת', 'err'); return; }
-    Store.update((d) => { d.settings.years[el.dataset.k] = ys; }, ['הגדרות', `שנים ${el.dataset.k}: ${ys.join(',')}`]);
-    el.value = ys.join(', ');
+  divrename: async (el) => {
+    const old = db().settings.divisions[+el.dataset.i];
+    const name = await promptBox('שינוי שם אגף', 'שם האגף', old);
+    if (!name || name === old) return;
+    if (db().settings.divisions.includes(name)) return toast('אגף בשם זה כבר קיים', 'err');
+    Store.update((d) => {
+      d.settings.divisions = d.settings.divisions.map((x) => (x === old ? name : x));
+      Object.values(d.depts).forEach((x) => { if (x.division === old) x.division = name; });
+    }, ['שינוי שם אגף', `${old} ← ${name}`]);
+    render();
+  },
+  divdel: async (el) => {
+    const D = db();
+    const name = D.settings.divisions[+el.dataset.i];
+    const used = Object.values(D.depts).filter((x) => x.division === name);
+    if (used.length) return toast(`לא ניתן למחוק: ${used.length} מחלקות משויכות לאגף זה (${used.map((x) => x.name).join(', ')}). יש לשייך אותן לאגף אחר קודם.`, 'err');
+    if (D.settings.divisions.length === 1) return toast('חייב להישאר לפחות אגף אחד', 'err');
+    if (!(await confirmBox('מחיקת אגף', `למחוק את "${esc(name)}"?`, { ok: 'מחיקה', danger: true }))) return;
+    Store.update((d) => { d.settings.divisions = d.settings.divisions.filter((x) => x !== name); }, ['מחיקת אגף', name]);
+    render();
+  },
+  yearadd: (el) => {
+    const k = el.dataset.k;
+    const cur = db().settings.years[k];
+    const y0 = U.thisYear();
+    const options = [];
+    for (let y = y0 + 3; y >= y0 - 8; y--) if (!cur.includes(y)) options.push([y, y]);
+    if (!options.length) return toast('כל השנים האפשריות כבר קיימות', 'warn');
+    const next = cur.length ? Math.max(...cur) + 1 : y0;
+    const m = openModal({
+      title: 'הוספת שנה', size: 'sm',
+      body: fieldHTML('שנה', selectHTML('id="ya-y"', options, options.some(([y]) => y === next) ? next : options[0][0]), { hint: 'תתווסף עמודה לשנה זו בגיליון ובדוח' }),
+      footer: '<button class="btn pri" id="ya-ok">הוספה</button><button class="btn" data-act="closemodal">ביטול</button>',
+    });
+    m.querySelector('#ya-ok').addEventListener('click', () => {
+      const y = Number(m.querySelector('#ya-y').value);
+      Store.update((d) => { d.settings.years[k] = [...new Set([...d.settings.years[k], y])].sort(); }, ['הגדרות', `נוספה שנה ${y} (${k})`]);
+      closeModal(); render();
+    });
+  },
+  yeardel: async (el) => {
+    const k = el.dataset.k, y = Number(el.dataset.y);
+    if (db().settings.years[k].length === 1) return toast('חייבת להישאר לפחות שנה אחת', 'err');
+    if (!(await confirmBox('הסרת שנה', `להסיר את ${y} מהגיליון ומהדוח?<br><span class="muted small">הנתונים שהוזנו לשנה זו לא נמחקים — אפשר להחזיר את השנה בכל עת.</span>`, { ok: 'הסרה' }))) return;
+    Store.update((d) => { d.settings.years[k] = d.settings.years[k].filter((x) => x !== y); }, ['הגדרות', `הוסרה שנה ${y} (${k})`]);
+    render();
   },
 });
 
