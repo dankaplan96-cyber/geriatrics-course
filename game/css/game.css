@@ -487,3 +487,41 @@ body.hc .panel-item,body.hc .journal-entry,body.hc .pg-ch,body.hc .game-menu-car
 body.hc small,body.hc .settings-desc,body.hc .pg-sub,body.hc .muted{color:#000!important}
 body.hc #quest-box{background:#fff;border-color:#000}
 body.hc #hud{background:#fff}
+
+/* v1.2 — calmer screens: quest lives in the HUD, nothing floats over the room */
+#hud{gap:12px}
+#quest-box{position:static!important;flex:1;min-width:0;max-width:none!important;display:flex;align-items:center;gap:6px;padding:5px 12px;margin:0 6px;border-radius:999px;font-size:12px;box-shadow:none!important;background:#fff8e8!important;border:1px solid #f0c060!important}
+#quest-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+body.in-battle #quest-box{display:none!important}
+#loc-label{top:10px!important;bottom:auto!important;right:10px!important}
+.hud-bars .badge-row{font-size:12px}
+@media(max-width:700px){.hud-bars{display:none}#quest-box{font-size:11px}}
+.ng-name input{font-size:16px}
+
+/* battle box: step bar, guidance, two big actions + a quiet secondary row */
+.bsteps{display:flex;flex-wrap:wrap;align-items:center;gap:3px;margin-bottom:5px}
+.bsteps span{font-size:11px;padding:2px 9px;border-radius:99px;background:#f2f7fb;border:1px solid #d1dfe9;color:#7b90a3;white-space:nowrap}
+.bsteps span.done{background:#dcf5e3;border-color:#7fd19f;color:#1b7a44}
+.bsteps span.cur{background:#0e8f86;border-color:#0e8f86;color:#fff;font-weight:700}
+.bsteps i{font-style:normal;color:#b3c6d6;font-size:11px}
+.bhint{font-size:13.5px;font-weight:700;color:#0b5f59;background:#e9faf7;border:1px solid #b9e3dc;border-radius:8px;padding:5px 10px;margin:2px 0 4px}
+.btags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:3px}
+.btags span{font-size:11px;padding:1px 8px;border-radius:99px;background:#fff4dc;border:1px solid #f0c060;color:#8a5b06}
+#msg-opts.grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px}
+#msg-opts.grid .opt.primary{grid-column:span 2;min-height:50px}
+#msg-opts.grid .opt.primary .o-txt b{font-size:16px}
+#msg-opts.grid .opt.mini{min-height:34px;padding:4px 8px;justify-content:center;background:#f6fafd}
+#msg-opts.grid .opt.mini .o-ico{font-size:15px}
+#msg-opts.grid .opt.mini .o-txt{flex:0 1 auto}
+#msg-opts.grid .opt.mini .o-txt b{font-size:13px;font-weight:600}
+.conf-row{align-items:center}
+.conf-l{font-size:12px;font-weight:700;color:#47627a}
+.conf-n{font-size:10.5px;color:#7b90a3;flex-basis:100%}
+#msg.battle .chips span{font-size:10.5px;padding:1px 8px}
+.shop-card.poor .shop-price{background:#fde4e4;color:#9b1c1c}
+.shop-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+
+#msg-opts.grid .opt.primary{min-height:44px}
+#msg-opts.grid .opt.mini{min-height:30px}
+.bhint .btags{display:inline-flex;margin:0 8px 0 0;vertical-align:middle}
+.bhint .btags span{font-weight:600}

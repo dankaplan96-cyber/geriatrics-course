@@ -42,6 +42,7 @@ const UI = {
     o = o || {};
     return new Promise(res => {
       this._open(o.name, text, o.extra);
+      $('msg-text').style.display = '';
       this.box().classList.toggle('tall', !!o.tall);
       $('msg-next').style.display = '';
       this.active = { kind: 'say', res, auto: o.auto };
@@ -59,12 +60,13 @@ const UI = {
     o = o || {};
     return new Promise(res => {
       this._open(o.name, text, o.extra);
+      $('msg-text').style.display = text ? '' : 'none';
       const b = this.box(), wrap = $('msg-opts');
       b.classList.add('has-opts'); b.classList.toggle('tall', !!o.tall);
       wrap.className = o.grid ? 'grid' : 'list';
       $('msg-next').style.display = 'none';
       let html = '';
-      if (o.conf) html += '<div class="conf-row" role="group" aria-label="רמת ביטחון">' + [['guess', '🤔 ניחוש'], ['maybe', '🙂 סביר'], ['sure', '😎 בטוח/ה']].map(([k, l]) => `<button type="button" class="conf${k === o.conf.value ? ' on' : ''}" data-conf="${k}">${l}</button>`).join('') + '</div>';
+      if (o.conf) html += '<div class="conf-row" role="group" aria-label="רמת ביטחון"><span class="conf-l">ביטחון:</span>' + [['guess', '🤔 ניחוש'], ['maybe', '🙂 סביר'], ['sure', '😎 בטוח/ה']].map(([k, l]) => `<button type="button" class="conf${k === o.conf.value ? ' on' : ''}" data-conf="${k}">${l}</button>`).join('') + '<small class="conf-n">בטוח/ה ונכון = בונוס · בטוח/ה וטועה = יותר נזק</small></div>';
       html += options.map((op, i) => `<button type="button" class="opt ${op.cls || ''}${op.disabled ? ' dis' : ''}" data-i="${i}" ${op.disabled ? 'aria-disabled="true"' : ''} style="${op.tint ? '--tint:' + op.tint : ''}">
         ${op.icon ? `<span class="o-ico">${op.icon}</span>` : ''}<span class="o-txt"><b>${esc(op.label)}</b>${op.sub ? `<small>${op.sub}</small>` : ''}</span>${op.mark ? `<span class="o-mark">${op.mark}</span>` : ''}</button>`).join('');
       if (o.cancel) html += `<button type="button" class="opt back" data-i="-1"><span class="o-txt"><b>↩ חזרה</b></span></button>`;
@@ -97,7 +99,7 @@ const UI = {
   move(d) {
     const a = this.active; if (!a || a.kind !== 'ask') return;
     const n = a.btns.length; let k = a.sel;
-    const cols = a.grid ? 3 : 1;
+    const cols = a.grid ? 2 : 1;
     const delta = d === 'up' ? -cols : d === 'down' ? cols : d === 'left' ? (a.grid ? 1 : 0) : d === 'right' ? (a.grid ? -1 : 0) : 0;
     if (!delta) { if (a.conf && (d === 'left' || d === 'right')) { const order = ['guess', 'maybe', 'sure']; let ci = order.indexOf(a.conf.value) + (d === 'left' ? 1 : -1); ci = clamp(ci, 0, 2); a.conf.value = order[ci]; this.box().querySelectorAll('[data-conf]').forEach(x => x.classList.toggle('on', x.dataset.conf === a.conf.value)); Sound.blip(); } return; }
     for (let tries = 0; tries < n; tries++) { k = (k + delta + n) % n; if (!a.btns[k].classList.contains('dis')) break; }

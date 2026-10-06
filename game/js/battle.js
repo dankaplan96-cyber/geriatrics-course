@@ -14,13 +14,22 @@ const DIFF = {
 };
 const diff = () => DIFF[S.difficulty] || DIFF.normal;
 
-function msgH() { return 112; }   // logical height reserved for the command box
+// Logical height taken by the command box (measured, eased, capped) so the nurse and her plate stay visible.
+let msgHs = 112;
+function msgH() {
+  const sa = $('screen-area'), m = $('msg');
+  if (sa.clientHeight && m.classList.contains('show') && !m.classList.contains('tall')) {
+    const want = clamp(m.offsetHeight * VH / sa.clientHeight + 4, 90, VH * .5);
+    msgHs = lerp(msgHs, want, .15);
+  }
+  return msgHs;
+}
 function battleFrame() {
   // plate / sprite anchors in logical units
   const narrow = VW < 560;
   return {
     foe: { x: narrow ? VW * .28 : VW * .3, y: VH * .2 + 8 + (VH - 320) * .3 },
-    hero: { x: VW * .81, y: VH - msgH() - 4 },
+    hero: { x: VW * .81, y: Math.max(VH * .5, VH - msgH() - 2) },
   };
 }
 
@@ -59,7 +68,7 @@ function drawPlates(B, F) {
   const INK = '#13304a', MUTED = '#5d7488', BG = 'rgba(255,255,255,.94)', EDGE = '#b9cbda';
   // enemy plate — top right (RTL: the problem is introduced where reading starts)
   ctx.save(); ctx.translate(VW - 10, 10); ctx.scale(s, s);
-  const W = 250, H = 64;
+  const W = 236, H = 60;
   ctx.save(); ctx.shadowColor = 'rgba(30,60,90,.18)'; ctx.shadowBlur = 10; ctx.fillStyle = BG; roundRect(ctx, -W, 0, W, H, 9); ctx.fill(); ctx.restore();
   ctx.strokeStyle = EDGE; ctx.lineWidth = 1; roundRect(ctx, -W, 0, W, H, 9); ctx.stroke();
   ctx.fillStyle = T.color; roundRect(ctx, -5, 8, 3, H - 16, 1.5); ctx.fill();
@@ -71,27 +80,12 @@ function drawPlates(B, F) {
   heText(e.barLabel || 'חומרה', -12, 52, { size: 10, bold: true, color: MUTED });
   numText(Math.max(0, Math.round(e.hp)) + ' / ' + e.maxHp, -W + 10, 52, { size: 10, color: MUTED });
   if (e.sub) heText(e.sub, -64, 52, { size: 10, bold: true, color: '#b26c06', maxWidth: 110 });
-  if (B.stages) {
-    const n = B.stages.length;
-    for (let i = 0; i < n; i++) {   // fills from the right, like Hebrew reading
-      const w = (W - 20) / n - 4, x = -10 - (i + 1) * ((W - 20) / n) + 4;
-      ctx.fillStyle = i < B.stage ? '#22a35a' : i === B.stage ? '#f2b544' : 'rgba(120,150,170,.25)';
-      roundRect(ctx, x, H + 5, w, 5, 2.5); ctx.fill();
-    }
-    const st = B.stages[Math.min(B.stage, n - 1)];
-    if (B.stage < n) heText('שלב ' + (B.stage + 1) + '/' + n + ' · ' + st.name, -10, H + 24, { size: 10.5, bold: true, color: '#b26c06', maxWidth: 200, stroke: 'rgba(255,255,255,.95)', strokeW: 4 });
-  }
-  const tags = [];
-  if (B.exposed) tags.push(['🔍 חשוף', '#3f7d12']);
-  if (B.shield) tags.push(['🛡️ מוגן', '#167a3f']);
-  if (B.guide) tags.push(['📘 מדריך', '#1d5fae']);
-  tags.forEach((tg, i) => heText(tg[0], -W + 30 + i * 60, H + 24, { size: 10, bold: true, color: tg[1], maxWidth: 58, align: 'center', stroke: 'rgba(255,255,255,.95)', strokeW: 4 }));
   ctx.restore();
 
   // hero plate — bottom left, above the command box
   const W2 = 196, H2 = 66;
-  const top = VH - msgH() - 14 - H2 * s;
-  ctx.save(); ctx.translate(10 + W2 * s, Math.max(VH * .36, top)); ctx.scale(s, s);
+  const top = VH - msgH() - 8 - H2 * s;
+  ctx.save(); ctx.translate(Math.min(VW * .7, VW - 120 * s), Math.max(VH * .3, top)); ctx.scale(s, s);
   ctx.save(); ctx.shadowColor = 'rgba(30,60,90,.18)'; ctx.shadowBlur = 10; ctx.fillStyle = BG; roundRect(ctx, -W2, 0, W2, H2, 9); ctx.fill(); ctx.restore();
   ctx.strokeStyle = EDGE; ctx.lineWidth = 1; roundRect(ctx, -W2, 0, W2, H2, 9); ctx.stroke();
   heText(B.heroLabel || S.player.name, -10, 16, { size: 13, bold: true, maxWidth: 120, color: INK });
@@ -172,6 +166,22 @@ async function battleTransition(kind) {
   Sound.encounter();
   await Game.transition(kind === 'boss' ? 'boss' : 'battle');
 }
+/* The step bar and the one-line "what now" guidance shown above every battle message. */
+function stepsHTML(B, hint) {
+  const names = B.kind === 'episode' ? ['🔍 אומדן'].concat(STAGES.map(st => st.name)) : B.stages ? B.stages.map(st => st.name) : [];
+  const off = B.kind === 'episode' ? 1 : 0;
+  const cur = B.kind === 'episode' ? (B.stage === 0 && !B.found.size ? 0 : B.stage + 1) : B.stage;
+  const done = i => B.kind === 'episode' ? (i === 0 ? B.found.size > 0 : i - off < B.stage) : i < B.stage;
+  const bar = names.length ? '<div class="bsteps">' + names.map((n, i) => `<span class="${done(i) ? 'done' : ''}${i === cur ? ' cur' : ''}">${done(i) ? '✓ ' : (i + 1) + ' · '}${esc(n)}</span>`).join('<i>‹</i>') + '</div>' : '';
+  const tags = [B.exposed && '🔍 הבעיה חשופה — ההחלטה הבאה תפגע חזק', B.shield && '🛡️ מוגן מטעות אחת', B.guide && '📘 שתי תשובות יוסרו'].filter(Boolean);
+  return bar + (hint ? `<div class="bhint">👉 ${esc(hint)}${tags.length ? `<span class="btags">${tags.map(t => `<span>${t}</span>`).join('')}</span>` : ''}</div>` : '');
+}
+function episodeHint(B) {
+  const st = STAGES[B.stage];
+  if (B.stage === 0 && B.found.size === 0) return 'התחל/י ב-🔍 אומדן: בחר/י ממצא לבדוק. ★ ממצא קריטי חושף את הבעיה.';
+  if (B.stage === 0 && B.found.size < 2) return 'עוד ממצא אחד או שניים — או, אם התמונה ברורה, 🧠 החלטה.';
+  return 'שלב ' + (B.stage + 1) + ' מתוך 4: לחץ/י 🧠 החלטה — ' + st.prompt;
+}
 function chipsHTML(list, cls) { return `<div class="chips ${cls || ''}">` + list.map(c => typeof c === 'string' ? `<span>${esc(c)}</span>` : `<span class="${c.cls || ''}">${esc(c.t)}</span>`).join('') + '</div>'; }
 
 function invOptions() {
@@ -237,27 +247,35 @@ async function episodeBattle(ep, opts) {
     enemy: { name: ep.t, type, icon: TYPES[type].icon, sub: pt.n, barLabel: 'חומרה' }, hpLabel: 'יציבות', heroLabel: S.player.name + ' · ' + pt.n.split(',')[0] });
   const B = battle;
   B.scoreClues = 0;
-  const vit = () => chipsHTML(ep.v.map(t => ({ t: '📈 ' + t, cls: 'vit' })).concat([...B.found].map(j => ({ t: (ep.c[j][2] === 2 ? '★ ' : ep.c[j][2] === 1 ? '◆ ' : '· ') + ep.c[j][0] + ': ' + ep.c[j][1], cls: 'r' + ep.c[j][2] }))));
+  const vit = (hint) => stepsHTML(B, hint) + chipsHTML(ep.v.map(t => ({ t: '📈 ' + t, cls: 'vit' })).concat([...B.found].map(j => ({ t: (ep.c[j][2] === 2 ? '★ ' : ep.c[j][2] === 1 ? '◆ ' : '· ') + ep.c[j][0] + ': ' + ep.c[j][1], cls: 'r' + ep.c[j][2] }))));
   await sleep(520);
   await UI.say(pick(BATTLE_INTROS).replace('{n}', /^[“"]/.test(ep.t) ? ep.t : '“' + ep.t + '”'), { extra: vit() });
   await UI.say(pt.n + ' — ' + ep.st, { name: 'סיפור המקרה', extra: vit() });
+  if (!S.flags.battleTut) {
+    S.flags.battleTut = 1; Game.save();
+    const coach = t => UI.say(t, { name: '🎓 רבקה מסבירה', extra: vit() });
+    await coach('למעלה מימין — הבעיה הקלינית. כל החלטה נכונה מורידה את ה“חומרה” שלה. כשהיא מגיעה לאפס — פתרת את האירוע.');
+    await coach('למטה משמאל — המטופל/ת: “יציבות” יורדת כשטועים, ו“⏱ זמן” מתבזבז על כל בדיקה באומדן.');
+    await coach('הסדר תמיד זהה, כמו בפס השלבים: קודם 🔍 אומדן (2–3 ממצאים), ואז 🧠 ארבע החלטות. השורה עם 👉 תגיד לך מה עכשיו.');
+  }
   const critTotal = ep.c.filter(c => c[2] === 2).length;
   let result = null;
   while (!result) {
     const st = STAGES[B.stage];
+    const startHere = B.stage === 0 && B.found.size < 2;
     const cells = [
-      { icon: '🔍', label: 'אומדן', sub: 'בדיקת ממצא · ⏱12' },
-      { icon: '🧠', label: 'החלטה', sub: st.name, cls: 'gold' },
-      { icon: '📋', label: 'תיק', sub: 'כל הנתונים' },
-      { icon: '🎒', label: 'ציוד', sub: Object.values(S.inv).reduce((a, b) => a + b, 0) + ' פריטים' },
-      { icon: '📞', label: 'ייעוץ', sub: B.used.consult ? 'נוצל' : 'רבקה · פעם אחת', disabled: !!B.used.consult },
-      { icon: '🏃', label: 'יציאה', sub: 'לחזור אחר כך' },
+      { icon: '🔍', label: 'אומדן', sub: 'לבדוק ממצא · ⏱12', cls: 'primary' + (startHere ? ' gold' : '') },
+      { icon: '🧠', label: 'החלטה', sub: 'שלב ' + (B.stage + 1) + ': ' + st.name, cls: 'primary' + (startHere ? '' : ' gold') },
+      { icon: '📋', label: 'תיק', cls: 'mini' },
+      { icon: '🎒', label: 'ציוד', cls: 'mini' },
+      { icon: '📞', label: B.used.consult ? 'ייעוץ ✓' : 'ייעוץ', cls: 'mini', disabled: !!B.used.consult },
+      { icon: '🏃', label: 'יציאה', cls: 'mini' },
     ];
-    const c = await UI.ask('מה עושים? ' + (B.stage === 0 && !B.found.size ? 'כדאי להתחיל באומדן.' : ''), cells, { grid: true, extra: vit() });
+    const c = await UI.ask('', cells, { grid: true, extra: stepsHTML(B, episodeHint(B)) });
     if (c === 0) await assess();
     else if (c === 1) {
       const r = await decide(st.prompt, ep[st.key], ep[st.ck], {
-        name: 'שלב ' + (B.stage + 1) + ' · ' + st.name, cancel: true, conf: true, extra: vit(),
+        name: 'שלב ' + (B.stage + 1) + ' · ' + st.name, cancel: true, conf: true, extra: vit('בחר/י רמת ביטחון ואז את התשובה הנכונה ביותר.'),
         onWrong: async (first, conf) => {
           if (first) { recordConf(conf, false); domain(st.dom, 0, 1); }
           if (B.shield) { B.shield = false; await UI.say('🛡️ הבדיקה הכפולה תפסה את הטעות לפני שהגיעה למטופל. ' + STAGE_HINT[st.key]); return; }
@@ -294,7 +312,7 @@ async function episodeBattle(ep, opts) {
 
   async function assess() {
     const list = ep.c.map((cc, j) => B.found.has(j) ? { label: cc[0] + ': ' + cc[1], mark: cc[2] === 2 ? '★' : cc[2] === 1 ? '◆' : '·', disabled: true, cls: 'r' + cc[2] } : { label: cc[0], sub: '⏱ 12', mark: '?' });
-    const j = await UI.ask('🔍 אומדן — איזה ממצא לבדוק? (זמן: ' + Math.round(B.time) + ')', list, { cancel: true, name: 'אומדן', extra: vit() });
+    const j = await UI.ask('איזה ממצא לבדוק? כל בדיקה עולה ⏱12 (נשאר ' + Math.round(B.time) + ')', list, { cancel: true, name: '🔍 אומדן', extra: vit('★ קריטי = חושף את הבעיה · ◆ תומך · · רעש שמבזבז זמן') });
     if (j < 0) return;
     if (B.time < 12) { await UI.say('⏱ נגמר הזמן לאומדן. עכשיו צריך להחליט עם מה שיש (או ☕ קפה).'); return; }
     B.time -= 12; B.found.add(j);
@@ -348,11 +366,11 @@ async function bossBattle(act) {
   await UI.say(A.leader + ': “ביקור רופאים גדול — ' + A.name + '. אני אציג מקרים מהמחלקה. תשכנע/י אותי שאת/ה מוכן/ה ל' + A.badgeName + '.”', { name: A.leader });
   let qi = 0, result = null;
   while (!result) {
-    const c = await UI.ask('תורך להציג.', [
-      { icon: '🧠', label: 'להשיב', sub: 'שאלה ' + (qi + 1), cls: 'gold' },
-      { icon: '🎒', label: 'ציוד', sub: Object.values(S.inv).reduce((a, b) => a + b, 0) + ' פריטים' },
-      { icon: '🏳️', label: 'לבקש דחייה', sub: 'לחזור מוכן/ה יותר' },
-    ], { grid: true });
+    const c = await UI.ask('', [
+      { icon: '🧠', label: 'להשיב', sub: 'שאלה ' + (qi + 1), cls: 'primary gold' },
+      { icon: '🎒', label: 'ציוד', cls: 'mini' },
+      { icon: '🏳️', label: 'דחייה', cls: 'mini' },
+    ], { grid: true, extra: '<div class="bhint">👉 5 תשובות נכונות מנצחות · 3 טעויות — נחזור לזה בהמשך</div>' });
     if (c === 2) { result = 'leave'; break; }
     if (c === 1) { await useItemMenu('boss'); continue; }
     const q = qs[qi++ % qs.length], e = q.e, st = q.st, pt = C.patients[e.p];
@@ -394,12 +412,14 @@ async function labBattle(idx) {
   startBattle({ kind: 'lab', scene: 'lab', music: 'battle', hpLabel: 'יציבות', stages: cs.steps.map(s => ({ name: STEP_NAMES[s[3]] || s[3] })),
     enemy: { name: cs.t, type: 'labs', icon: '🧪', sub: 'סבב מעבדה ' + (idx + 1) + '/' + C.labRounds.length, barLabel: 'תעלומה' } });
   const B = battle;
-  const extra = chipsHTML(cs.labs.map(t => ({ t: '🧪 ' + t, cls: 'lab' })));
+  const labChips = chipsHTML(cs.labs.map(t => ({ t: '🧪 ' + t, cls: 'lab' })));
+  let extra = stepsHTML(B, 'קרא/י את הפאנל וענה/י על כל שלב.') + labChips;
   await sleep(520);
   await UI.say('טל: “' + cs.st + '” — הפאנל על המסך.', { name: 'סבב מעבדה קריטי', extra });
   let result = null;
   for (let i = 0; i < cs.steps.length && !result; i++) {
     const s = cs.steps[i];
+    extra = stepsHTML(B) + labChips;
     const r = await decide(s[0], s[1], s[2], {
       name: 'שלב ' + (i + 1) + ' · ' + (STEP_NAMES[s[3]] || s[3]), extra, conf: true,
       onWrong: async (first, conf) => {

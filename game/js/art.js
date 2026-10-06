@@ -201,7 +201,7 @@ const Art = (() => {
     if (o.alpha != null) c.globalAlpha = o.alpha;
     if (o.shadow !== false) ellipse(c, 0, -1, 12, 4, 'rgba(0,0,0,.28)');
     const side = dir === 'left' || dir === 'right';
-    if (dir === 'left') c.scale(-1, 1);
+    if (dir === 'right') c.scale(-1, 1);   // side art faces left; mirror it for right
     const fl = o.flash;
     const col = k => fl ? '#fecaca' : L[k];
     // legs
@@ -338,7 +338,6 @@ const Art = (() => {
       c.fillStyle = 'rgba(255,255,255,.55)'; roundRect(c, -26, -11, 46, 5, 3); c.fill();
       c.strokeStyle = '#1e1b2e'; c.lineWidth = 2; roundRect(c, -34, -16, 68, 32, 16); c.stroke(); c.restore();
       eyes(c, 0, -2, 14, 'angry');
-      for (let i = 0; i < 3; i++) { const a = t * 1.6 + i * 2.1; c.save(); c.translate(Math.cos(a) * 46, Math.sin(a) * 22 - 6); c.rotate(a); roundRect(c, -7, -3.5, 14, 7, 3.5); c.fillStyle = ['#f472b6', '#60a5fa', '#fde047'][i]; c.fill(); c.restore(); }
     } else if (type === 'labs') {
       c.save(); c.rotate(Math.sin(t * 1.3) * .1);
       roundRect(c, -16, -46, 32, 84, 15); c.fillStyle = 'rgba(226,232,240,.35)'; c.fill(); c.strokeStyle = '#e2e8f0'; c.lineWidth = 2.5; c.stroke();
@@ -397,7 +396,6 @@ const Art = (() => {
       c.fillStyle = '#334155'; c.fillRect(-20, -30, 12, 6); c.restore();
       eyes(c, -4, 14, 10, 'angry', '#fde047');
     }
-    if (e.icon && type !== 'pager') heText(e.icon, 0, -50, { size: 16, align: 'center', alpha: .9 });
     c.restore();
   }
 
@@ -474,23 +472,12 @@ const Art = (() => {
       drawSky(ctx, w, wy + wh, wy + wh); sun(ctx, wx + ww * .2, wy + 24, 11); skyline(ctx, w, h, wy + wh, 3); ctx.restore();
       ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5; ctx.strokeRect(wx, wy, ww, wh); ctx.fillStyle = '#ffffff'; ctx.fillRect(wx + ww / 2 - 2, wy, 4, wh);
       ctx.fillStyle = '#7dd3c8'; ctx.globalAlpha = .7; ctx.fillRect(wx - 16, wy - 6, 18, wh + 14); ctx.fillRect(wx + ww - 2, wy - 6, 18, wh + 14); ctx.globalAlpha = 1;
-      const mx = w * .08; roundRect(ctx, mx, 26, 64, 44, 5); ctx.fillStyle = '#0f172a'; ctx.fill(); ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.stroke();
-      ctx.strokeStyle = '#4ade80'; ctx.lineWidth = 1.5; ctx.beginPath();
-      for (let i = 0; i <= 54; i += 2) { const ph = (i + clock / 25) % 27, v = ph > 11 && ph < 13 ? -12 : ph >= 13 && ph < 14 ? 6 : 0; if (i) ctx.lineTo(mx + 5 + i, 50 + v); else ctx.moveTo(mx + 5 + i, 50 + v); } ctx.stroke();
-      heText('♥ ' + (88 + Math.round(Math.sin(clock / 900) * 4)), mx + 58, 66, { size: 9, bold: true, color: '#4ade80', ltr: true, align: 'right' });
     }
     ctx.fillStyle = lin(0, horizon, 0, h, [[0, kind === 'conf' ? '#e2c39d' : kind === 'lab' ? '#e3edf5' : '#eef3e8'], [1, kind === 'conf' ? '#c49d72' : kind === 'lab' ? '#b9cad8' : '#c8d9cf']]);
     ctx.fillRect(0, horizon, w, h - horizon);
     ctx.strokeStyle = 'rgba(30,60,80,.08)'; ctx.lineWidth = 1;
     for (let i = -8; i <= 8; i++) { ctx.beginPath(); ctx.moveTo(w / 2 + i * 30, horizon); ctx.lineTo(w / 2 + i * 140, h); ctx.stroke(); }
     for (let k = 1; k < 6; k++) { const yy = horizon + (h - horizon) * Math.pow(k / 6, 1.6); ctx.beginPath(); ctx.moveTo(0, yy); ctx.lineTo(w, yy); ctx.stroke(); }
-    if (who && kind === 'room') {         // the patient in the background bed, behind the problem
-      const bx = w * .3, by = horizon - 6;
-      ctx.fillStyle = '#64748b'; roundRect(ctx, bx - 70, by - 46, 10, 50, 3); ctx.fill();
-      ctx.fillStyle = '#e2e8f0'; roundRect(ctx, bx - 66, by - 10, 150, 18, 6); ctx.fill();
-      drawBust(ctx, bx - 38, by - 18, who, .62);
-      ctx.fillStyle = '#4f7cc7'; roundRect(ctx, bx - 52, by - 14, 136, 16, 6); ctx.fill(); ctx.fillStyle = '#6f97da'; ctx.fillRect(bx - 52, by - 14, 136, 3);
-    }
     ctx.fillStyle = rad(w / 2, h * .45, h * .25, w * .8, [[0, 'rgba(255,255,255,0)'], [1, 'rgba(120,150,170,.18)']]); ctx.fillRect(0, 0, w, h);
   }
   function platform(x, y, rx, ry, col) {

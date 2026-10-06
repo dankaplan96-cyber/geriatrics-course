@@ -43,8 +43,7 @@ const Game = {
     if (n.id === 'rivka') return !this.tutorialDone() ? '!' : null;
     if (n.id === 'leader') return this.bossReady() && !S.badges.includes(this.bossAct()) ? '!' : null;
     if (n.id === 'tal') return this.tutorialDone() && Object.keys(S.labRounds).length < C.labRounds.length ? '?' : null;
-    if (n.trainer) return this.tutorialDone() && S.trainers[n.id] !== S.shift ? '…' : null;
-    return null;
+        return null;
   },
   questText() {
     const f = S.flags;
@@ -322,7 +321,7 @@ const Game = {
     const html = `<p class="muted">משמרת במחלקה גריאטרית: 7 מטופלים, 58 אירועים קליניים, 7 ביקורים גדולים — כל אירוע מקושר להנחיות קליניות עדכניות. ההתקדמות נשמרת במכשיר.</p>
       <div class="pg-section">הדמות שלך</div>
       <div class="ng-looks">${['nurseF', 'nurseM'].map(k => `<button class="ng-look${k === look ? ' diff-sel' : ''}" data-look="${k}"><canvas width="90" height="110" data-draw="${k}"></canvas><b>${k === 'nurseF' ? 'אחות' : 'אח'}</b></button>`).join('')}</div>
-      <label class="ng-name">שם: <input id="ng-name" maxlength="14" value="" placeholder="השם שלך" autofocus></label>
+      <label class="ng-name">שם: <input id="ng-name" maxlength="14" value="" placeholder="לא חובה" enterkeyhint="done" autocomplete="off"></label>
       <div class="pg-section">רמת קושי</div>
       <div class="ng-diff">${Object.entries(DIFF).map(([k, d]) => `<button class="diff-card${k === dif ? ' diff-sel' : ''}" data-diff="${k}"><span>${k === 'learner' ? '🌱' : k === 'normal' ? '⚖️' : '🔥'}</span><b>${d.name}</b><small>${k === 'learner' ? 'טעויות עולות פחות, יותר זמן לאומדן' : k === 'normal' ? 'האיזון שהמשחק נבנה סביבו' : 'פחות זמן, כל טעות מורגשת'}</small></button>`).join('')}</div>
       <div class="db-btns"><button class="btn-main" data-act="go">להתחיל משמרת ←</button></div>`;
