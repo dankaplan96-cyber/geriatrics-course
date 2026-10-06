@@ -1,0 +1,21 @@
+{
+  "id": "./",
+  "name": "המשמרת — מסע קליני בגריאטריה",
+  "short_name": "המשמרת",
+  "description": "משחק RPG קליני בגריאטריה ברמת אח/ות מומחה/ית: משמרת לילה, 7 מטופלים, 58 אירועים, סבבי מעבדה וביקורים גדולים.",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "landscape",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "categories": ["medical", "education", "games"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

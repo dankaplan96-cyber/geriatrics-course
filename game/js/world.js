@@ -1,0 +1,247 @@
+/* המשמרת — the ward: movement, NPCs, interaction, encounters, camera, rendering. */
+'use strict';
+
+const hero = { x: 3, y: 4, dir: 'down', px: 0, py: 0, move: null, phase: 0, path: null, after: null };
+let npcs = [];
+let encSteps = 0;
+const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+const cam = { x: 0, y: 0 };
+
+function curMap() { return MAPS[S.map]; }
+function tileAt(x, y) { const g = curMap().grid; return (g[y] && g[y][x]) || '#'; }
+function npcAt(x, y) { return npcs.find(n => n.x === x && n.y === y && !n.hidden); }
+function blocked(x, y) { const t = tileAt(x, y); return BLOCK.has(t) || !!npcAt(x, y); }
+function bedAt(x, y) {
+  const beds = curMap().beds; if (!beds) return undefined;
+  if (Object.prototype.hasOwnProperty.call(beds, x + ',' + y)) return { key: x + ',' + y, who: beds[x + ',' + y] };
+  if (tileAt(x, y) === 'b' && Object.prototype.hasOwnProperty.call(beds, x + ',' + (y - 1))) return { key: x + ',' + (y - 1), who: beds[x + ',' + (y - 1)] };
+  return undefined;
+}
+
+function loadMap(mi, x, y, dir) {
+  S.map = mi; hero.x = x; hero.y = y; hero.dir = dir || hero.dir; hero.move = null; hero.path = null; hero.after = null;
+  hero.px = x * TILE + TILE / 2; hero.py = y * TILE + TILE;
+  const m = MAPS[mi];
+  npcs = (m.npcs || []).map(n => {
+    const info = n.id === 'leader' ? { name: ACTS[Game.bossAct()].leader, role: ACTS[Game.bossAct()].role, look: ACTS[Game.bossAct()].look } : NPC_INFO[n.id];
+    return Object.assign({}, n, info, { home: { x: n.x, y: n.y }, px: n.x * TILE + TILE / 2, py: n.y * TILE + TILE, move: null, next: 1500 + Math.random() * 2500, seed: Math.random() * 9 });
+  });
+  encSteps = 0;
+  Music.play(m.music);
+  UI.location(m.name, m.sub);
+  S.visited[mi] = 1;
+  Game.refresh();
+}
+
+/* ---------- movement ---------- */
+function tryMove(dir) {
+  hero.dir = dir;
+  const [dx, dy] = DIRS[dir], nx = hero.x + dx, ny = hero.y + dy;
+  if (blocked(nx, ny)) return false;
+  const door = curMap().doors[nx + ',' + ny];
+  if (door && door.boss && !Game.bossReady()) { Game.lockedConference(); return false; }
+  const run = Input.run || S.settings.autoRun;
+  hero.move = { fx: hero.x, fy: hero.y, tx: nx, ty: ny, t: 0, dur: run ? 125 : 210 };
+  hero.x = nx; hero.y = ny;
+  return true;
+}
+function onTileEntered() {
+  S.stats.steps++;
+  const m = curMap(), door = m.doors[hero.x + ',' + hero.y];
+  if (door) { Sound.door(); Game.goTo(door.to, door.x, door.y, door.dir); return; }
+  if (checkTrainers()) return;
+  if (m.encounters && Game.tutorialDone() && S.settings.pager !== false) {
+    encSteps++;
+    if (encSteps > 16 && Math.random() < .07) { encSteps = 0; hero.path = null; Sound.pager(); Game.run(() => quickBattle({})); }
+  }
+}
+
+function checkTrainers() {
+  for (const n of npcs) {
+    if (!n.trainer || S.trainers[n.id] === S.shift || !Game.tutorialDone()) continue;
+    const [dx, dy] = DIRS[n.dir];
+    for (let k = 1; k <= n.sight; k++) {
+      const tx = n.x + dx * k, ty = n.y + dy * k;
+      if (BLOCK.has(tileAt(tx, ty))) break;
+      if (tx === hero.x && ty === hero.y) { hero.path = null; Game.run(() => trainerSpotted(n, k)); return true; }
+    }
+  }
+  return false;
+}
+async function trainerSpotted(n, dist) {
+  n.bubble = '!'; Sound.encounter(); await sleep(600); n.bubble = null;
+  const [dx, dy] = DIRS[n.dir];
+  for (let k = 1; k < dist; k++) { n.move = { fx: n.x, fy: n.y, tx: n.x + dx, ty: n.y + dy, t: 0, dur: 200 }; n.x += dx; n.y += dy; await sleep(210); }
+  hero.dir = Object.keys(DIRS).find(d => DIRS[d][0] === -dx && DIRS[d][1] === -dy);
+  await quickBattle({ trainer: n });
+  S.trainers[n.id] = S.shift; Game.save();
+}
+
+function stepNpcs(dt) {
+  for (const n of npcs) {
+    if (n.move) { n.move.t += dt; const k = clamp(n.move.t / n.move.dur, 0, 1); n.px = lerp(n.move.fx, n.move.tx, k) * TILE + TILE / 2; n.py = lerp(n.move.fy, n.move.ty, k) * TILE + TILE; n.phase = (n.phase || 0) + dt / 60; if (k >= 1) n.move = null; continue; }
+    n.px = n.x * TILE + TILE / 2; n.py = n.y * TILE + TILE;
+    if (!n.wander || Game.state !== 'OVERWORLD' || UI.active) continue;
+    n.next -= dt;
+    if (n.next > 0) continue;
+    n.next = 1800 + Math.random() * 3000;
+    const d = pick(Object.keys(DIRS)), [dx, dy] = DIRS[d], nx = n.x + dx, ny = n.y + dy, [x1, y1, x2, y2] = n.wander;
+    n.dir = d;
+    if (nx < x1 || nx > x2 || ny < y1 || ny > y2 || blocked(nx, ny) || (nx === hero.x && ny === hero.y) || curMap().doors[nx + ',' + ny]) continue;
+    n.move = { fx: n.x, fy: n.y, tx: nx, ty: ny, t: 0, dur: 320 }; n.x = nx; n.y = ny;
+  }
+}
+
+function stepWorld(dt) {
+  stepNpcs(dt);
+  if (hero.move) {
+    hero.move.t += dt;
+    const k = clamp(hero.move.t / hero.move.dur, 0, 1);
+    hero.px = lerp(hero.move.fx, hero.move.tx, k) * TILE + TILE / 2; hero.py = lerp(hero.move.fy, hero.move.ty, k) * TILE + TILE;
+    hero.phase += dt / (hero.move.dur / 3.1);
+    if (k >= 1) { hero.move = null; if (S.stats.steps % 2) Sound.step(); onTileEntered(); }
+    return;
+  }
+  hero.px = hero.x * TILE + TILE / 2; hero.py = hero.y * TILE + TILE;
+  if (Game.state !== 'OVERWORLD' || UI.active || Panel.isOpen || Game.busy) return;
+  let dir = Input.heldDir() || Touch.steer;
+  if (dir) { hero.path = null; hero.after = null; if (!tryMove(dir) && !hero.move) { /* bump */ } return; }
+  if (hero.path && hero.path.length) {
+    const [nx, ny] = hero.path.shift(), d = Object.keys(DIRS).find(k => DIRS[k][0] === nx - hero.x && DIRS[k][1] === ny - hero.y);
+    if (!d || !tryMove(d)) hero.path = null;
+    return;
+  }
+  if (hero.after) { const a = hero.after; hero.after = null; hero.dir = a.dir; interact(); }
+}
+
+/* ---------- tap to walk (BFS) ---------- */
+function planPath(tx, ty) {
+  const g = curMap().grid, W = g[0].length, H = g.length;
+  const goalBlocked = blocked(tx, ty) || BLOCK.has(tileAt(tx, ty));
+  const goals = goalBlocked ? Object.values(DIRS).map(([dx, dy]) => [tx + dx, ty + dy]).filter(([x, y]) => !blocked(x, y)) : [[tx, ty]];
+  if (!goals.length) return null;
+  const key = (x, y) => y * W + x, prev = new Map([[key(hero.x, hero.y), null]]), q = [[hero.x, hero.y]];
+  while (q.length) {
+    const [x, y] = q.shift();
+    if (goals.some(([gx, gy]) => gx === x && gy === y)) {
+      const path = []; let k = key(x, y);
+      while (prev.get(k) != null) { path.unshift([k % W, Math.floor(k / W)]); k = prev.get(k); }
+      return { path, end: [x, y], face: goalBlocked ? Object.keys(DIRS).find(d => DIRS[d][0] === tx - x && DIRS[d][1] === ty - y) : null };
+    }
+    for (const [dx, dy] of Object.values(DIRS)) {
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= W || ny >= H || prev.has(key(nx, ny)) || blocked(nx, ny)) continue;
+      const door = curMap().doors[nx + ',' + ny];
+      if (door && !(nx === tx && ny === ty)) continue;
+      prev.set(key(nx, ny), key(x, y)); q.push([nx, ny]);
+    }
+  }
+  return null;
+}
+const Touch = { steer: null, down: null };
+function tapWorld(lx, ly) {
+  const tx = Math.floor((lx + cam.x) / TILE), ty = Math.floor((ly + cam.y) / TILE);
+  if (tx === hero.x && ty === hero.y) return;
+  const p = planPath(tx, ty);
+  if (!p) return;
+  hero.path = p.path;
+  hero.after = p.face ? { dir: p.face } : null;
+  if (!p.path.length && p.face) { hero.dir = p.face; interact(); hero.after = null; }
+  addRing(tx * TILE + TILE / 2 - cam.x, ty * TILE + TILE / 2 - cam.y, { maxR: 16, color: '#fbbf24', width: 2, life: 380 });
+}
+function setupTouch() {
+  canvas.addEventListener('pointerdown', ev => {
+    if (Game.state === 'TITLE') return;
+    if (UI.active) { if (UI.active.kind === 'say') UI.advance(); return; }
+    if (Game.state === 'CUTSCENE') { Game.cutNext(); return; }
+    if (Game.state !== 'OVERWORLD' || Panel.isOpen) return;
+    const p = eventToLogical(ev);
+    Touch.down = { p, t: performance.now(), id: ev.pointerId };
+    Touch.timer = setTimeout(() => { if (Touch.down) Touch.holding = true; }, 260);
+  });
+  const steer = ev => {
+    if (!Touch.down || !Touch.holding) return;
+    const p = eventToLogical(ev), hx = hero.px - cam.x, hy = hero.py - 20 - cam.y, dx = p.x - hx, dy = p.y - hy;
+    Touch.steer = Math.hypot(dx, dy) < 18 ? null : Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+  };
+  canvas.addEventListener('pointermove', steer);
+  const up = ev => {
+    clearTimeout(Touch.timer);
+    if (Touch.down && !Touch.holding && Game.state === 'OVERWORLD' && !UI.active && !Panel.isOpen) { const p = eventToLogical(ev); tapWorld(p.x, p.y); }
+    Touch.down = null; Touch.holding = false; Touch.steer = null;
+  };
+  canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up); canvas.addEventListener('pointerleave', up);
+}
+
+/* ---------- interaction ---------- */
+function interact() {
+  if (hero.move || Game.busy) return;
+  const [dx, dy] = DIRS[hero.dir];
+  let tx = hero.x + dx, ty = hero.y + dy;
+  const m = curMap();
+  // talk across a counter, like at a nurses' station
+  if (tileAt(tx, ty) === 'C' && npcAt(tx + dx, ty + dy)) { tx += dx; ty += dy; }
+  const n = npcAt(tx, ty);
+  if (n) { n.dir = Object.keys(DIRS).find(d => DIRS[d][0] === -dx && DIRS[d][1] === -dy) || n.dir; Game.run(() => Game.talk(n)); return; }
+  const bed = bedAt(tx, ty);
+  if (bed !== undefined) { Game.run(() => Game.visitPatient(bed.who)); return; }
+  const hs = m.hotspots && m.hotspots[tx + ',' + ty];
+  if (hs) { Game.run(() => Game.hotspot(hs)); return; }
+  const t = tileAt(tx, ty);
+  const FLAVOR = { O: 'מבעד לחלון: העיר ישנה. רק החלונות של המחלקה דולקים.', P: 'עציץ. מישהו מהלילה משקה אותו בסתר.', w: 'כיסא גלגלים. הבלמים — נעולים. ככה צריך.', y: 'זהירות, רצפה רטובה. מניעת נפילות מתחילה בשלט.', c: 'עגלת תרופות. נעולה. הכל מתועד.', I: 'עמוד עירוי. המשאבה מתקתקת בשקט.', k: 'כיור. רחיצת ידיים — 20 שניות, ולא פחות.', H: 'מתקן חיטוי. לחיצה אחת לפני ואחרי כל מטופל.', A: 'פוסטר: “קום לאט — 3 שלבים: לשבת, לחכות, לעמוד”.', Q: 'השעון מראה 03:12. השעה שבה דליריום אוהב להופיע.', m: 'מוניטור. סינוס, 76 לדקה. בינתיים.', T: 'שולחן. ערימת תיקים ותה שהתקרר.', h: 'כיסא. לא עכשיו — יש משמרת.', F: 'מקרר דגימות. 4°C. בלי אוכל!', L: 'שולחן מעבדה נקי ומסודר.', S: 'ספה. אפשר לנוח כאן ולסיים משמרת.', J: 'מסך הקרנה. השקף האחרון: “מה המטרה של המטופל?”' };
+  if (FLAVOR[t]) Game.run(() => UI.say(FLAVOR[t]));
+}
+
+/* ---------- rendering ---------- */
+function renderWorld() {
+  const m = curMap(), W = m.grid[0].length * TILE, H = m.grid.length * TILE;
+  cam.x = W <= VW ? -(VW - W) / 2 : clamp(hero.px - VW / 2, 0, W - VW);
+  cam.y = H <= VH ? -(VH - H) / 2 : clamp(hero.py - 20 - VH / 2, 0, H - VH);
+  cam.x = Math.round(cam.x); cam.y = Math.round(cam.y);
+  ctx.fillStyle = '#0b1220'; ctx.fillRect(0, 0, VW, VH);
+  ctx.save(); ctx.translate(-cam.x, -cam.y);
+  ctx.drawImage(Art.mapLayer(S.map), 0, 0, W, H);
+  Art.mapAnim(ctx, S.map, clock);
+  // door plates
+  if (m.labels) for (const k in m.labels) {
+    const [x, y] = k.split(',').map(Number), cx = x * TILE + TILE / 2, cy = y === 0 ? y * TILE + 12 : y * TILE + 20;
+    const locked = m.doors[k] && m.doors[k].boss && !Game.bossReady();
+    setFont(9, true); const tw = ctx.measureText(m.labels[k]).width + 10;
+    ctx.fillStyle = locked ? 'rgba(127,29,29,.9)' : 'rgba(15,23,42,.85)'; roundRect(ctx, cx - tw / 2, cy - 8, tw, 14, 4); ctx.fill();
+    ctx.strokeStyle = locked ? '#fca5a5' : 'rgba(233,193,124,.7)'; ctx.lineWidth = 1; roundRect(ctx, cx - tw / 2, cy - 8, tw, 14, 4); ctx.stroke();
+    heText((locked ? '🔒 ' : '') + m.labels[k], cx, cy + 3, { size: 9, bold: true, color: locked ? '#fecaca' : '#fde68a', align: 'center' });
+    const pid = Object.keys(PATIENT_ROOM).filter(p => MAPS[PATIENT_ROOM[p] + 1] && m.doors[k].to === PATIENT_ROOM[p] + 1);
+    if (pid.some(p => Game.availableEpisode(p))) drawBubble(cx + tw / 2 + 4, cy + 10, '!');
+  }
+  // patients in beds
+  if (m.beds) for (const k in m.beds) {
+    const who = m.beds[k]; if (!who) continue;
+    const [x, y] = k.split(',').map(Number);
+    const has = Game.availableEpisode(who);
+    Art.drawPatientInBed(ctx, x * TILE, y * TILE, who, clock, { sleep: !has });
+    if (has) drawBubble(x * TILE + TILE / 2, y * TILE + 2, '!');
+  }
+  // people, sorted by depth
+  const ents = npcs.filter(n => !n.hidden).map(n => ({ y: n.py, draw: () => {
+    Art.drawPerson(ctx, n.px, n.py, n.look, { dir: n.dir, walking: !!n.move, phase: n.phase || 0, seed: n.seed });
+    const b = n.bubble || Game.npcBubble(n);
+    if (b) drawBubble(n.px, n.py - 52, b);
+  } }));
+  ents.push({ y: hero.py + .1, draw: () => Art.drawPerson(ctx, hero.px, hero.py, S.player.look, { dir: hero.dir, walking: !!hero.move, phase: hero.phase }) });
+  ents.sort((a, b) => a.y - b.y).forEach(e => e.draw());
+  // tap path dots
+  if (hero.path && hero.path.length) hero.path.forEach(([x, y], i) => circle(ctx, x * TILE + TILE / 2, y * TILE + TILE / 2, 2.5, 'rgba(251,191,36,' + (.5 - i * .03) + ')'));
+  ctx.restore();
+  renderFx();
+  // warm vignette, like the reference's evening light
+  ctx.fillStyle = rad(VW / 2, VH / 2, VH * .35, VW * .7, [[0, 'rgba(0,0,0,0)'], [1, 'rgba(3,8,20,.42)']]); ctx.fillRect(0, 0, VW, VH);
+}
+function drawBubble(x, y, kind) {
+  const b = Math.sin(clock / 220) * 2.5;
+  ctx.save(); ctx.translate(x, y - 8 + b);
+  ctx.fillStyle = '#fff'; roundRect(ctx, -8, -18, 16, 16, 5); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-3, -3); ctx.lineTo(0, 3); ctx.lineTo(3, -3); ctx.fill();
+  ctx.strokeStyle = 'rgba(15,23,42,.6)'; ctx.lineWidth = 1; roundRect(ctx, -8, -18, 16, 16, 5); ctx.stroke();
+  heText(kind, 0, -5, { size: 12, bold: true, color: kind === '!' ? '#dc2626' : kind === '?' ? '#2563eb' : '#0f172a', align: 'center', ltr: true });
+  ctx.restore();
+}
