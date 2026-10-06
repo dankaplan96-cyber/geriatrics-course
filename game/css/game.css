@@ -245,8 +245,8 @@ button.shop-card:hover,button.shop-card:focus{border-color:var(--tint);box-shado
 .dex-entry{display:flex;gap:10px;align-items:center;justify-content:space-between}
 .dex-range{display:flex;gap:8px;align-items:baseline}
 .dex-range small{color:var(--muted);font-size:11px}
-.dex-range b{font-size:22px;color:#fbcfe8;direction:ltr}
-.dex-range span{font-size:12px;color:var(--muted);direction:ltr}
+.dex-range b{font-size:22px;color:#fbcfe8;unicode-bidi:plaintext}
+.dex-range span{font-size:12px;color:var(--muted);unicode-bidi:plaintext}
 /* new game */
 .ng-looks{display:flex;gap:10px}
 .ng-look{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 14px;background:#101f31;border:1px solid #385168;border-radius:10px}
@@ -345,3 +345,145 @@ body.hc #hud{background:#000}
 @keyframes maeHint{to{opacity:1}}
 @keyframes maeOut{to{opacity:0;transform:scale(1.04)}}
 @media (prefers-reduced-motion:reduce){.mae-run *{animation-duration:.01s!important;animation-delay:0s!important}}
+/* =====================================================================
+   LIGHT THEME (v1.1) — a bright day-shift palette, right-aligned layout
+   ===================================================================== */
+:root{color-scheme:light;--ink:#16324a;--surface:#ffffff;--surface-2:#f2f7fb;--surface-3:#e7f0f6;--line:#c9d8e4;--line-2:#b3c6d6;--paper:#16324a;--muted:#5d7488;--accent:#0e8f86;--gold:#c27c0e;--gold-soft:#fff4dc;--teal-soft:#e2f5f2;--stripe:#e0a93b}
+html,body{background:#eaf2f7;color:var(--ink)}
+#game-container{background:#eaf2f7}
+#screen-area{background:#dfeaf1}
+/* HUD */
+#hud{background:linear-gradient(180deg,#ffffff,#f1f7fb);border-bottom:1px solid #cfdde8;box-shadow:0 2px 10px #1d3b5a14;color:var(--ink)}
+.hud-name{color:#47627a}
+.hud-name strong{color:#0f2a40}
+.bar-tag{color:#6b8296}
+.mini-bar{background:#e3ecf3;box-shadow:inset 0 0 0 1px #c6d6e3}
+.mini-bar-fill{background:linear-gradient(90deg,#f0b232,#f7d27a)}
+.flow-chip{border-color:#f3a76a;color:#b4521a;background:#fff1e6}
+.coin-chip{border-color:#e7c26f;color:#8a5b06;background:#fff7e3}
+.badge-row i{filter:grayscale(1);opacity:.35}
+.system-btn{background:#ffffff;border:1px solid #b9cbda;color:var(--ink);box-shadow:0 2px 6px #1d3b5a14}
+.system-btn:active{background:#e8f2f8}
+@media(hover:hover){.system-btn:hover{background:#f0f7fb;border-color:#8fb0c8}}
+.menu-btn{background:#ffffff!important;border-color:#9fb8cb!important;color:var(--ink)}
+/* overlays on the screen — right aligned */
+#quest-box{top:9px;right:9px;left:auto;background:rgba(255,255,255,.94);border:1px solid #e0a93b;color:var(--ink);box-shadow:0 4px 14px #1d3b5a22}
+#quest-box strong{color:#c27c0e}
+#quest-text{color:#24425c}
+#loc-label{top:auto;bottom:12px;left:auto;right:12px;text-align:right;background:linear-gradient(270deg,rgba(255,255,255,.95),rgba(255,255,255,0));border-right:4px solid #0e8f86;padding:6px 12px 6px 30px}
+#loc-label b{color:#0f2a40}
+#loc-label small{color:#5d7488}
+#skip-btn{left:auto;right:10px}
+#ach-toast{left:auto;right:14px;border-color:#e0a93b;background:linear-gradient(120deg,#fff8e8,#ffffff);box-shadow:0 10px 30px #1d3b5a33;color:var(--ink)}
+#ach-toast small{color:#c27c0e}
+#ach-toast b{color:#0f2a40}
+#ach-toast em{color:#5d7488}
+#ach-toast.mini{background:#ffffff;border-color:#b9cbda}
+/* dialogue & command box */
+#msg{background:rgba(255,255,255,.97);border:2px solid #e0a93b;box-shadow:0 10px 30px #1d3b5a33;color:var(--ink);text-align:right}
+#msg.battle{border:1px solid #b9cbda;border-right:5px solid var(--stripe);background:rgba(255,255,255,.97)}
+#msg-name{background:#0e8f86;color:#fff}
+#msg-text{color:#13304a}
+#msg-next{color:#c27c0e}
+.chips span{background:#f2f7fb;border-color:#c9d8e4;color:#24425c}
+.chips .vit{border-color:#8cc5e6;color:#0b5b86;background:#eaf6fd}
+.chips .r2{border-color:#e0a93b;color:#8a5b06;background:#fff4dc;font-weight:700}
+.chips .r1{border-color:#a9bfd0;color:#36536b}
+.chips .r0{color:#8aa0b2}
+.chips .lab{border-color:#e7a2c7;color:#9d2463;background:#fdeef6}
+.opt{background:#f6fafd;border:1px solid #c9d8e4;color:var(--ink);text-align:right}
+.opt small{color:#5d7488}
+.opt .o-mark{color:#8aa0b2}
+.opt.sel{background:#e2f5f2;border-color:#0e8f86;box-shadow:0 0 0 1px #0e8f8655 inset}
+.opt.right{background:#dcf5e3;border-color:#22a35a;color:#0f4d29}
+.opt.wrong{background:#fde4e4;border-color:#e05252;color:#7a1d1d}
+.opt.gold{background:linear-gradient(150deg,#fff4dc,#ffe9b8);border-color:#e0a93b}
+.opt.gold.sel{border-color:#c27c0e;box-shadow:0 0 0 1px #c27c0e66 inset}
+.opt.back{background:transparent}
+#msg-opts.grid .opt{flex-direction:row;justify-content:flex-start;text-align:right;gap:8px;padding:6px 12px;background:linear-gradient(150deg,#ffffff,#eef5fa);border-color:#c3d4e2}
+#msg-opts.grid .opt .o-txt b{font-size:15px}
+#msg-opts.grid .opt.sel{background:linear-gradient(150deg,#e9faf7,#d8f1ed);border-color:#0e8f86}
+#msg-opts.grid .opt.gold{background:linear-gradient(150deg,#fff6e2,#ffe7b0);border-color:#e0a93b}
+#msg-opts.grid .opt .o-ico{font-size:20px}
+.conf{background:#f2f7fb;border-color:#c9d8e4;color:#47627a}
+.conf.on{background:#fff4dc;border-color:#e0a93b;color:#8a5b06}
+/* panels */
+#scrim{background:rgba(40,70,95,.22)}
+.panel{background:linear-gradient(160deg,#ffffff,#f4f9fc);border:1px solid #c3d4e2;box-shadow:0 20px 60px #1d3b5a40;color:var(--ink);text-align:right}
+.panel-header{border-bottom:1px solid #d7e3ec;color:#0e7a72}
+.x-btn{background:#f2f7fb;border-color:#b9cbda;color:var(--ink)}
+.x-btn:hover{background:#e3eef6}
+.panel-item,.journal-entry,.pg-ch,.st-stat,.dex-card,.diff-card,.ng-look,.slot-card{background:#f7fbfd;border-color:#d1dfe9;color:var(--ink)}
+.journal-entry{border-inline-start-color:#e0a93b}
+.journal-entry b{color:#b26c06}
+.journal-entry.warn b{color:#b42f2f}
+.journal-entry.sbar b,.journal-entry.sbar i{color:#0b6fa4}
+.journal-entry.evid{border-inline-start-color:#0e8f86;background:#f1faf8}
+.journal-entry.evid b{color:#0e7a72}
+.menu-context{background:#f1faf8;border-inline-start-color:#0e8f86}
+.menu-context small,.panel-item small,.pg-sub,.settings-desc,.muted,.st-stat small,.st-lv small,.diff-card small,.game-menu-card small{color:#5d7488}
+.game-menu-card{background:linear-gradient(150deg,#ffffff,#eef5fa);border:1px solid #c6d6e3;border-bottom:3px solid #b7c9d8;color:var(--ink);text-align:right;align-items:flex-start;padding:7px 10px}
+.game-menu-card:focus,.game-menu-card:hover{background:#e9faf7;border-color:#0e8f86}
+.menu-footer{color:#5d7488}
+.menu-footer span:first-child{color:#b26c06}
+.btn-main{background:linear-gradient(180deg,#ffd982,#f2b544);border:1px solid #f0c060;border-bottom:4px solid #c98a1c;color:#3a2504;box-shadow:0 5px 16px #c98a1c33}
+.btn-secondary{background:linear-gradient(180deg,#2fb3a8,#0e8f86);border-color:#36b8ad;border-bottom-color:#0a6c65;color:#fff}
+.close-btn{background:#f2f7fb;border:1px solid #b9cbda;color:var(--ink)}
+.danger-btn{background:#fde4e4!important;border-color:#e59a9a!important;color:#7a1d1d!important}
+.diff-sel,.diff-opt.diff-sel{background:#e2f5f2!important;border-color:#0e8f86!important;color:#0b5f59!important}
+.pg-bar{background:#e3ecf3;box-shadow:inset 0 0 0 1px #c9d8e4}
+.pg-ch.current{border-inline-start-color:#e0a93b;background:linear-gradient(270deg,#fff8e8,#f7fbfd)}
+.pg-tag{border-color:#b3c6d6;color:#5d7488}
+.pg-tag.done{border-color:#4cbf7d;color:#1b7a44}
+.pg-steps span{color:#7b90a3}
+.pg-steps span.ok{color:#1b7a44}
+.pg-section{color:#b26c06}
+.st-top,.db-top,.badge-hero{background:linear-gradient(270deg,#e9faf7,#ffffff);border-color:#b9d9d4;color:var(--ink)}
+.db-top.lose{background:linear-gradient(270deg,#fdecec,#ffffff);border-color:#e7a6a6}
+.st-top canvas,.pt-face{background:#e7f0f6;border-color:#c3d4e2}
+.st-lv b,.st-stat em{color:#b26c06}
+.st-chips span{background:#f2f7fb;border-color:#c9d8e4}
+.db-row{background:#f2f7fb}
+.db-row span{color:#0e7a72}
+.db-stars{color:#e0a10b}
+.badge-hero b{color:#b26c06}
+.badge-row.big i.on{text-shadow:0 0 10px #f2b54488}
+.cert{background:radial-gradient(ellipse at top,#fff6e2,#ffffff);border-color:#e0a93b}
+.cert h2{color:#b26c06}
+.dl-card{background:linear-gradient(270deg,#fff1e6,#ffffff);border-color:#f3a76a}
+.dl-card.done{background:#f7fbfd;border-color:#d1dfe9}
+.dl-head b{color:#b4521a}
+.shop-counter{background:linear-gradient(270deg,#fdeef6,#ffffff);border-color:#efc3dc}
+.shop-face{background:#fff;border-color:#f472b6}
+.shop-bubble{background:#ffffff;border:1px solid #efc3dc;color:#16324a}
+.shop-wallet{background:#fff7e3;border-color:#e7c26f;color:#8a5b06}
+.shop-card{background:linear-gradient(160deg,color-mix(in srgb,var(--tint) 16%,#ffffff),#ffffff 75%);border-color:color-mix(in srgb,var(--tint) 45%,#d1dfe9);color:var(--ink);text-align:right}
+.shop-fx{color:#5d7488}
+.shop-name em{color:#b26c06}
+.shop-price{background:#f2b544;color:#3a2504}
+.dex-card{color:#9aaebe;text-align:right;align-items:flex-start}
+.dex-card.s1{color:#5d7488}
+.dex-card.s2{background:linear-gradient(150deg,#fdeef6,#ffffff);border-color:#e7a2c7;color:var(--ink)}
+.dex-card.s2 b{color:#9d2463}
+.dex-range b{color:#9d2463}
+.ng-name input{background:#ffffff;border-color:#b9cbda;color:var(--ink)}
+.title-modal{background:linear-gradient(to bottom,rgba(255,255,255,0) 58%,rgba(255,255,255,.55) 82%,rgba(255,255,255,.85))}
+.title-tag{color:#47627a;text-shadow:none}
+#boot-gate{background:#f4f8fb;color:#0e7a72}
+#boot-gate .gate-ring{border-color:rgba(14,143,134,.55)}
+/* sources */
+.srcs{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;align-items:center}
+a.src{font-size:11px;padding:2px 9px;border-radius:99px;background:#eaf6fd;border:1px solid #9cc9e6;color:#0b5b86;text-decoration:none;line-height:1.6}
+a.src:hover{background:#d8eefb}
+.evid-k{margin-top:4px;color:#0e5f59;font-size:12.5px}
+.evid-g{font-size:12px;color:#0e7a72;font-weight:700;margin-bottom:2px}
+ol.biblio{padding-inline-start:20px;display:flex;flex-direction:column;gap:5px;font-size:12px;line-height:1.5}
+ol.biblio a{color:#0b5b86;text-decoration:none}
+ol.biblio a:hover{text-decoration:underline}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #0e8f86;outline-offset:2px}
+/* high contrast (light) */
+body.hc .panel,body.hc .game-menu-panel,body.hc #msg{background:#fff;border-color:#000}
+body.hc .panel-item,body.hc .journal-entry,body.hc .pg-ch,body.hc .game-menu-card,body.hc .opt{background:#fff;border-color:#000;color:#000}
+body.hc small,body.hc .settings-desc,body.hc .pg-sub,body.hc .muted{color:#000!important}
+body.hc #quest-box{background:#fff;border-color:#000}
+body.hc #hud{background:#fff}

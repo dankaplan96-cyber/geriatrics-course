@@ -141,6 +141,7 @@ const Game = {
       ${STAGES.map(st => `<div class="db-row"><span>${st.name}</span><b>${esc(ep[st.key][ep[st.ck]])}</b></div>`).join('')}
       <div class="pg-section">★ ממצאים קריטיים</div>
       <div class="chips">${crit.map(c => `<span class="r2">${esc(c[0])}: ${esc(c[1])}</span>`).join('')}</div>
+      ${EP_EVIDENCE[ep.id] ? `<div class="journal-entry evid"><b>📚 מה אומרות ההנחיות</b>${esc(EP_EVIDENCE[ep.id].k)}<div class="srcs">${srcLinks(EP_EVIDENCE[ep.id].s)}</div></div>` : ''}
       <div class="journal-entry"><b>💡 פנינה קלינית</b>${esc(ep.pe)}</div>
       <div class="journal-entry warn"><b>⚠️ מה היה קורה אם מפספסים</b>${esc(ep.risk)}</div>
       <div class="journal-entry sbar"><b>📝 מסירה (SBAR)</b>
@@ -186,11 +187,12 @@ const Game = {
     const say = (t, o) => UI.say(t, Object.assign({ name: n.name + ' · ' + n.role }, o));
     if (n.id === 'rivka') {
       if (!this.tutorialDone()) return this.tutorial(n);
-      const c = await UI.ask('רבקה: “מה צריך?”', [{ icon: '💬', label: 'עצה למשמרת', sub: 'לאן עכשיו?' }, { icon: '📋', label: 'משימות המשמרת' }, { icon: '🧭', label: 'איפה אני חלש/ה?', sub: 'לפי הביצועים שלך' }, { icon: '❓', label: 'איך זה עובד?' }], { name: 'רבקה · האחות האחראית', cancel: true });
+      const c = await UI.ask('רבקה: “מה צריך?”', [{ icon: '💬', label: 'עצה למשמרת', sub: 'לאן עכשיו?' }, { icon: '📋', label: 'משימות המשמרת' }, { icon: '🧭', label: 'איפה אני חלש/ה?', sub: 'לפי הביצועים שלך' }, { icon: '❓', label: 'איך זה עובד?' }, { icon: '🔬', label: 'על מה זה מבוסס?' }], { name: 'רבקה · האחות האחראית', cancel: true });
       if (c === 0) await say('“' + this.questText() + '.” ' + pick(COFFEE_PEARLS));
       if (c === 1) openDaily();
       if (c === 2) await say(weakAdvice());
       if (c === 3) await this.explainLoop(say);
+      if (c === 4) openEvidence();
     } else if (n.id === 'shula') {
       openShop();
     } else if (n.id === 'tal') {
@@ -230,10 +232,11 @@ const Game = {
     await say('“🔍 אומדן — בוחרים ממצאים לבדוק. ★ קריטי חושף את הבעיה, ◆ תומך, ו-· רעש שגוזל זמן. 🧠 החלטה — ארבעה שלבים: פרשנות, מטרה, התערבות והערכה חוזרת.”');
     await say('“לפני כל החלטה בוחרים רמת ביטחון. בטוח/ה ונכון? פגיעה חזקה. בטוח/ה וטועה? המטופל משלם יותר. זה כיול — בדיוק כמו בחיים.”');
     await say('“אם היציבות מגיעה לאפס — קוד. לא נורא: מקבלים סיכום מלא ומנסים שוב. 60% מהאירועים בפרק פותחים את הביקור הגדול בחדר הישיבות — ושם מרוויחים תג.”');
+    await say('“וחשוב: כל אירוע מקושר להנחיות עדכניות — Beers, NICE, KDIGO, AHA, Surviving Sepsis ועוד. בסיכום של כל מקרה תראה/י ‘מה אומרות ההנחיות’ וקישור למקור.”');
   },
   async tutorial(n) {
     const say = t => UI.say(t, { name: 'רבקה · האחות האחראית' });
-    await say('“' + S.player.name + '! טוב שהגעת. משמרת לילה, מחלקה מלאה, ואני צריכה מישהו/י עם עיניים טובות.”');
+    await say('“' + S.player.name + '! טוב שהגעת. משמרת בוקר, מחלקה מלאה, ואני צריכה מישהו/י עם עיניים טובות.”');
     await this.explainLoop(say);
     await say('“הנה — שני ☕ קפה ו-🔦 פנס לדרך. ותזכור/י: בגריאטריה “חולשה” היא תיאור, לא אבחנה.”');
     S.inv.coffee += 2; S.inv.torch += 1; S.flags.tutorial = true;
@@ -264,7 +267,7 @@ const Game = {
     const c = await UI.ask(lockTxt, opts, { name: pt.n, extra: card, cancel: true });
     if (c < 0) return;
     if (opts[c].icon === '🔁') await episodeBattle(done[0]);
-    else await UI.say(pick(['“תודה שבאת. בלילה הכל נשמע חזק יותר.”', '“הבת שלי תבוא בבוקר. תגיד/י לה שאני בסדר?”', '“פעם הייתי אח/ות בעצמי, את/ה יודע/ת?”', '“רק אל תשכח/י את המשקפיים שלי על השידה.”']), { name: pt.n });
+    else await UI.say(pick(['“תודה שבאת. כשמסבירים לי מה קורה, פחות מפחיד.”', '“הבת שלי תבוא בבוקר. תגיד/י לה שאני בסדר?”', '“פעם הייתי אח/ות בעצמי, את/ה יודע/ת?”', '“רק אל תשכח/י את המשקפיים שלי על השידה.”']), { name: pt.n });
   },
 
   async hotspot(kind) {
@@ -295,7 +298,7 @@ const Game = {
     S.shift++; S.shiftLog = { eps: 0, xp: 0 }; this.touchDay(); this.makeDaily();
     loadMap(0, 2, 5, 'up'); this.uncover();
     Sound.heal();
-    await UI.say('🌅 בוקר. סיכום משמרת: ' + log.eps + ' אירועים, +' + log.xp + ' XP. משמרת ' + S.shift + ' מתחילה — משימות חדשות על הלוח.');
+    await UI.say('🌅 משמרת חדשה. סיכום המשמרת הקודמת: ' + log.eps + ' אירועים, +' + log.xp + ' XP. משמרת ' + S.shift + ' מתחילה — משימות חדשות על הלוח.');
     this.save();
   },
   lockedConference() {
@@ -316,7 +319,7 @@ const Game = {
   hideTitle() { $('title-modal').classList.add('title-hidden'); document.body.classList.remove('on-title'); },
   newGameDialog() {
     let look = 'nurseF', dif = 'normal';
-    const html = `<p class="muted">משמרת לילה במחלקה גריאטרית: 7 מטופלים, 58 אירועים קליניים, 7 ביקורים גדולים. ההתקדמות נשמרת במכשיר.</p>
+    const html = `<p class="muted">משמרת במחלקה גריאטרית: 7 מטופלים, 58 אירועים קליניים, 7 ביקורים גדולים — כל אירוע מקושר להנחיות קליניות עדכניות. ההתקדמות נשמרת במכשיר.</p>
       <div class="pg-section">הדמות שלך</div>
       <div class="ng-looks">${['nurseF', 'nurseM'].map(k => `<button class="ng-look${k === look ? ' diff-sel' : ''}" data-look="${k}"><canvas width="90" height="110" data-draw="${k}"></canvas><b>${k === 'nurseF' ? 'אחות' : 'אח'}</b></button>`).join('')}</div>
       <label class="ng-name">שם: <input id="ng-name" maxlength="14" value="" placeholder="השם שלך" autofocus></label>
@@ -339,7 +342,7 @@ const Game = {
   },
   startCutscene() {
     this.state = 'CUTSCENE'; document.body.classList.add('on-cutscene');
-    this.cut = { i: 0, t: 0, pages: ['העיר עוד ישנה.', 'בקומה השלישית של בית החולים, המחלקה הגריאטרית ערה תמיד.', 'שבעה מטופלים. שבעה סיפורים. כל שינוי קטן — מספר משהו גדול.', S.player.name + ', המשמרת שלך מתחילה עכשיו.'] };
+    this.cut = { i: 0, t: 0, pages: ['בוקר. העיר מתעוררת.', 'בקומה השלישית של בית החולים, המחלקה הגריאטרית כבר בתנועה.', 'שבעה מטופלים. שבעה סיפורים. כל שינוי קטן — מספר משהו גדול.', 'כל החלטה במשמרת מבוססת על הנחיות קליניות ומחקר עדכני.', S.player.name + ', המשמרת שלך מתחילה עכשיו.'] };
     Music.play('title');
   },
   cutNext() { if (!this.cut) return; this.cut.i++; this.cut.t = 0; Sound.blip(); if (this.cut.i >= this.cut.pages.length) this.endCutscene(); },
@@ -392,13 +395,13 @@ function openMenu() {
   const cards = [['status', '📋', 'כרטיס אח/ות', 'רמה, תחומים, כיול'], ['inv', '🎒', 'ציוד', Object.values(S.inv).reduce((a, b) => a + b, 0) + ' פריטים'], ['patients', '🛏️', 'תיק מטופלים', Object.keys(S.episodes).length + '/' + C.episodes.length + ' אירועים'],
     ['journal', '📖', 'יומן', 'פנינות ומסירות'], ['dex', '🧪', 'מעבדון', Object.values(S.dex).filter(v => v === 2).length + '/' + C.labs.length], ['daily', '🗓️', 'משימות המשמרת', 'משמרת ' + S.shift],
     ['map', '🗺️', 'מפת המחלקה', 'מעבר מהיר'], ['settings', '⚙️', 'הגדרות', 'סאונד, טקסט, נגישות'], ['save', '💾', 'שמירה וגיבוי', 'ייצוא / ייבוא'],
-    ['library', '📚', 'ספריית הידע', 'הגרסה המלאה'], ['help', '❓', 'עזרה', 'מקשים ומהלך'], ['title', '🏠', 'למסך הפתיחה', 'נשמר אוטומטית']];
+    ['evidence', '🔬', 'בסיס מחקרי', 'הנחיות ומקורות'], ['library', '📚', 'ספריית הידע', 'הגרסה המלאה'], ['help', '❓', 'עזרה', 'מקשים ומהלך'], ['title', '🏠', 'למסך הפתיחה', 'נשמר אוטומטית']];
   Panel.open('☰ תפריט', `<div class="menu-context"><small>המשימה</small><div>${esc(Game.questText())}</div></div>
     <div class="game-menu-grid">${cards.map(c => `<button class="game-menu-card" data-m="${c[0]}"><b>${c[1]} ${c[2]}</b><small>${c[3]}</small></button>`).join('')}</div>
     <div class="menu-footer"><span>${esc(S.player.name)} · ${titleFor(levelOf(S.xp))}</span><span>משמרת ${S.shift} · ${DIFF[S.difficulty].name}</span></div>`, { cls: 'game-menu-panel', bind: el => {
     el.querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
       const m = b.dataset.m;
-      ({ status: openStatus, inv: openInventory, patients: openPatients, journal: openJournal, dex: openDex, daily: openDaily, map: openMap, settings: openSettings, save: openSave, help: openHelp,
+      ({ evidence: openEvidence, status: openStatus, inv: openInventory, patients: openPatients, journal: openJournal, dex: openDex, daily: openDaily, map: openMap, settings: openSettings, save: openSave, help: openHelp,
         library: () => { window.open('library/index.html', '_blank', 'noopener'); },
         title: () => { Game.save(); Panel.close(true); Game.state = 'TITLE'; UI.hide(); UI.quest(''); Game.showTitle(); } })[m]();
     });
@@ -429,7 +432,7 @@ function openInventory() {
     <div class="shop-grid">${Object.entries(ITEMS).map(([k, it]) => `<div class="shop-card" style="--tint:${it.tint}"><span class="shop-ico">${it.icon}</span><span class="shop-name">${it.name} <em>×${S.inv[k] || 0}</em></span><span class="shop-fx">${it.desc}</span></div>`).join('')}</div>${backBtn}`, { bind: bindBack });
 }
 function openShop() {
-  const lines = ['“קפה טרי, פנסים, ומדריכים. מה תיקח/י הלילה?”', '“הלילה ארוך. קח/י משהו לדרך.”', '“אחות טובה לא הולכת למיטה בלי פנס.”'];
+  const lines = ['“קפה טרי, פנסים, ומדריכים. מה תיקח/י היום?”', '“משמרת ארוכה. קח/י משהו לדרך.”', '“אחות טובה לא הולכת למיטה בלי פנס.”'];
   const render = (msg) => `<div class="shop-counter"><canvas class="npc-face shop-face" data-look="shula" width="74" height="74"></canvas><div class="shop-bubble"><b>שולה · קפיטריית הצוות</b>${msg || pick(lines)}</div><span class="shop-wallet">🪙 ${S.coins}</span></div>
     <div class="shop-grid">${Object.entries(ITEMS).map(([k, it]) => `<button class="shop-card ${S.coins < it.price ? 'poor' : ''}" data-buy="${k}" style="--tint:${it.tint}"><span class="shop-price">${it.price}</span><span class="shop-ico">${it.icon}</span><span class="shop-name">${it.name} <em>יש: ${S.inv[k] || 0}</em></span><span class="shop-fx">${it.desc}</span></button>`).join('')}</div>`;
   const bind = el => {
@@ -438,7 +441,7 @@ function openShop() {
       const k = b.dataset.buy, it = ITEMS[k];
       if (S.coins < it.price) { Sound.back(); el.innerHTML = render('“חסרים לך ' + (it.price - S.coins) + ' 🪙. אירוע או שניים — וזה שלך.”'); bind(el); return; }
       S.coins -= it.price; S.inv[k] = (S.inv[k] || 0) + 1; Sound.coin(); Game.save(); Game.refresh();
-      el.innerHTML = render('“' + it.icon + ' בבקשה! ' + pick(['שיהיה בהצלחה.', 'תשמור/י על עצמך.', 'לילה שקט.']) + '”'); bind(el);
+      el.innerHTML = render('“' + it.icon + ' בבקשה! ' + pick(['שיהיה בהצלחה.', 'תשמור/י על עצמך.', 'משמרת שקטה.']) + '”'); bind(el);
       const card = el.querySelector(`[data-buy="${k}"]`); if (card) card.classList.add('bought');
     });
   };
@@ -458,9 +461,9 @@ function openJournal(tab) {
   tab = tab || 'pearls';
   const eps = C.episodes.filter(e => S.episodes[e.id]);
   let body = '';
-  if (tab === 'pearls') body = eps.length ? eps.map(e => `<div class="journal-entry"><b>💡 ${esc(e.t)} · ${esc(C.patients[e.p].n)}</b>${esc(e.pe)}</div>`).join('') : '<p class="muted">עוד אין פנינות. כל אירוע שתסיים/י ישאיר כאן את הלקח שלו.</p>';
+  if (tab === 'pearls') body = eps.length ? eps.map(e => `<div class="journal-entry"><b>💡 ${esc(e.t)} · ${esc(C.patients[e.p].n)}</b>${esc(e.pe)}${EP_EVIDENCE[e.id] ? `<div class="evid-k">📚 ${esc(EP_EVIDENCE[e.id].k)}</div><div class="srcs">${srcLinks(EP_EVIDENCE[e.id].s)}</div>` : ''}</div>`).join('') : '<p class="muted">עוד אין פנינות. כל אירוע שתסיים/י ישאיר כאן את הלקח שלו.</p>';
   if (tab === 'sbar') body = eps.length ? eps.map(e => `<div class="journal-entry sbar"><b>📝 ${esc(e.t)}</b><div><i>S</i> ${esc(e.st)}</div><div><i>A</i> ${esc(e.q[e.qc])}</div><div><i>R</i> ${esc(e.x[e.xc])}</div></div>`).join('') : '<p class="muted">המסירות שלך יופיעו כאן.</p>';
-  if (tab === 'lab') { const done = Object.keys(S.labRounds).map(Number); body = done.length ? done.map(i => { const c = C.labRounds[i]; return `<div class="journal-entry"><b>🧪 ${esc(c.t)}</b>${c.steps.map(s => `<div>• ${esc(s[4])}</div>`).join('')}</div>`; }).join('') : '<p class="muted">סבבי המעבדה שתפתור/י אצל טל יופיעו כאן.</p>'; }
+  if (tab === 'lab') { const done = Object.keys(S.labRounds).map(Number); body = done.length ? done.map(i => { const c = C.labRounds[i]; return `<div class="journal-entry"><b>🧪 ${esc(c.t)}</b>${c.steps.map(s => `<div>• ${esc(s[4])}</div>`).join('')}<div class="srcs">${srcLinks(LAB_ROUND_SOURCES[i])}</div></div>`; }).join('') : '<p class="muted">סבבי המעבדה שתפתור/י אצל טל יופיעו כאן.</p>'; }
   Panel.open('📖 יומן', `<div class="j-tabs">${[['pearls', '💡 פנינות', eps.length], ['sbar', '📝 מסירות', eps.length], ['lab', '🧪 מעבדה', Object.keys(S.labRounds).length]].map(t => `<button class="system-btn${t[0] === tab ? ' diff-sel' : ''}" data-tab="${t[0]}">${t[1]} <small>${t[2]}</small></button>`).join('')}</div><div class="panel-list">${body}</div>${backBtn}`,
     { cls: 'wide', bind: el => { bindBack(el); el.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => openJournal(b.dataset.tab)); } });
 }
@@ -535,6 +538,28 @@ function openHelp() {
     </div>${Game.state === 'OVERWORLD' ? backBtn : ''}`, { bind: bindBack });
 }
 
+/* ---------- research basis ---------- */
+function openEvidence(tab) {
+  tab = tab || 'game';
+  let body = '';
+  if (tab === 'game') body = `<div class="menu-context"><small>למה המשחק בנוי כך</small><div>כל מכניקה במשחק מבוססת על מחקר בחינוך קליני. התוכן הקליני מקושר להנחיות עדכניות — המקורות מופיעים בסיכום כל אירוע, בסבבי המעבדה ובמעבדון.</div></div>` +
+    PEDAGOGY.map(p => `<div class="journal-entry evid"><b>${p.icon} ${esc(p.t)}</b><div class="evid-g">במשחק: ${esc(p.g)}</div>${esc(p.why)}<div class="srcs">${srcLinks(p.s)}</div></div>`).join('');
+  else {
+    const groups = [['גריאטריה, תרופות ותפקוד', ['beers2023', 'stopp2023', 'scott2015', 'falls2022', 'freeman2011', 'nice_delirium', 'tieges2021', 'inouye1999', 'npiap2019', 'nice_cg124', 'nice_ng27', 'who_toc2019', 'ahrq_teachback']],
+      ['נוירולוגיה', ['aha_stroke2019', 'trinka2015', 'nice_ng232']],
+      ['לב וריאות', ['acls2020', 'af2023', 'hf2022', 'esc_htn2024', 'thygesen2018', 'esc_pe2019', 'righini2014', 'drew2010', 'gold2025', 'bts_o2_2017', 'mandell2019']],
+      ['כליה ומטבוליזם', ['ukka_k', 'kdigo_aki2012', 'kdigo_ckd2024', 'kdigo_anemia2026', 'spasovski2014', 'adrogue2000', 'ada2025', 'umpierrez2024', 'berend2014', 'nice_cg32', 'endo_ca2023']],
+      ['זיהום והמטולוגיה', ['ssc2021', 'sepsis3', 'taylor2001', 'idsa_cdi2021', 'freifeld2011', 'mermel2009', 'aabb2023', 'bsh_atr2023', 'aga2020', 'devalia2014', 'acc_bleed2020', 'acg_ugib2021', 'merck_hemat']],
+      ['כאב, ניתוח ופליאציה', ['cdc_opioid2022', 'boast_cs', 'wses_asbo', 'asco_dyspnea2021']],
+      ['מעבדה', ['merck_labs']],
+      ['חינוך קליני', ['tanner2006', 'lasater2007', 'ncjmm2019', 'kononowicz2019', 'gentry2019', 'hattie2007', 'berner2008', 'roediger2006', 'cepeda2006', 'muller2018']]];
+    body = groups.map(([g, ids]) => `<div class="pg-section">${g}</div><ol class="biblio">${srcFull(ids)}</ol>`).join('');
+  }
+  Panel.open('🔬 בסיס מחקרי', `<div class="j-tabs">${[['game', '🎮 המכניקות והמחקר'], ['refs', '📚 רשימת מקורות']].map(t => `<button class="system-btn${t[0] === tab ? ' diff-sel' : ''}" data-tab="${t[0]}">${t[1]}</button>`).join('')}</div><div class="panel-list">${body}</div>
+    <p class="muted">כלי למידה. אינו מחליף פרוטוקול מוסדי, טווחי מעבדה מקומיים או שיקול דעת קליני. הנחיות מתעדכנות — כדאי לבדוק את הגרסה העדכנית.</p>${Game.state === 'OVERWORLD' ? backBtn : ''}`,
+    { cls: 'wide', bind: el => { bindBack(el); el.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => openEvidence(b.dataset.tab)); } });
+}
+
 /* ---------- labdex ---------- */
 function openDex(cat) {
   const cats = [...new Set(C.labs.map(l => l.cat))];
@@ -554,6 +579,7 @@ function dexEntry(l, cat) {
   Panel.open('🧪 ' + esc(l.en) + ' · ' + esc(l.name), `<div class="dex-entry"><div class="dex-range"><small>טווח</small><b>${esc(l.range)}</b><span>${esc(l.unit)}</span></div><div class="pg-tag">${esc(l.cat)}</div></div>
     <div class="journal-entry"><b>מה זה</b>${esc(l.what)}</div><div class="journal-entry"><b>⬆️ גבוה</b>${esc(l.high)}</div><div class="journal-entry"><b>⬇️ נמוך</b>${esc(l.low)}</div>
     <div class="journal-entry"><b>👵 בגריאטריה</b>${esc(l.geri)}</div><div class="journal-entry warn"><b>⚠️ מלכודת</b>${esc(l.pit)}</div>
+    <div class="srcs"><span class="muted">📚 טווחים משתנים בין מעבדות — תמיד לפי הטווח המקומי.</span>${srcLinks((LAB_SOURCES[l.id] || []).concat('merck_labs'))}</div>
     <button class="close-btn" data-dex>↩ למעבדון</button>`, { bind: el => el.querySelector('[data-dex]').onclick = () => openDex(cat) });
 }
 async function dexQuiz() {
@@ -595,26 +621,26 @@ function renderCutscene(dt) {
   c.t += dt;
   Art.cutsceneBg(clock);
   const bar = VH * .11;
-  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, bar); ctx.fillRect(0, VH - bar, VW, bar);
+  ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.fillRect(0, 0, VW, bar); ctx.fillRect(0, VH - bar, VW, bar);
   const a = clamp(c.t / 500, 0, 1);
-  heText(c.pages[c.i] || '', VW / 2, VH - bar / 2 + 6, { size: 17, bold: true, color: '#f8fafc', align: 'center', alpha: a, maxWidth: VW - 40 });
-  heText('▼', 22, VH - 12, { size: 10, color: '#fbbf24', alpha: .4 + .6 * Math.abs(Math.sin(clock / 300)), ltr: true, align: 'center' });
+  heText(c.pages[c.i] || '', VW - 24, VH - bar / 2 + 6, { size: 17, bold: true, color: '#13304a', alpha: a, maxWidth: VW - 60 });
+  heText('▼', 22, VH - 12, { size: 10, color: '#c27c0e', alpha: .4 + .6 * Math.abs(Math.sin(clock / 300)), ltr: true, align: 'center' });
 }
 function renderTransition(dt) {
   const T = Game.trans; if (!T) return;
   T.t += dt;
   const k = clamp(T.t / T.dur, 0, 1);
   const cover = T.phase === 'out' ? k : 1 - k;
-  if (T.kind === 'fade' || T.phase === 'in') { ctx.fillStyle = 'rgba(3,6,14,' + cover + ')'; ctx.fillRect(0, 0, VW, VH); }
+  if (T.kind === 'fade' || T.phase === 'in') { ctx.fillStyle = 'rgba(244,248,251,' + cover + ')'; ctx.fillRect(0, 0, VW, VH); }
   else {
     const n = 8, h = VH / n;
     for (let i = 0; i < n; i++) {
       const kk = clamp(k * 1.5 - i * .06, 0, 1), w = VW * easeIn(kk);
-      ctx.fillStyle = T.kind === 'boss' ? (i % 2 ? '#3b0d0d' : '#120406') : (i % 2 ? '#0b1220' : '#111c2e');
+      ctx.fillStyle = T.kind === 'boss' ? (i % 2 ? '#f2b544' : '#ffe2a0') : (i % 2 ? '#0e8f86' : '#bfe9e3');
       if (i % 2) ctx.fillRect(VW - w, i * h, w, h + 1); else ctx.fillRect(0, i * h, w, h + 1);
     }
     if (k < .25) { ctx.fillStyle = 'rgba(255,255,255,' + (.5 * (1 - k / .25)) + ')'; ctx.fillRect(0, 0, VW, VH); }
-    if (T.kind === 'boss' && k > .5) heText('ביקור גדול', VW / 2, VH / 2 + 10, { size: 30, bold: true, color: '#fbbf24', align: 'center', alpha: (k - .5) * 2, stroke: '#000', strokeW: 5 });
+    if (T.kind === 'boss' && k > .5) heText('ביקור גדול', VW / 2, VH / 2 + 10, { size: 30, bold: true, color: '#7a4b04', align: 'center', alpha: (k - .5) * 2, stroke: '#fff', strokeW: 6 });
   }
   if (k >= 1) { const r = T.res; if (T.phase === 'in') Game.trans = null; else { T.done = true; T.t = T.dur; } if (r) { T.res = null; r(); } }
 }

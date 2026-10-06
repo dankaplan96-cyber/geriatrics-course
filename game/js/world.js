@@ -188,7 +188,7 @@ function interact() {
   const hs = m.hotspots && m.hotspots[tx + ',' + ty];
   if (hs) { Game.run(() => Game.hotspot(hs)); return; }
   const t = tileAt(tx, ty);
-  const FLAVOR = { O: 'מבעד לחלון: העיר ישנה. רק החלונות של המחלקה דולקים.', P: 'עציץ. מישהו מהלילה משקה אותו בסתר.', w: 'כיסא גלגלים. הבלמים — נעולים. ככה צריך.', y: 'זהירות, רצפה רטובה. מניעת נפילות מתחילה בשלט.', c: 'עגלת תרופות. נעולה. הכל מתועד.', I: 'עמוד עירוי. המשאבה מתקתקת בשקט.', k: 'כיור. רחיצת ידיים — 20 שניות, ולא פחות.', H: 'מתקן חיטוי. לחיצה אחת לפני ואחרי כל מטופל.', A: 'פוסטר: “קום לאט — 3 שלבים: לשבת, לחכות, לעמוד”.', Q: 'השעון מראה 03:12. השעה שבה דליריום אוהב להופיע.', m: 'מוניטור. סינוס, 76 לדקה. בינתיים.', T: 'שולחן. ערימת תיקים ותה שהתקרר.', h: 'כיסא. לא עכשיו — יש משמרת.', F: 'מקרר דגימות. 4°C. בלי אוכל!', L: 'שולחן מעבדה נקי ומסודר.', S: 'ספה. אפשר לנוח כאן ולסיים משמרת.', J: 'מסך הקרנה. השקף האחרון: “מה המטרה של המטופל?”' };
+  const FLAVOR = { O: 'מבעד לחלון: שמש של בוקר. אור יום עוזר לשמור על מחזור שינה-ערות ומפחית דליריום.', P: 'עציץ. מישהו מהלילה משקה אותו בסתר.', w: 'כיסא גלגלים. הבלמים — נעולים. ככה צריך.', y: 'זהירות, רצפה רטובה. מניעת נפילות מתחילה בשלט.', c: 'עגלת תרופות. נעולה. הכל מתועד.', I: 'עמוד עירוי. המשאבה מתקתקת בשקט.', k: 'כיור. רחיצת ידיים — 20 שניות, ולא פחות.', H: 'מתקן חיטוי. לחיצה אחת לפני ואחרי כל מטופל.', A: 'פוסטר: “קום לאט — 3 שלבים: לשבת, לחכות, לעמוד”.', Q: 'השעון מראה 07:12. סבב בוקר — שעון גלוי ואוריינטציה הם חלק ממניעת דליריום.', m: 'מוניטור. סינוס, 76 לדקה. בינתיים.', T: 'שולחן. ערימת תיקים ותה שהתקרר.', h: 'כיסא. לא עכשיו — יש משמרת.', F: 'מקרר דגימות. 4°C. בלי אוכל!', L: 'שולחן מעבדה נקי ומסודר.', S: 'ספה. אפשר לנוח כאן ולסיים משמרת.', J: 'מסך הקרנה. השקף האחרון: “מה המטרה של המטופל?”' };
   if (FLAVOR[t]) Game.run(() => UI.say(FLAVOR[t]));
 }
 
@@ -198,7 +198,7 @@ function renderWorld() {
   cam.x = W <= VW ? -(VW - W) / 2 : clamp(hero.px - VW / 2, 0, W - VW);
   cam.y = H <= VH ? -(VH - H) / 2 : clamp(hero.py - 20 - VH / 2, 0, H - VH);
   cam.x = Math.round(cam.x); cam.y = Math.round(cam.y);
-  ctx.fillStyle = '#0b1220'; ctx.fillRect(0, 0, VW, VH);
+  ctx.fillStyle = '#dfeaf1'; ctx.fillRect(0, 0, VW, VH);
   ctx.save(); ctx.translate(-cam.x, -cam.y);
   ctx.drawImage(Art.mapLayer(S.map), 0, 0, W, H);
   Art.mapAnim(ctx, S.map, clock);
@@ -207,9 +207,9 @@ function renderWorld() {
     const [x, y] = k.split(',').map(Number), cx = x * TILE + TILE / 2, cy = y === 0 ? y * TILE + 12 : y * TILE + 20;
     const locked = m.doors[k] && m.doors[k].boss && !Game.bossReady();
     setFont(9, true); const tw = ctx.measureText(m.labels[k]).width + 10;
-    ctx.fillStyle = locked ? 'rgba(127,29,29,.9)' : 'rgba(15,23,42,.85)'; roundRect(ctx, cx - tw / 2, cy - 8, tw, 14, 4); ctx.fill();
-    ctx.strokeStyle = locked ? '#fca5a5' : 'rgba(233,193,124,.7)'; ctx.lineWidth = 1; roundRect(ctx, cx - tw / 2, cy - 8, tw, 14, 4); ctx.stroke();
-    heText((locked ? '🔒 ' : '') + m.labels[k], cx, cy + 3, { size: 9, bold: true, color: locked ? '#fecaca' : '#fde68a', align: 'center' });
+    ctx.fillStyle = locked ? 'rgba(254,226,226,.97)' : 'rgba(255,255,255,.95)'; roundRect(ctx, cx - tw / 2, cy - 8, tw, 14, 4); ctx.fill();
+    ctx.strokeStyle = locked ? '#e05252' : '#0e8f86'; ctx.lineWidth = 1; roundRect(ctx, cx - tw / 2, cy - 8, tw, 14, 4); ctx.stroke();
+    heText((locked ? '🔒 ' : '') + m.labels[k], cx, cy + 3, { size: 9, bold: true, color: locked ? '#9b1c1c' : '#0b5f59', align: 'center' });
     const pid = Object.keys(PATIENT_ROOM).filter(p => MAPS[PATIENT_ROOM[p] + 1] && m.doors[k].to === PATIENT_ROOM[p] + 1);
     if (pid.some(p => Game.availableEpisode(p))) drawBubble(cx + tw / 2 + 4, cy + 10, '!');
   }
@@ -230,11 +230,11 @@ function renderWorld() {
   ents.push({ y: hero.py + .1, draw: () => Art.drawPerson(ctx, hero.px, hero.py, S.player.look, { dir: hero.dir, walking: !!hero.move, phase: hero.phase }) });
   ents.sort((a, b) => a.y - b.y).forEach(e => e.draw());
   // tap path dots
-  if (hero.path && hero.path.length) hero.path.forEach(([x, y], i) => circle(ctx, x * TILE + TILE / 2, y * TILE + TILE / 2, 2.5, 'rgba(251,191,36,' + (.5 - i * .03) + ')'));
+  if (hero.path && hero.path.length) hero.path.forEach(([x, y], i) => circle(ctx, x * TILE + TILE / 2, y * TILE + TILE / 2, 2.5, 'rgba(14,143,134,' + (.6 - i * .03) + ')'));
   ctx.restore();
   renderFx();
-  // warm vignette, like the reference's evening light
-  ctx.fillStyle = rad(VW / 2, VH / 2, VH * .35, VW * .7, [[0, 'rgba(0,0,0,0)'], [1, 'rgba(3,8,20,.42)']]); ctx.fillRect(0, 0, VW, VH);
+  // soft daylight vignette
+  ctx.fillStyle = rad(VW / 2, VH / 2, VH * .45, VW * .75, [[0, 'rgba(255,255,255,0)'], [1, 'rgba(110,140,160,.16)']]); ctx.fillRect(0, 0, VW, VH);
 }
 function drawBubble(x, y, kind) {
   const b = Math.sin(clock / 220) * 2.5;

@@ -19,8 +19,8 @@ function battleFrame() {
   // plate / sprite anchors in logical units
   const narrow = VW < 560;
   return {
-    foe: { x: narrow ? VW * .72 : VW * .7, y: VH * .2 + 8 + (VH - 320) * .3 },
-    hero: { x: VW * .19, y: VH - msgH() - 4 },
+    foe: { x: narrow ? VW * .28 : VW * .3, y: VH * .2 + 8 + (VH - 320) * .3 },
+    hero: { x: VW * .81, y: VH - msgH() - 4 },
   };
 }
 
@@ -37,16 +37,16 @@ function renderBattle(dt) {
   Art.platform(F.hero.x, F.hero.y + 2, 58, 12, '#7aa4b8');
   // enemy
   const e = B.enemy;
-  let fx = F.foe.x + intro * 280, fy = F.foe.y;
+  let fx = F.foe.x - intro * 280, fy = F.foe.y;
   if (B.foeAnim) { const k = attack(B.foeAnim.t / B.foeAnim.dur); fx += (F.hero.x - F.foe.x) * .3 * k; fy += (F.hero.y - F.foe.y) * .3 * k; }
   if (e.person) {
     const sh = e.shake > 0 && !reduceFx() ? Math.sin(clock * .09) * 4 : 0;
-    Art.drawPerson(ctx, fx + sh, fy + 44, e.person, { size: 84, dir: 'left', flash: e.flash > 0 && (e.flash % 100) > 50, alpha: 1 - (e.dying || 0), seed: 3 });
+    Art.drawPerson(ctx, fx + sh, fy + 44, e.person, { size: 84, dir: 'right', flash: e.flash > 0 && (e.flash % 100) > 50, alpha: 1 - (e.dying || 0), seed: 3 });
   } else Art.drawCreature(ctx, e, fx, fy, .9);
   // hero (the nurse, facing the problem)
-  let hx = F.hero.x - intro * 260, hy = F.hero.y;
-  if (B.heroAnim) { const k = attack(B.heroAnim.t / B.heroAnim.dur); if (B.heroAnim.type === 'lunge') { hx += (F.foe.x - F.hero.x) * .22 * k; hy += (F.foe.y - F.hero.y) * .22 * k; } else hx -= 10 * Math.sin(Math.PI * clamp(B.heroAnim.t / B.heroAnim.dur, 0, 1)); }
-  Art.drawPerson(ctx, hx, hy, S.player.look, { size: 74, dir: 'right', walking: !!B.heroAnim, phase: clock / 90, flash: B.heroFlash > 0 && (B.heroFlash % 100) > 50, bob: Math.sin(clock / 420) * 1.2 });
+  let hx = F.hero.x + intro * 260, hy = F.hero.y;
+  if (B.heroAnim) { const k = attack(B.heroAnim.t / B.heroAnim.dur); if (B.heroAnim.type === 'lunge') { hx += (F.foe.x - F.hero.x) * .22 * k; hy += (F.foe.y - F.hero.y) * .22 * k; } else hx += 10 * Math.sin(Math.PI * clamp(B.heroAnim.t / B.heroAnim.dur, 0, 1)); }
+  Art.drawPerson(ctx, hx, hy, S.player.look, { size: 74, dir: 'left', walking: !!B.heroAnim, phase: clock / 90, flash: B.heroFlash > 0 && (B.heroFlash % 100) > 50, bob: Math.sin(clock / 420) * 1.2 });
   renderFx();
   ctx.restore();
   drawPlates(B, F);
@@ -56,49 +56,50 @@ const attack = t => { t = clamp(t, 0, 1); if (t < .18) return -.07 * Math.sin(t 
 function drawPlates(B, F) {
   const e = B.enemy, T = TYPES[e.type] || TYPES.meds;
   const s = clamp(VW / 560, .9, 1.08);
-  // enemy plate — top, right-anchored (as in the reference)
-  ctx.save(); ctx.translate(10 + 250 * s, 10); ctx.scale(s, s);
+  const INK = '#13304a', MUTED = '#5d7488', BG = 'rgba(255,255,255,.94)', EDGE = '#b9cbda';
+  // enemy plate — top right (RTL: the problem is introduced where reading starts)
+  ctx.save(); ctx.translate(VW - 10, 10); ctx.scale(s, s);
   const W = 250, H = 64;
-  ctx.fillStyle = 'rgba(15,23,42,.84)'; roundRect(ctx, -W, 0, W, H, 8); ctx.fill();
-  ctx.strokeStyle = 'rgba(142,181,203,.45)'; ctx.lineWidth = .85; roundRect(ctx, -W, 0, W, H, 8); ctx.stroke();
-  heText(e.name, -10, 19, { size: 14, bold: true, maxWidth: 168, color: '#fff' });
-  ctx.fillStyle = T.color + '33'; roundRect(ctx, -W + 6, 7, 66, 16, 5); ctx.fill(); ctx.strokeStyle = T.color; ctx.lineWidth = 1; roundRect(ctx, -W + 6, 7, 66, 16, 5); ctx.stroke();
-  heText(T.icon + ' ' + T.name, -W + 68, 19, { size: 10, bold: true, color: T.color, maxWidth: 60 });
-  bar(-W + 10, 28, W - 20, 9, disp.ehpG, '#fde68a');
-  ctx.fillStyle = disp.ehp > .3 ? '#22c55e' : '#ef4444'; if (disp.ehp > 0) { roundRect(ctx, -W + 10, 28, Math.max(9, disp.ehp * (W - 20)), 9, 4.5); ctx.fill(); }
-  heText(e.barLabel || 'חומרה', -10, 52, { size: 10, color: '#cbd5e1' });
-  numText(Math.max(0, Math.round(e.hp)) + ' / ' + e.maxHp, -W + 10, 52, { size: 10, color: '#cbd5e1' });
-  if (e.sub) heText(e.sub, -64, 52, { size: 10, bold: true, color: '#fbbf24', maxWidth: 110 });
-  // stage track
+  ctx.save(); ctx.shadowColor = 'rgba(30,60,90,.18)'; ctx.shadowBlur = 10; ctx.fillStyle = BG; roundRect(ctx, -W, 0, W, H, 9); ctx.fill(); ctx.restore();
+  ctx.strokeStyle = EDGE; ctx.lineWidth = 1; roundRect(ctx, -W, 0, W, H, 9); ctx.stroke();
+  ctx.fillStyle = T.color; roundRect(ctx, -5, 8, 3, H - 16, 1.5); ctx.fill();
+  heText(e.name, -12, 19, { size: 14, bold: true, maxWidth: 168, color: INK });
+  ctx.fillStyle = T.color + '2a'; roundRect(ctx, -W + 6, 7, 66, 16, 5); ctx.fill(); ctx.strokeStyle = T.color; ctx.lineWidth = 1; roundRect(ctx, -W + 6, 7, 66, 16, 5); ctx.stroke();
+  heText(T.icon + ' ' + T.name, -W + 68, 19, { size: 10, bold: true, color: INK, maxWidth: 60 });
+  bar(-W + 10, 28, W - 22, 9, disp.ehpG, '#fde68a', '#e3ecf3');
+  ctx.fillStyle = disp.ehp > .3 ? '#22a35a' : '#e05252'; if (disp.ehp > 0) { roundRect(ctx, -W + 10 + (1 - disp.ehp) * (W - 22), 28, Math.max(9, disp.ehp * (W - 22)), 9, 4.5); ctx.fill(); }
+  heText(e.barLabel || 'חומרה', -12, 52, { size: 10, bold: true, color: MUTED });
+  numText(Math.max(0, Math.round(e.hp)) + ' / ' + e.maxHp, -W + 10, 52, { size: 10, color: MUTED });
+  if (e.sub) heText(e.sub, -64, 52, { size: 10, bold: true, color: '#b26c06', maxWidth: 110 });
   if (B.stages) {
     const n = B.stages.length;
-    for (let i = 0; i < n; i++) {
-      const x = -W + 10 + i * ((W - 20) / n), w = (W - 20) / n - 4;
-      ctx.fillStyle = i < B.stage ? '#4ade80' : i === B.stage ? '#fbbf24' : 'rgba(148,163,184,.25)';
+    for (let i = 0; i < n; i++) {   // fills from the right, like Hebrew reading
+      const w = (W - 20) / n - 4, x = -10 - (i + 1) * ((W - 20) / n) + 4;
+      ctx.fillStyle = i < B.stage ? '#22a35a' : i === B.stage ? '#f2b544' : 'rgba(120,150,170,.25)';
       roundRect(ctx, x, H + 5, w, 5, 2.5); ctx.fill();
     }
     const st = B.stages[Math.min(B.stage, n - 1)];
-    if (B.stage < n) heText('שלב ' + (B.stage + 1) + '/' + n + ' · ' + st.name, -10, H + 24, { size: 10, bold: true, color: '#fde68a', maxWidth: 200, stroke: 'rgba(8,13,24,.8)', strokeW: 3 });
+    if (B.stage < n) heText('שלב ' + (B.stage + 1) + '/' + n + ' · ' + st.name, -10, H + 24, { size: 10.5, bold: true, color: '#b26c06', maxWidth: 200, stroke: 'rgba(255,255,255,.95)', strokeW: 4 });
   }
   const tags = [];
-  if (B.exposed) tags.push(['🔍 חשוף', '#a3e635']);
-  if (B.shield) tags.push(['🛡️ מוגן', '#4ade80']);
-  if (B.guide) tags.push(['📘 מדריך', '#60a5fa']);
-  tags.forEach((tg, i) => heText(tg[0], -W + 70 + i * 62, H + 24, { size: 10, bold: true, color: tg[1], maxWidth: 58, align: 'center', stroke: 'rgba(8,13,24,.8)', strokeW: 3 }));
+  if (B.exposed) tags.push(['🔍 חשוף', '#3f7d12']);
+  if (B.shield) tags.push(['🛡️ מוגן', '#167a3f']);
+  if (B.guide) tags.push(['📘 מדריך', '#1d5fae']);
+  tags.forEach((tg, i) => heText(tg[0], -W + 30 + i * 60, H + 24, { size: 10, bold: true, color: tg[1], maxWidth: 58, align: 'center', stroke: 'rgba(255,255,255,.95)', strokeW: 4 }));
   ctx.restore();
 
-  // hero plate — bottom right, above the message box
-  const top = VH - msgH() - 14 - 66 * s;
-  ctx.save(); ctx.translate(VW - 10, Math.max(VH * .36, top)); ctx.scale(s, s);
+  // hero plate — bottom left, above the command box
   const W2 = 196, H2 = 66;
-  ctx.fillStyle = 'rgba(15,23,42,.84)'; roundRect(ctx, -W2, 0, W2, H2, 8); ctx.fill();
-  ctx.strokeStyle = 'rgba(142,181,203,.45)'; ctx.lineWidth = .85; roundRect(ctx, -W2, 0, W2, H2, 8); ctx.stroke();
-  heText(B.heroLabel || S.player.name, -8, 16, { size: 13, bold: true, maxWidth: 120 });
-  numText('Lv.' + levelOf(S.xp), -W2 + 8, 16, { size: 11, bold: true, color: '#fbbf24' });
-  bar(-W2 + 8, 22, W2 - 16, 9, disp.hpG, '#fca5a5');
-  ctx.fillStyle = disp.hp > .3 ? '#22c55e' : '#ef4444'; if (disp.hp > 0) { roundRect(ctx, -W2 + 8, 22, Math.max(9, disp.hp * (W2 - 16)), 9, 4.5); ctx.fill(); }
-  if (B.time != null) bar(-W2 + 8, 36, W2 - 16, 7, disp.ap, '#38bdf8');
-  numText((B.hpLabel || 'יציבות') + ' ' + Math.max(0, Math.round(B.hp)) + (B.time != null ? '   ⏱ ' + Math.max(0, Math.round(B.time)) : ''), -W2 + 8, 58, { size: 10, color: '#cbd5e1', ltr: false, align: 'left' });
+  const top = VH - msgH() - 14 - H2 * s;
+  ctx.save(); ctx.translate(10 + W2 * s, Math.max(VH * .36, top)); ctx.scale(s, s);
+  ctx.save(); ctx.shadowColor = 'rgba(30,60,90,.18)'; ctx.shadowBlur = 10; ctx.fillStyle = BG; roundRect(ctx, -W2, 0, W2, H2, 9); ctx.fill(); ctx.restore();
+  ctx.strokeStyle = EDGE; ctx.lineWidth = 1; roundRect(ctx, -W2, 0, W2, H2, 9); ctx.stroke();
+  heText(B.heroLabel || S.player.name, -10, 16, { size: 13, bold: true, maxWidth: 120, color: INK });
+  numText('Lv.' + levelOf(S.xp), -W2 + 8, 16, { size: 11, bold: true, color: '#b26c06' });
+  bar(-W2 + 8, 22, W2 - 16, 9, disp.hpG, '#fca5a5', '#e3ecf3');
+  ctx.fillStyle = disp.hp > .3 ? '#22a35a' : '#e05252'; if (disp.hp > 0) { roundRect(ctx, -W2 + 8 + (1 - disp.hp) * (W2 - 16), 22, Math.max(9, disp.hp * (W2 - 16)), 9, 4.5); ctx.fill(); }
+  if (B.time != null) { bar(-W2 + 8, 36, W2 - 16, 7, 0, '#38bdf8', '#e3ecf3'); ctx.fillStyle = '#2b9fd8'; if (disp.ap > 0) { roundRect(ctx, -W2 + 8 + (1 - disp.ap) * (W2 - 16), 36, Math.max(7, disp.ap * (W2 - 16)), 7, 3.5); ctx.fill(); } }
+  heText((B.hpLabel || 'יציבות') + ' ' + Math.max(0, Math.round(B.hp)) + (B.time != null ? '  ·  ⏱ זמן ' + Math.max(0, Math.round(B.time)) : ''), -10, 58, { size: 10, bold: true, color: MUTED });
   ctx.restore();
 }
 
@@ -152,7 +153,7 @@ function healFx(n) {
 /* ---------- shared helpers ---------- */
 function startBattle(cfg) {
   battle = Object.assign({ introT: 0, hp: 100, maxHp: 100, time: null, maxTime: 100, stage: 0, stages: null, xp: 0, coins: 0, firstTry: 0, used: {}, log: [] }, cfg);
-  battle.enemy = Object.assign({ hp: 100, maxHp: 100, seed: Math.random() * 6, flash: 0, shake: 0 }, cfg.enemy);
+  battle.enemy = Object.assign({ hp: 100, maxHp: 100, seed: Math.random() * 6, flash: 0, shake: 0, recoilDir: -1 }, cfg.enemy);
   disp.ehp = disp.ehpG = 1; disp.hp = disp.hpG = battle.hp / battle.maxHp; disp.ap = 1;
   UI.mode('battle'); UI.stripe = (TYPES[battle.enemy.type] || TYPES.meds).color;
   Game.state = 'BATTLE';
@@ -369,7 +370,7 @@ async function bossBattle(act) {
     if (r.fail) { result = 'fail'; break; }
     await heroStrike(r.first);
     B.enemy.hp = Math.max(0, B.enemy.hp - (r.first ? 20 : 10));
-    await UI.say((r.first ? '✓ ' : '✓ בסוף הגעת לזה. ') + e[st.key][e[st.ck]] + ' — ' + e.pe, { extra, tall: true });
+    await UI.say((r.first ? '✓ ' : '✓ בסוף הגעת לזה. ') + e[st.key][e[st.ck]] + ' — ' + e.pe + (EP_EVIDENCE[e.id] ? '\n📚 ' + EP_EVIDENCE[e.id].k : ''), { extra, tall: true });
     if (B.enemy.hp <= 0) result = 'win';
   }
   if (result === 'leave') { endBattle(); return; }
@@ -422,7 +423,7 @@ async function labBattle(idx) {
     const prev = S.labRounds[idx] || 0;
     S.labRounds[idx] = Math.max(prev, stars);
     const xp = Math.round((30 + B.firstTry * 10) * (prev ? .5 : 1)), coins = prev ? 4 : 12;
-    await UI.say('התעלומה נפתרה! ' + '★'.repeat(stars) + '☆'.repeat(3 - stars));
+    await UI.say('התעלומה נפתרה! ' + '★'.repeat(stars) + '☆'.repeat(3 - stars) + '\n📚 מבוסס על: ' + LAB_ROUND_SOURCES[idx].map(id => SOURCES[id].t).join(' · '));
     Game.markLabsSeen(cs.labs.join(' '));
     Game.dailyTick('lab');
     endBattle();
@@ -441,9 +442,9 @@ function quickQuestion() {
   C.events.forEach(ev => { if (ev.act <= unlocked) pool.push({ kind: 'event', ev }); });
   Object.keys(S.episodes).forEach(id => { const e = C.episodes.find(x => x.id === id); if (e) pool.push({ kind: 'ep', e }); });
   const q = pick(pool) || { kind: 'event', ev: C.events[0] };
-  if (q.kind === 'event') return { title: q.ev.title, story: q.ev.story, v: q.ev.v, q: q.ev.q, opts: q.ev.a, c: q.ev.c, explain: q.ev.e, type: ACT_TYPE[q.ev.act] || 'meds' };
+  if (q.kind === 'event') return { title: q.ev.title, story: q.ev.story, v: q.ev.v, q: q.ev.q, opts: q.ev.a, c: q.ev.c, explain: q.ev.e, type: ACT_TYPE[q.ev.act] || 'meds', src: EVENT_SOURCES[C.events.indexOf(q.ev)] };
   const st = pick(STAGES), e = q.e;
-  return { title: e.t, story: C.patients[e.p].n + ': ' + e.st, v: e.v, q: st.prompt, opts: e[st.key], c: e[st.ck], explain: e.pe, type: episodeType(e), epId: e.id };
+  return { title: e.t, story: C.patients[e.p].n + ': ' + e.st, v: e.v, q: st.prompt, opts: e[st.key], c: e[st.ck], explain: e.pe + (EP_EVIDENCE[e.id] ? '\n📚 ' + EP_EVIDENCE[e.id].k : ''), type: episodeType(e), epId: e.id, src: EP_EVIDENCE[e.id] && EP_EVIDENCE[e.id].s };
 }
 async function quickBattle(o) {
   const Q = quickQuestion(), D = diff();
@@ -465,7 +466,7 @@ async function quickBattle(o) {
     } });
   if (r.first) recordConf(r.conf, true);
   await heroStrike(r.first); B.enemy.hp = 0; B.enemy.dyingT = 0; Sound.good();
-  await UI.say('✓ ' + Q.opts[Q.c] + '\n💡 ' + Q.explain, { extra, tall: true });
+  await UI.say('✓ ' + Q.opts[Q.c] + '\n💡 ' + Q.explain + (Q.src ? '\n— ' + Q.src.map(id => SOURCES[id].t).join(' · ') : ''), { extra, tall: true });
   if (o.trainer) await UI.say(o.trainer.name + ': “' + pick(TRAINER_LINES[o.trainer.id].win) + '”', { name: o.trainer.name });
   endBattle();
   await Game.reward(r.first ? 18 : 8, r.first ? 6 : 3);
