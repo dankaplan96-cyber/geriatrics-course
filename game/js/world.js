@@ -10,7 +10,8 @@ const cam = { x: 0, y: 0 };
 function curMap() { return MAPS[S.map]; }
 function tileAt(x, y) { const g = curMap().grid; return (g[y] && g[y][x]) || '#'; }
 function npcAt(x, y) { return npcs.find(n => n.x === x && n.y === y && !n.hidden); }
-function blocked(x, y) { const t = tileAt(x, y); return BLOCK.has(t) || !!npcAt(x, y); }
+function barrierClosed(x, y) { const b = curMap().barriers; return !!(b && b[x + ',' + y] && (S.council || 0) < b[x + ',' + y]); }
+function blocked(x, y) { const t = tileAt(x, y); if (t === 'G') return barrierClosed(x, y) || !!npcAt(x, y); return BLOCK.has(t) || !!npcAt(x, y); }
 function bedAt(x, y) {
   const beds = curMap().beds; if (!beds) return undefined;
   if (Object.prototype.hasOwnProperty.call(beds, x + ',' + y)) return { key: x + ',' + y, who: beds[x + ',' + y] };
@@ -40,6 +41,8 @@ function tryMove(dir) {
   if (blocked(nx, ny)) return false;
   const door = curMap().doors[nx + ',' + ny];
   if (door && door.boss && !Game.bossReady()) { Game.lockedConference(); return false; }
+  if (door && door.needBadges && S.badges.length < door.needBadges) { Game.lockedDoor(door); return false; }
+  if (door && door.elite && S.badges.length < ACTS.length) { Game.lockedDoor(door); return false; }
   const run = Input.run || S.settings.autoRun;
   hero.move = { fx: hero.x, fy: hero.y, tx: nx, ty: ny, t: 0, dur: run ? 125 : 210 };
   hero.x = nx; hero.y = ny;
@@ -50,7 +53,12 @@ function onTileEntered() {
   const m = curMap(), door = m.doors[hero.x + ',' + hero.y];
   if (door) { Sound.door(); Game.goTo(door.to, door.x, door.y, door.dir); return; }
   if (checkTrainers()) return;
-  if (m.encounters && Game.tutorialDone() && S.settings.pager !== false) {
+  if (m.encounters === 'grass') {   // like tall grass: only the long grass rustles with calls from the community
+    if (tileAt(hero.x, hero.y) === ';' && Game.tutorialDone() && S.settings.pager !== false && ++encSteps > 3 && Math.random() < .22) {
+      encSteps = 0; hero.path = null; Sound.pager(); addParticles(hero.px - cam.x, hero.py - cam.y - 10, 8, { color: ['#5fb35a', '#a7dc93'], speed: 70, life: 450 });
+      Game.run(() => quickBattle({ community: true }));
+    }
+  } else if (m.encounters && Game.tutorialDone() && S.settings.pager !== false) {
     encSteps++;
     if (encSteps > 16 && Math.random() < .07) { encSteps = 0; hero.path = null; Sound.pager(); Game.run(() => quickBattle({})); }
   }
@@ -185,6 +193,8 @@ function interact() {
   if (n) { n.dir = Object.keys(DIRS).find(d => DIRS[d][0] === -dx && DIRS[d][1] === -dy) || n.dir; Game.run(() => Game.talk(n)); return; }
   const bed = bedAt(tx, ty);
   if (bed !== undefined) { Game.run(() => Game.visitPatient(bed.who)); return; }
+  const hid = m.hidden && m.hidden[tx + ',' + ty];
+  if (hid && !S.found[S.map + ':' + tx + ',' + ty]) { Game.run(() => Game.findHidden(tx, ty, hid)); return; }
   const hs = m.hotspots && m.hotspots[tx + ',' + ty];
   if (hs) { Game.run(() => Game.hotspot(hs)); return; }
   const t = tileAt(tx, ty);
@@ -222,6 +232,13 @@ function renderWorld() {
     Art.drawPatientInBed(ctx, x * TILE, y * TILE, who, clock, { sleep: !has });
     if (has) drawBubble(x * TILE + TILE / 2, y * TILE + 2, '!');
   }
+  // council barriers and hidden-item sparkles
+  if (m.barriers) for (const k in m.barriers) { const [x, y] = k.split(',').map(Number); if (!barrierClosed(x, y)) continue;
+    const px = x * TILE, py = y * TILE; ctx.fillStyle = '#64748b'; ctx.fillRect(px + 2, py + 4, 36, 4); ctx.fillRect(px + 2, py + 30, 36, 4);
+    for (let i = 0; i < 5; i++) { ctx.fillStyle = '#94a3b8'; ctx.fillRect(px + 4 + i * 7.5, py + 4, 3, 30); }
+    ctx.fillStyle = '#c27c0e'; circle(ctx, px + 20, py + 19, 6, '#fde68a'); heText(m.barriers[k], px + 20, py + 23, { size: 9, bold: true, color: '#7a4b04', align: 'center', ltr: true }); }
+  if (m.hidden) for (const k in m.hidden) { if (S.found[S.map + ':' + k]) continue; const [x, y] = k.split(',').map(Number), ph = (clock / 1400 + x * .37 + y * .21) % 1;
+    if (ph < .18) { const a = Math.sin(ph / .18 * Math.PI); ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#fffbe6'; const cx = x * TILE + 20, cy = y * TILE + 20; ctx.fillRect(cx - 5, cy - .8, 10, 1.6); ctx.fillRect(cx - .8, cy - 5, 1.6, 10); ctx.restore(); } }
   // people, sorted by depth
   const ents = npcs.filter(n => !n.hidden).map(n => ({ y: n.py, draw: () => {
     Art.drawPerson(ctx, n.px, n.py, n.look, { dir: n.dir, walking: !!n.move, phase: n.phase || 0, seed: n.seed });

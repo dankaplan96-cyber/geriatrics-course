@@ -559,3 +559,15 @@ body.in-battle #quest-box{display:none!important}
 .story-next b{display:block;color:#0e7a72;margin-bottom:2px}
 .story-next span{color:#47627a}
 .story-next .jr{display:block;margin-top:3px;font-weight:700;color:#b26c06}
+
+/* v1.4 — the team */
+.tm-card{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border-radius:10px;background:#f7fbfd;border:1px solid #d1dfe9}
+.tm-card canvas{width:56px;height:56px;border-radius:10px;background:#e9faf7;border:1px solid #b9d9d4;flex-shrink:0}
+.tm-card b{display:block;font-size:14px;color:#0f2a40}
+.tm-card small{display:block;font-size:11.5px;color:#47627a;margin-top:2px}
+.tm-card.locked{opacity:.65}
+.tm-card.locked canvas{filter:brightness(0) opacity(.25)}
+.tm-meters{display:grid;grid-template-columns:auto 1fr auto;gap:2px 8px;align-items:center;font-size:11px;color:#5d7488;margin:5px 0 2px;max-width:340px}
+.tm-meters .pg-bar{margin:0}
+.hof-team{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:4px 0 8px}
+.hof-team span{font-size:12px;padding:3px 10px;border-radius:99px;background:#fff;border:1px solid #e0a93b}

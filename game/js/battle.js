@@ -206,7 +206,7 @@ async function decide(prompt, options, correct, o) {
   const order = shuffle(options.map((_, i) => i));
   const gone = new Set(o.eliminated || []);
   if (B.guide) { shuffle(order.filter(i => i !== correct && !gone.has(i))).slice(0, 2).forEach(i => gone.add(i)); B.guide = false; }
-  if (B.consultCut != null) { gone.add(B.consultCut); B.consultCut = null; }
+  if (B.cut) { shuffle(order.filter(i => i !== correct && !gone.has(i))).slice(0, B.cut).forEach(i => gone.add(i)); B.cut = 0; }
   let first = true, conf = { value: 'maybe' }, firstConf = null;
   for (;;) {
     const opts = order.map(i => ({ label: options[i], disabled: gone.has(i), mark: gone.has(i) ? '✗' : '', cls: gone.has(i) ? 'gone' : '' }));
@@ -283,7 +283,7 @@ async function episodeBattle(ep, opts) {
       { icon: '🧠', label: 'החלטה', sub: 'שלב ' + (B.stage + 1) + ': ' + st.name, cls: 'primary' + (startHere ? '' : ' gold') },
       { icon: '📋', label: 'תיק', cls: 'mini' },
       { icon: '🎒', label: 'ציוד', cls: 'mini' },
-      { icon: '📞', label: B.used.consult ? 'ייעוץ ✓' : 'ייעוץ', cls: 'mini', disabled: !!B.used.consult },
+      { icon: '👥', label: 'צוות', cls: 'mini' },
       { icon: '🏃', label: 'יציאה', cls: 'mini' },
     ];
     const c = await UI.ask('', cells, { grid: true, extra: stepsHTML(B, episodeHint(B)) });
@@ -316,11 +316,8 @@ async function episodeBattle(ep, opts) {
     else if (c === 2) await UI.say('📋 ' + pt.n + ': ' + pt.s + (ep.tags ? ' · תגיות: ' + ep.tags.join(', ') : ''), { name: 'תיק המטופל', extra: vit(), tall: true });
     else if (c === 3) await useItemMenu('episode');
     else if (c === 4) {
-      B.used.consult = true;
-      const wrongs = ep[st.key].map((_, i) => i).filter(i => i !== ep[st.ck]);
-      B.consultCut = pick(wrongs);
       const crit = ep.c.filter(cc => cc[2] === 2).map(cc => cc[0]);
-      await UI.say('📞 רבקה: “' + (st.key === 'q' ? 'תסתכל/י על: ' + crit.join(', ') + '. מה מחבר ביניהם?' : STAGE_HINT[st.key]) + '” — ותשובה אחת שגויה כבר לא על השולחן.', { name: 'ייעוץ', extra: vit() });
+      await teamMenu(st.key === 'q' ? 'תסתכל/י על: ' + crit.join(', ') + '. מה מחבר ביניהם?' : STAGE_HINT[st.key], vit);
     }
     else if (c === 5) { const sure = await UI.ask('לצאת מהאירוע? אפשר לחזור אליו מאוחר יותר (ההתקדמות באירוע לא נשמרת).', [{ label: 'כן, אחזור אחר כך' }, { label: 'לא, ממשיכים' }]); if (sure === 0) result = 'leave'; }
   }
@@ -384,10 +381,12 @@ async function bossBattle(act) {
     const c = await UI.ask('', [
       { icon: '🧠', label: 'להשיב', sub: 'שאלה ' + (qi + 1), cls: 'primary gold' },
       { icon: '🎒', label: 'ציוד', cls: 'mini' },
+      { icon: '👥', label: 'צוות', cls: 'mini' },
       { icon: '🏳️', label: 'דחייה', cls: 'mini' },
     ], { grid: true, extra: '<div class="bhint">👉 5 תשובות נכונות מנצחות · 3 טעויות — נחזור לזה בהמשך</div>' });
-    if (c === 2) { result = 'leave'; break; }
+    if (c === 3) { result = 'leave'; break; }
     if (c === 1) { await useItemMenu('boss'); continue; }
+    if (c === 2) { await teamMenu(STAGE_HINT.q); continue; }
     const q = qs[qi++ % qs.length], e = q.e, st = q.st, pt = C.patients[e.p];
     const extra = chipsHTML(e.v.map(t => ({ t: '📈 ' + t, cls: 'vit' })));
     await UI.say(pt.n + ': ' + e.st, { name: A.leader + ' מציג/ה', extra });
@@ -486,11 +485,11 @@ async function quickBattle(o) {
   await battleTransition();
   const room = 1 + Math.floor(Math.random() * 4);
   startBattle({ kind: 'quick', scene: 'hall', hpLabel: 'יציבות', heroLabel: S.player.name,
-    enemy: o.trainer ? { name: o.trainer.name, person: o.trainer.look, type: Q.type, sub: o.trainer.role, barLabel: 'ספק' } : { name: 'קריאה מחדר ' + room, type: 'pager', ringing: true, sub: Q.title, barLabel: 'דחיפות' } });
+    enemy: o.trainer ? { name: o.trainer.name, person: o.trainer.look, type: Q.type, sub: o.trainer.role, barLabel: 'ספק' } : { name: o.community ? 'שיחה מהקהילה' : 'קריאה מחדר ' + room, type: 'pager', ringing: true, sub: Q.title, barLabel: 'דחיפות' } });
   const B = battle;
   const extra = chipsHTML((Q.v || []).map(t => ({ t: '📈 ' + t, cls: 'vit' })));
   await sleep(520);
-  await UI.say(o.trainer ? o.trainer.name + ': “' + pick(TRAINER_LINES[o.trainer.id].intro) + '”' : pick(PAGER_INTROS).replace('{r}', room), { name: o.trainer ? o.trainer.name : '📟' });
+  await UI.say(o.trainer ? o.trainer.name + ': “' + pick(TRAINER_LINES[o.trainer.id].intro) + '”' : o.community ? pick(COMMUNITY_INTROS) : pick(PAGER_INTROS).replace('{r}', room), { name: o.trainer ? o.trainer.name : o.community ? '📞 מהקהילה' : '📟' });
   await UI.say(Q.story, { name: Q.title, extra });
   const r = await decide(Q.q, Q.opts, Q.c, { name: Q.title, conf: true, extra,
     onWrong: async (first, conf) => {
@@ -505,4 +504,104 @@ async function quickBattle(o) {
   if (o.trainer) await UI.say(o.trainer.name + ': “' + pick(TRAINER_LINES[o.trainer.id].win) + '”', { name: o.trainer.name });
   endBattle();
   await Game.reward(r.first ? 18 : 8, r.first ? 6 : 3);
+}
+
+
+/* ============ 5. The team: interdisciplinary "party" moves ============ */
+const teamMax = m => m.evo ? 3 : 2;
+const teamRole = m => TEAM[m.id].role + (m.evo ? ' מומחה/ית' : '');
+async function teamMenu(rivkaHint, vit) {
+  const B = battle, type = B.enemy.type;
+  const extra = vit ? vit() : '';
+  const opts = [{ k: 'rivka', icon: '📞', label: 'רבקה — האחות האחראית', sub: B.used.consult ? 'כבר עזרה בקרב הזה' : 'פעם אחת בכל קרב · מסירה תשובה שגויה אחת', disabled: !!B.used.consult }];
+  (S.team || []).forEach(m => { const T = TEAM[m.id], eff = T.strong.includes(type);
+    opts.push({ k: m.id, icon: T.icon, label: T.name + ' · ' + teamRole(m), sub: (eff ? '⚡ יעיל/ה במיוחד נגד ' + TYPES[type].name : 'יעילות רגילה') + ' · “' + T.move + '” · PP ' + m.pp + '/' + teamMax(m), disabled: m.pp <= 0, cls: eff ? 'gold' : '' }); });
+  if (!(S.team || []).length) opts.push({ label: 'עוד אין חברי צוות — הם מחכים במחלקה, במבואה, בשיקום ובבית המרקחת', disabled: true });
+  const i = await UI.ask('👥 למי לקרוא? כל איש/אשת מקצוע חזק/ה נגד סוגי בעיות אחרים.', opts, { cancel: true, name: 'הצוות הבין-מקצועי', extra, tall: true });
+  if (i < 0 || !opts[i].k) return false;
+  const k = opts[i].k;
+  if (k === 'rivka') { B.used.consult = true; B.cut = (B.cut || 0) + 1; Sound.reveal(); await UI.say('📞 רבקה: “' + rivkaHint + '” — ותשובה שגויה אחת ירדה מהשולחן.', { name: 'רבקה', extra: vit ? vit() : '' }); return true; }
+  const m = S.team.find(x => x.id === k), T = TEAM[k], eff = T.strong.includes(type);
+  m.pp--; m.bond = (m.bond || 0) + 1;
+  B.cut = (B.cut || 0) + (eff ? 2 : 1);
+  if (eff) {
+    const n = Math.min(10, B.maxHp - B.hp); B.hp += n; if (n) healFx(n);
+    if (B.ep) { const j = B.ep.c.findIndex((cc, jj) => cc[2] === 2 && !B.found.has(jj)); if (j >= 0) { B.found.add(j); B.exposed = true; } }
+    addParticles(battleFrame().foe.x, battleFrame().foe.y, 16, { color: ['#fde047', '#ffffff', (TYPES[type] || TYPES.meds).color], speed: 120, star: true });
+    Sound.crit();
+  } else Sound.reveal();
+  await UI.say(T.icon + ' ' + T.name + ' משתמש/ת ב“' + T.move + '”! ' + (eff ? '⚡ יעיל במיוחד! שתי תשובות שגויות ירדו' + (B.ep ? ', ממצא קריטי נחשף' : '') + ' והיציבות עלתה.' : 'תשובה שגויה אחת ירדה.') + '\n📚 ' + T.fact,
+    { name: T.name + ' · ' + teamRole(m), extra: vit ? vit() : '', tall: true });
+  if (!m.evo && m.bond >= 4) {
+    m.evo = 1; m.pp = teamMax(m); Sound.levelUp(); screenFlash('#fde68a', 200);
+    await UI.say('✨ ' + T.name + ' התפתח/ה! עכשיו: ' + teamRole(m) + ' — PP מקסימלי 3.', { name: 'התפתחות' });
+  }
+  Game.save();
+  return true;
+}
+
+function questionsFrom(acts, n, types) {
+  let eps = C.episodes.filter(e => acts.includes(e.a) && (!types || types.includes(episodeType(e))));
+  if (!eps.length) eps = C.episodes.filter(e => acts.includes(e.a));
+  eps = shuffle(eps);
+  const out = [];
+  for (let i = 0; out.length < n; i++) out.push({ e: eps[i % eps.length], st: STAGES[(i + Math.floor(Math.random() * 4)) % 4] });
+  return out;
+}
+
+/* A panel-style battle (rival, recruitment, council): answer until the opponent is convinced or confidence runs out. */
+async function panelBattle(cfg) {
+  await battleTransition(cfg.boss ? 'boss' : 'battle');
+  startBattle({ kind: 'panel', scene: cfg.scene || 'conf', music: cfg.music || 'battle', hpLabel: 'ביטחון', heroLabel: S.player.name, hp: cfg.hp == null ? 100 : cfg.hp,
+    enemy: Object.assign({ barLabel: 'שכנוע' }, cfg.enemy) });
+  const B = battle, per = Math.ceil(100 / cfg.need);
+  await sleep(520);
+  await UI.say(cfg.enemy.name + ': “' + cfg.intro + '”', { name: cfg.enemy.name + ' · ' + cfg.enemy.sub });
+  let qi = 0, result = null, rights = 0;
+  while (!result) {
+    const c = await UI.ask('', [
+      { icon: '🧠', label: 'להשיב', sub: 'שאלה ' + (qi + 1) + ' · ' + rights + '/' + cfg.need + ' נכונות', cls: 'primary gold' },
+      { icon: '🎒', label: 'ציוד', cls: 'mini' },
+      { icon: '👥', label: 'צוות', cls: 'mini' },
+      { icon: '🏳️', label: cfg.noLeave ? '—' : 'פרישה', cls: 'mini', disabled: !!cfg.noLeave },
+    ], { grid: true, extra: '<div class="bhint">👉 ' + cfg.need + ' תשובות נכונות מנצחות · כל טעות מורידה ' + cfg.loss + ' ביטחון</div>' });
+    if (c === 3) { result = 'leave'; break; }
+    if (c === 1) { await useItemMenu('boss'); continue; }
+    if (c === 2) { await teamMenu(STAGE_HINT.q); continue; }
+    const q = cfg.qs[qi++ % cfg.qs.length], e = q.e, st = q.st, pt = C.patients[e.p];
+    const extra = chipsHTML(e.v.map(t => ({ t: '📈 ' + t, cls: 'vit' })));
+    await UI.say(pt.n + ': ' + e.st, { name: cfg.enemy.name + ' מציג/ה', extra });
+    const r = await decide(st.prompt, e[st.key], e[st.ck], { name: st.name, extra: extra + '<div class="bhint">💡 ' + esc(STAGE_TIP[st.key]) + '</div>', conf: true,
+      onWrong: async (first, conf) => {
+        if (first) recordConf(conf, false);
+        if (B.shield) { B.shield = false; await UI.say('🛡️ עצרת לבדוק שוב — הטעות לא עלתה בביטחון.'); return; }
+        const dmg = conf === 'sure' && first ? cfg.loss + 8 : cfg.loss;
+        await foeStrike(dmg); B.hp = Math.max(0, B.hp - dmg);
+        if (B.hp <= 0) return 'fail';
+        await UI.say(cfg.enemy.name + ': “לא בדיוק. ' + STAGE_HINT[st.key] + '”', { extra });
+      } });
+    if (r.fail) { result = 'fail'; break; }
+    if (r.first) { recordConf(r.conf, true); rights++; }
+    await heroStrike(r.first);
+    B.enemy.hp = Math.max(0, B.enemy.hp - (r.first ? per : Math.ceil(per / 2)));
+    await UI.say('✓ ' + e[st.key][e[st.ck]] + (EP_EVIDENCE[e.id] ? '\n📚 ' + EP_EVIDENCE[e.id].k : '\n💡 ' + e.pe), { extra, tall: true });
+    if (B.enemy.hp <= 0) result = 'win';
+  }
+  const hp = B.hp;
+  if (result === 'win') { Sound.good(); B.enemy.dyingT = null; }
+  endBattle();
+  return { result, hp };
+}
+
+/* Recruiting a team member: one case from their field. */
+async function recruitBattle(id) {
+  const T = TEAM[id], info = NPC_INFO[id];
+  const r = await panelBattle({ enemy: { name: T.name, person: info.look, type: T.strong[0], sub: T.role }, scene: 'hall', need: 2, loss: 25,
+    intro: 'רוצה שאצטרף לצוות שלך? תראה/י לי שאת/ה חושב/ת גם כמו ' + T.role + '. שני מקרים מהתחום שלי.', qs: questionsFrom([0, 1, 2, 3, 4, 5, 6].filter(a => a <= Game.unlockedAct()), 4, T.strong) });
+  if (r.result !== 'win') { await UI.say(T.name + ': “עוד לא — תחזור/י אליי כשתרגיש/י מוכן/ה.”', { name: T.name }); return false; }
+  S.team = S.team || []; S.team.push({ id, pp: 2, bond: 0, evo: 0 }); Game.save();
+  Sound.badge(); UI.toast(T.icon, T.name + ' הצטרף/ה לצוות!', T.role + ' · “' + T.move + '”');
+  await UI.say('🎉 ' + T.name + ' הצטרף/ה לצוות! בקרב: 👥 צוות → ' + T.name + '. ⚡ ' + T.name + ' יעיל/ה במיוחד נגד: ' + T.strong.map(t => TYPES[t].icon + ' ' + TYPES[t].name).join(', ') + '.\n📚 ' + T.fact, { name: '👥 הצוות שלך', tall: true });
+  await Game.reward(30, 10);
+  return true;
 }

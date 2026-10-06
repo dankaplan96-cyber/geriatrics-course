@@ -573,6 +573,18 @@ body.in-battle #quest-box{display:none!important}
 .story-next span{color:#47627a}
 .story-next .jr{display:block;margin-top:3px;font-weight:700;color:#b26c06}
 
+/* v1.4 — the team */
+.tm-card{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border-radius:10px;background:#f7fbfd;border:1px solid #d1dfe9}
+.tm-card canvas{width:56px;height:56px;border-radius:10px;background:#e9faf7;border:1px solid #b9d9d4;flex-shrink:0}
+.tm-card b{display:block;font-size:14px;color:#0f2a40}
+.tm-card small{display:block;font-size:11.5px;color:#47627a;margin-top:2px}
+.tm-card.locked{opacity:.65}
+.tm-card.locked canvas{filter:brightness(0) opacity(.25)}
+.tm-meters{display:grid;grid-template-columns:auto 1fr auto;gap:2px 8px;align-items:center;font-size:11px;color:#5d7488;margin:5px 0 2px;max-width:340px}
+.tm-meters .pg-bar{margin:0}
+.hof-team{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:4px 0 8px}
+.hof-team span{font-size:12px;padding:3px 10px;border-radius:99px;background:#fff;border:1px solid #e0a93b}
+
 </style>
 </head>
 <body class="on-title">
@@ -819,6 +831,7 @@ const Music = {
     ward: { bpm: 96, lead: [72, 0, 76, 0, 79, 0, 76, 0, 77, 0, 76, 74, 72, 0, 0, 0, 74, 0, 77, 0, 81, 0, 79, 0, 77, 0, 76, 0, 74, 0, 0, 0], bass: [48, 0, 55, 0, 52, 0, 55, 0, 53, 0, 57, 0, 55, 0, 52, 0, 50, 0, 57, 0, 53, 0, 57, 0, 55, 0, 59, 0, 55, 0, 52, 0], lt: 'triangle', bt: 'triangle' },
     battle: { bpm: 148, lead: [69, 0, 72, 69, 76, 0, 74, 72, 71, 0, 72, 0, 74, 0, 71, 0, 69, 0, 72, 69, 77, 0, 76, 74, 76, 0, 72, 0, 71, 0, 68, 0], bass: [45, 45, 57, 45, 45, 57, 45, 57, 43, 43, 55, 43, 44, 44, 56, 44, 45, 45, 57, 45, 41, 41, 53, 41, 40, 40, 52, 40, 44, 44, 56, 44], lt: 'square', bt: 'triangle' },
     boss: { bpm: 156, lead: [64, 0, 67, 0, 70, 0, 69, 67, 64, 0, 63, 0, 64, 67, 70, 72, 71, 0, 67, 0, 64, 0, 66, 67, 69, 0, 67, 0, 66, 0, 63, 0], bass: [40, 40, 52, 40, 40, 52, 40, 52, 39, 39, 51, 39, 38, 38, 50, 38, 40, 40, 52, 40, 43, 43, 55, 43, 35, 35, 47, 35, 39, 39, 51, 39], lt: 'sawtooth', bt: 'square' },
+    town: { bpm: 104, lead: [76, 0, 79, 81, 0, 79, 76, 0, 74, 0, 76, 79, 0, 0, 72, 0, 74, 0, 77, 79, 0, 77, 74, 0, 72, 74, 76, 0, 0, 0, 0, 0], bass: [48, 0, 55, 0, 52, 0, 55, 0, 45, 0, 52, 0, 48, 0, 52, 0, 50, 0, 57, 0, 53, 0, 57, 0, 43, 0, 50, 0, 47, 0, 50, 0], lt: 'square', bt: 'triangle' },
     lab: { bpm: 112, lead: [79, 0, 0, 83, 0, 0, 86, 0, 84, 0, 0, 81, 0, 0, 79, 0, 77, 0, 0, 81, 0, 0, 84, 0, 83, 0, 79, 0, 0, 0, 0, 0], bass: [43, 0, 50, 0, 43, 0, 50, 0, 45, 0, 52, 0, 45, 0, 52, 0, 41, 0, 48, 0, 41, 0, 48, 0, 43, 0, 50, 0, 47, 0, 50, 0], lt: 'triangle', bt: 'sine' },
   },
   hz: m => 440 * Math.pow(2, (m - 69) / 12),
@@ -958,6 +971,25 @@ const LOOKS = {
   hana: { skin: '#e3ae84', hair: '#cbd5e1', hairStyle: 'bob', top: '#e36f5a', top2: '#c2410c', pants: '#475569', shoes: '#1e293b', bag: true },
   noam: { skin: '#f0c49b', hair: '#1f2937', hairStyle: 'short', top: '#93c5fd', top2: '#3b82f6', pants: '#1e3a8a', shoes: '#f1f5f9', coat: true, steth: true },
   avi: { skin: '#b9825a', hair: '#111827', hairStyle: 'short', top: '#0f766e', top2: '#115e59', pants: '#134e4a', shoes: '#f1f5f9', steth: true, beard: true },
+  shira: { skin: '#e9b98f', hair: '#7c2d12', hairStyle: 'long', top: '#f59e0b', top2: '#d97706', pants: '#334155', shoes: '#f1f5f9', badge: '#fff' },
+  liat: { skin: '#f0c49b', hair: '#1f2937', hairStyle: 'bob', top: '#0e8f86', top2: '#0b6f68', pants: '#334155', shoes: '#1e293b', badge: '#fbbf24' },
+  dana: { skin: '#d9a47c', hair: '#4b2e1e', hairStyle: 'curly', top: '#a855f7', top2: '#7e22ce', pants: '#334155', shoes: '#1e293b', bag: true },
+  noa: { skin: '#f2c7a1', hair: '#a16207', hairStyle: 'bun', top: '#84cc16', top2: '#4d7c0f', pants: '#365314', shoes: '#f1f5f9', apron: '#f7fee7' },
+  gil: { skin: '#c48a5c', hair: '#111827', hairStyle: 'short', top: '#1e3a8a', top2: '#1e40af', pants: '#1e293b', shoes: '#111827', badge: '#fbbf24' },
+  maya: { skin: '#e9b98f', hair: '#1f2937', hairStyle: 'bun', top: '#ef4444', top2: '#b91c1c', pants: '#1e293b', shoes: '#f1f5f9' },
+  ron: { skin: '#f0c49b', hair: '#92400e', hairStyle: 'short', top: '#06b6d4', top2: '#0e7490', pants: '#334155', shoes: '#f1f5f9', glasses: true },
+  cohen: { skin: '#dcae86', hair: '#d1d5db', hairStyle: 'short', top: '#a3b5c9', top2: '#8397ad', pants: '#475569', shoes: '#1e293b', glasses: true },
+  yael: { skin: '#d9a47c', hair: '#3b2618', hairStyle: 'long', top: '#0ea5e9', top2: '#0369a1', pants: '#1e3a8a', shoes: '#f1f5f9', bag: true, steth: true },
+  moshe: { skin: '#e4b48c', hair: '#9ca3af', hairStyle: 'short', top: '#78716c', top2: '#57534e', pants: '#44403c', shoes: '#1c1917', beard: true },
+  zelda: { skin: '#f2cfb1', hair: '#e5e7eb', hairStyle: 'curly', top: '#f472b6', top2: '#db2777', pants: '#475569', shoes: '#1e293b', glasses: true },
+  michal: { skin: '#f2c7a1', hair: '#78350f', hairStyle: 'bob', top: '#fb923c', top2: '#ea580c', pants: '#334155', shoes: '#1e293b' },
+  rachel: { skin: '#e8bf9c', hair: '#d1d5db', hairStyle: 'bun', top: '#7dd3fc', top2: '#0284c7', pants: '#475569', shoes: '#1e293b', glasses: true },
+  ido: { skin: '#e9b98f', hair: '#b45309', hairStyle: 'short', top: '#6366f1', top2: '#4338ca', pants: '#3730a3', shoes: '#f1f5f9', steth: true },
+  judge0: { skin: '#f0c49b', hair: '#6b7280', hairStyle: 'bob', top: '#f8fafc', top2: '#cbd5e1', pants: '#334155', shoes: '#1e293b', coat: true, inner: '#0e8f86', glasses: true },
+  judge1: { skin: '#c48a5c', hair: '#1f2937', hairStyle: 'short', top: '#f8fafc', top2: '#cbd5e1', pants: '#1e293b', shoes: '#1e293b', coat: true, inner: '#ef4444', steth: true },
+  judge2: { skin: '#e9b98f', hair: '#7c2d12', hairStyle: 'long', top: '#f8fafc', top2: '#cbd5e1', pants: '#334155', shoes: '#1e293b', coat: true, inner: '#22c55e' },
+  judge3: { skin: '#f0c49b', hair: '#e5e7eb', hairStyle: 'short', top: '#f8fafc', top2: '#cbd5e1', pants: '#1e293b', shoes: '#1e293b', coat: true, inner: '#64748b', beard: true, glasses: true },
+  champion: { skin: '#e8b58c', hair: '#f3f4f6', hairStyle: 'bun', top: '#1e3a8a', top2: '#1e40af', pants: '#1e293b', shoes: '#1e293b', coat: false, badge: '#fbbf24', glasses: true },
   leader0: { skin: '#f0c49b', hair: '#9ca3af', hairStyle: 'bob', top: '#f8fafc', top2: '#cbd5e1', pants: '#334155', shoes: '#1e293b', coat: true, inner: '#2aa198', glasses: true },
   leader1: { skin: '#e9b98f', hair: '#4b2e1e', hairStyle: 'short', top: '#f8fafc', top2: '#cbd5e1', pants: '#1e293b', shoes: '#1e293b', coat: true, inner: '#8b5cf6' },
   leader2: { skin: '#d9a47c', hair: '#1f1720', hairStyle: 'long', top: '#f8fafc', top2: '#cbd5e1', pants: '#334155', shoes: '#1e293b', coat: true, inner: '#ef4444', steth: true },
@@ -992,12 +1024,12 @@ const MAPS = [
     npcs: [{ id: 'shula', x: 6, y: 2, dir: 'down' }],
     hotspots: { '1,1': 'locker', '2,1': 'locker', '2,0': 'board', '7,1': 'coffee', '9,1': 'library', '10,1': 'library', '1,6': 'sofa', '2,6': 'sofa' } },
   { id: 'hall', name: 'מסדרון המחלקה', sub: 'מחלקה גריאטרית · קומה 3', floor: 'hall', music: 'ward', encounters: true,
-    grid: ['##H#D##A##D##Q##D##H##D##A##D###', '#P............................P#', '#..............................#', '#............CCKCC.............#', 'D..............................#', '#.......y...............c......#', '#..w...........................#', '#P............................P#', '###########################D####'],
-    doors: { '0,4': { to: 0, x: 10, y: 4, dir: 'left' }, '4,0': { to: 2, x: 5, y: 6, dir: 'up' }, '10,0': { to: 3, x: 5, y: 6, dir: 'up' }, '16,0': { to: 4, x: 5, y: 6, dir: 'up' }, '22,0': { to: 5, x: 5, y: 6, dir: 'up' }, '28,0': { to: 6, x: 4, y: 6, dir: 'up' }, '27,8': { to: 7, x: 5, y: 1, dir: 'down', boss: true } },
-    labels: { '4,0': 'חדר 1', '10,0': 'חדר 2', '16,0': 'חדר 3', '22,0': 'חדר 4', '28,0': 'מעבדה', '27,8': 'ישיבות', '0,4': 'צוות' },
-    npcs: [{ id: 'rivka', x: 14, y: 2, dir: 'down' }, { id: 'omer', x: 6, y: 6, dir: 'down', wander: [2, 5, 12, 7] }, { id: 'hana', x: 25, y: 2, dir: 'down', wander: [19, 1, 29, 3] },
+    grid: ['##H#D##A##D##Q##D##H##D##A##D###', '#P............................P#', '#..............................#', '#............CCKCC.............#', 'D..............................D', '#.......y...............c......#', '#..w...........................#', '#P............................P#', '###########################D####'],
+    doors: { '0,4': { to: 0, x: 10, y: 4, dir: 'left' }, '4,0': { to: 2, x: 5, y: 6, dir: 'up' }, '10,0': { to: 3, x: 5, y: 6, dir: 'up' }, '16,0': { to: 4, x: 5, y: 6, dir: 'up' }, '22,0': { to: 5, x: 5, y: 6, dir: 'up' }, '28,0': { to: 6, x: 4, y: 6, dir: 'up' }, '27,8': { to: 7, x: 5, y: 1, dir: 'down', boss: true }, '31,4': { to: 8, x: 1, y: 4, dir: 'right' } },
+    labels: { '4,0': 'חדר 1', '10,0': 'חדר 2', '16,0': 'חדר 3', '22,0': 'חדר 4', '28,0': 'מעבדה', '27,8': 'ישיבות', '0,4': 'צוות', '31,4': 'מבואה' },
+    npcs: [{ id: 'rivka', x: 14, y: 2, dir: 'down' }, { id: 'shira', x: 18, y: 2, dir: 'down' }, { id: 'hana', x: 25, y: 2, dir: 'down', wander: [19, 1, 29, 3] },
       { id: 'noam', x: 8, y: 1, dir: 'down', trainer: true, sight: 3 }, { id: 'avi', x: 21, y: 7, dir: 'up', trainer: true, sight: 3 }],
-    hotspots: { '15,3': 'review' } },
+    hotspots: { '15,3': 'review' }, hidden: { '29,6': 'coffee' } },
   { id: 'room1', name: 'חדר 1', sub: 'לאה · רות', floor: 'ward', music: 'ward', beds: { '2,1': 'leah', '6,1': 'ruth' },
     grid: ['##m#O#m#O#', '#IB..IB..#', '#.b.h.b.h#', '#........#', '#........#', '#P......k#', '#........#', '#####D####'], doors: { '5,7': { to: 1, x: 4, y: 1, dir: 'down' } } },
   { id: 'room2', name: 'חדר 2', sub: 'יוסף · אברהם', floor: 'ward', music: 'ward', beds: { '2,1': 'yosef', '6,1': 'avraham' },
@@ -1012,9 +1044,51 @@ const MAPS = [
   { id: 'conf', name: 'חדר הישיבות', sub: 'ביקור רופאים גדול', floor: 'wood', music: 'ward',
     grid: ['#####D##JJ##', '#..........#', '#.hhhh.....#', '#.TTTT.....#', '#.TTTT.....#', '#.hhhh.....#', '#P........P#', '############'],
     doors: { '5,0': { to: 1, x: 27, y: 7, dir: 'up' } }, npcs: [{ id: 'leader', x: 8, y: 3, dir: 'left' }] },
+  // 8 — the hospital lobby (the Pokémon Center of this game)
+  { id: 'lobby', name: 'מבואת בית החולים', sub: 'קבלה · שיקום · בית מרקחת · יציאה לקהילה', floor: 'hall', music: 'town',
+    grid: ['##A###D###D##Q##', '#P............P#', '#..............#', '#..CCCC.....hh.#', 'D..............D', '#..........hh..#', '#..w...........#', '#..............#', '#P............P#', '#######D########'],
+    doors: { '0,4': { to: 1, x: 30, y: 4, dir: 'left' }, '6,0': { to: 9, x: 6, y: 6, dir: 'up' }, '10,0': { to: 10, x: 5, y: 6, dir: 'up' },
+      '7,9': { to: 11, x: 11, y: 2, dir: 'down', needBadges: 1 }, '15,4': { to: 14, x: 6, y: 11, dir: 'up', elite: true } },
+    labels: { '6,0': 'שיקום', '10,0': 'רוקחות', '7,9': 'יציאה', '15,4': 'מועצה' },
+    npcs: [{ id: 'liat', x: 4, y: 2, dir: 'down' }, { id: 'dana', x: 12, y: 2, dir: 'down' }, { id: 'noa', x: 11, y: 7, dir: 'up' }, { id: 'gil', x: 14, y: 3, dir: 'left' }],
+    hidden: { '13,8': 'calm' } },
+  // 9 — rehabilitation gym
+  { id: 'rehab', name: 'מכון השיקום', sub: 'פיזיותרפיה · ריפוי בעיסוק', floor: 'wood', music: 'town',
+    grid: ['##W###O###O#', '#pppp..vv..#', '#..........#', '#.uuu..uuu.#', '#.uuu..uuu.#', '#..........#', '#P..z....P.#', '######D#####'],
+    doors: { '6,7': { to: 8, x: 6, y: 1, dir: 'down' } },
+    npcs: [{ id: 'maya', x: 6, y: 2, dir: 'down' }, { id: 'ron', x: 8, y: 5, dir: 'left' }, { id: 'cohen', x: 3, y: 5, dir: 'right' }],
+    hidden: { '10,2': 'shield' } },
+  // 10 — pharmacy
+  { id: 'pharm', name: 'בית המרקחת', sub: 'רוקחות קלינית', floor: 'lab', music: 'town',
+    grid: ['####A##Q##', '#XXXX.XXX#', '#........#', '#.CCCCCC.#', '#........#', '#P.....h.#', '#........#', '#####D####'],
+    doors: { '5,7': { to: 8, x: 10, y: 1, dir: 'down' } }, npcs: [{ id: 'omer', x: 4, y: 2, dir: 'down' }] },
+  // 11 — the community street (outdoors, tall grass)
+  { id: 'street', name: 'רחוב הקהילה', sub: 'ביקורי בית · שיחות מהקהילה', floor: 'grass', music: 'town', outdoor: true, encounters: 'grass',
+    grid: ['EEEEEEEEEEEEEEEEEEEEEEEE', 'EEEEEEEEEEEDEEEEEEEEEEEE', 'Y,,f,;;;,,,::,,,;;;,f,,Y', 'Y,,,,;;;,,,::,,,;;;,,,,Y', 'Y,,,lq,,,,,::,,,,ql,,,,Y',
+      'Y::::::::::::::::::::::Y', 'Y======================Y', 'Y======================Y', 'Y::::::::::::::::::::::Y', 'Y,,UUUU,,,,,,,,,,UUUU,,Y',
+      'Y,,UUUU,,,j,,;;;,UUUU,,Y', 'Y,,UUDU,,,,,;;;,,UDUU,,Y', 'Y,,,,:,,,,f,,,,,,,:,,,,Y', 'YYYYYYYYYYYYYYYYYYYYYYYY'],
+    doors: { '11,1': { to: 8, x: 7, y: 8, dir: 'up' }, '5,11': { to: 12, x: 4, y: 5, dir: 'up', needBadges: 2 }, '18,11': { to: 13, x: 4, y: 5, dir: 'up', needBadges: 4 } },
+    labels: { '5,11': 'בית לאה', '18,11': 'בית אברהם' },
+    npcs: [{ id: 'yael', x: 15, y: 4, dir: 'left', trainer: true, sight: 3 }, { id: 'moshe', x: 8, y: 12, dir: 'up', trainer: true, sight: 3 }, { id: 'neighbor', x: 20, y: 3, dir: 'down', wander: [19, 2, 22, 4] }],
+    hidden: { '22,12': 'guide' } },
+  // 12 — Leah's home: the home-safety walk-through
+  { id: 'homeLeah', name: 'הבית של לאה', sub: 'ביקור בית · סיור בטיחות', floor: 'wood', music: 'ward',
+    grid: ['###O##O##', '#a..o..k#', '#..r.T..#', '#.......#', '#.B.....#', '#.b...P.#', '####D####'],
+    doors: { '4,6': { to: 11, x: 5, y: 12, dir: 'down' } }, npcs: [{ id: 'michal', x: 6, y: 3, dir: 'down' }],
+    hotspots: { '3,2': 'hz_rug', '4,1': 'hz_light', '5,2': 'hz_pills', '7,1': 'hz_reach', '2,4': 'hz_night', '2,5': 'hz_night' }, hidden: { '1,3': 'torch' } },
+  // 13 — Avraham's home: teach-back before discharge
+  { id: 'homeAvraham', name: 'הבית של אברהם', sub: 'ביקור בית · תרופות ומטפלים', floor: 'carpet', music: 'ward',
+    grid: ['##O###O##', '#a..X..k#', '#...T...#', '#.......#', '#.....h.#', '#P......#', '####D####'],
+    doors: { '4,6': { to: 11, x: 18, y: 12, dir: 'down' } }, npcs: [{ id: 'rachel', x: 4, y: 3, dir: 'down' }] },
+  // 14 — the Expert Council (Elite Four + Champion)
+  { id: 'council', name: 'מועצת המומחים', sub: 'ארבעה שופטים ויו״רית — בלי מנוחה בין הסבבים', floor: 'wood', music: 'boss',
+    grid: ['#####JJJ#####', '#P....h....P#', '#...........#', '######G######', '#...........#', '#.P.......P.#', '######G######', '#...........#', '######G######', '#...........#', '######G######', '#...........#', '######D######'],
+    doors: { '6,12': { to: 8, x: 14, y: 4, dir: 'left' } }, barriers: { '6,10': 1, '6,8': 2, '6,6': 3, '6,3': 4 },
+    npcs: [{ id: 'judge0', x: 7, y: 11, dir: 'left' }, { id: 'judge1', x: 7, y: 9, dir: 'left' }, { id: 'judge2', x: 7, y: 7, dir: 'left' }, { id: 'judge3', x: 7, y: 4, dir: 'left' }, { id: 'champion', x: 6, y: 2, dir: 'down' }] },
 ];
-const BLOCK = new Set('#WOmQHAJBbCKThPSLMRFVXZIwcyk'.split(''));
+const BLOCK = new Set('#WOmQHAJBbCKThPSLMRFVXZIwcykYUEqljnpvzaoG'.split(''));
 const WALLISH = new Set('#WOmQHAJ'.split(''));
+const GROUND = { ',': 'grass', ';': 'tallgrass', ':': 'path', '=': 'road', 'f': 'flowers', 'u': 'mat', 'r': 'rug' };   // walkable ground variants
 
 const NPC_INFO = {
   rivka: { name: 'רבקה', role: 'האחות האחראית', look: 'rivka' },
@@ -1024,14 +1098,36 @@ const NPC_INFO = {
   hana: { name: 'חנה', role: 'בת של מטופלת', look: 'hana' },
   noam: { name: 'ד״ר נועם', role: 'מתמחה', look: 'noam' },
   avi: { name: 'אבי', role: 'אח בכיר', look: 'avi' },
+  shira: { name: 'שירה', role: 'קלינאית תקשורת', look: 'shira' },
+  liat: { name: 'ליאת', role: 'דלפק הקבלה', look: 'liat' },
+  dana: { name: 'דנה', role: 'עובדת סוציאלית', look: 'dana' },
+  noa: { name: 'נועה', role: 'דיאטנית קלינית', look: 'noa' },
+  gil: { name: 'גיל', role: 'שומר המועצה', look: 'gil' },
+  maya: { name: 'מאיה', role: 'פיזיותרפיסטית', look: 'maya' },
+  ron: { name: 'רון', role: 'מרפא בעיסוק', look: 'ron' },
+  cohen: { name: 'מר כהן', role: 'בשיקום אחרי שבר', look: 'cohen' },
+  yael: { name: 'יעל', role: 'אחות בריאות הקהילה', look: 'yael' },
+  moshe: { name: 'משה', role: 'מטפל עיקרי לאשתו', look: 'moshe' },
+  neighbor: { name: 'זלדה', role: 'שכנה', look: 'zelda' },
+  michal: { name: 'מיכל', role: 'הבת של לאה', look: 'michal' },
+  rachel: { name: 'רחל', role: 'אשתו של אברהם', look: 'rachel' },
+  ido: { name: 'עידו', role: 'אח חדש — היריב שלך', look: 'ido' },
+  judge0: { name: 'ד״ר אסתר גולן', role: 'מועצה · יסודות ומוח', look: 'judge0' },
+  judge1: { name: 'ד״ר יונתן בר', role: 'מועצה · לב, ריאה וכליה', look: 'judge1' },
+  judge2: { name: 'ד״ר מיכל אדר', role: 'מועצה · זיהום, דם וכאב', look: 'judge2' },
+  judge3: { name: 'פרופ׳ שמעון נחום', role: 'מועצה · מורכבות ומטרות', look: 'judge3' },
+  champion: { name: 'פרופ׳ דבורה אלמוג', role: 'יו״רית מועצת המומחים', look: 'champion' },
 };
 
 const TRAINER_LINES = {
   noam: { intro: ['רגע, רגע! לפני שאת/ה ממשיך/ה — יש לי מקרה מהלילה.', 'עצור/י! אני צריך דעה שנייה, מהר.'], win: ['טוב, השתכנעתי. אני הולך לבדוק את זה שוב.', 'אוקיי, זה היה חד. תודה.'], done: 'ד״ר נועם שקוע בהזמנת בדיקות. הוא מהנהן אליך.' },
+  yael: { intro: ['אחות קהילה? בבית אין מוניטור — יש עיניים, שאלות ומשפחה. בוא/י נבדוק את שלך.', 'רגע! מטופלת שלי שוחררה אתמול. מה היית בודק/ת קודם?'], win: ['יפה. בקהילה זה בדיוק מה שמציל.', 'את/ה תהיה/י אחות/אח קהילה מצוין/ת.'], done: 'יעל ממהרת לביקור הבית הבא.' },
+  moshe: { intro: ['אשתי חזרה מבית החולים ואני לבד איתה. תעזור/י לי להבין משהו?', 'סליחה! אתה/את מבית החולים? יש לי שאלה על אשתי.'], win: ['תודה. עכשיו אני יודע למה לשים לב.', 'הסברת יותר טוב מהמכתב שחרור.'], done: 'משה ממהר הביתה לאשתו.' },
   avi: { intro: ['בוא/י נראה אם את/ה מוכן/ה למשמרת. שאלה אחת.', 'אח/ות טוב/ה לא עובר/ת ליד אירוע. מה היית עושה?'], win: ['ככה עובדים. לך/י, המטופלים מחכים.', 'יפה. שומר/ת על הראש קר.'], done: 'אבי מסדר את עגלת התרופות ומחייך.' },
 };
 
 const PAGER_INTROS = ['📟 הביפר מצפצף! קריאה מחדר {r}.', '🔔 פעמון קריאה מחדר {r} — מישהו צריך אותך.', '📟 “אחות, את/ה יכול/ה לבוא רגע?” — חדר {r}.'];
+const COMMUNITY_INTROS = ['📞 טלפון מבת משפחה: “אבא שלי לא נשמע כמו תמיד…”', '📞 המטפלת של שכנה מתקשרת: “יש לי שאלה דחופה”', '📞 שיחה מהמוקד הקהילתי: מטופלת שוחררה אתמול ומשהו השתנה'];
 const BATTLE_INTROS = ['{n} — האירוע מתחיל.', 'משהו לא מסתדר: {n}', 'המטופל/ת לא “כמו תמיד”. {n}'];
 const LEVEL_TITLES = [[1, 'אח/ות מתחיל/ה'], [3, 'אח/ות ליד המיטה'], [6, 'אח/ות אחראי/ת משמרת'], [10, 'אח/ות מומחה/ית בהכשרה'], [15, 'אח/ות מומחה/ית קליני/ת'], [20, 'מנטור/ית גריאטרי/ת']];
 
@@ -1079,6 +1175,47 @@ const ROOM_INTRO = {
   lab: 'המעבדה של טל: סבבי מעבדה קריטיים (קריאת פאנל שלם) והמעבדון — 78 בדיקות לזהות. המחשב כאן פותח את המעבדון.',
   conf: 'חדר הישיבות: כאן מתקיים הביקור הגדול של כל פרק. ניצחון = תג, ותג פותח את הפרק הבא אצל כל המטופלים.',
 };
+
+/* The interdisciplinary team — the party you recruit. Each is "super effective" against the clinical
+   types that match their scope of practice, and each fact is evidence-based. */
+const TEAM = {
+  maya: { name: 'מאיה', role: 'פיזיותרפיסטית', icon: '🦿', strong: ['func', 'neuro'], move: 'הערכת ניידות ושיווי משקל', where: 'מכון השיקום',
+    fact: 'Timed Up and Go של 12 שניות ומעלה מצביע על סיכון לנפילה (CDC STEADI). אימון כוח ושיווי משקל מפחית את שיעור הנפילות בכ-23% (Cochrane 2019).', src: ['steadi', 'sherrington2019'] },
+  ron: { name: 'רון', role: 'מרפא בעיסוק', icon: '🏠', strong: ['func', 'goals'], move: 'התאמת סביבה ותפקוד', where: 'מכון השיקום',
+    fact: 'הערכת מפגעים בבית והפחתתם מונעת כ-343 נפילות לכל 1,000 מבוגרים בסיכון בשנה — ויותר בקרב מי שכבר נפל (Cochrane 2023).', src: ['clemson2023'] },
+  shira: { name: 'שירה', role: 'קלינאית תקשורת', icon: '🗣️', strong: ['neuro', 'infect'], move: 'הערכת בליעה', where: 'מסדרון המחלקה',
+    fact: 'סקר בליעה לפני כל אכילה, שתייה או תרופה פומית אחרי שבץ (AHA/ASA 2019); מרקמי מזון ונוזלים מתוארים לפי מסגרת IDDSI.', src: ['aha_stroke2019', 'iddsi'] },
+  noa: { name: 'נועה', role: 'דיאטנית קלינית', icon: '🥗', strong: ['renal', 'labs'], move: 'הערכה תזונתית', where: 'מבואת בית החולים',
+    fact: 'MNA-SF הוא כלי סקר מתוקף לתת-תזונה במבוגרים (Kaiser 2009). בסיכון ל-refeeding מתחילים לאט ומנטרים זרחן, אשלגן ומגנזיום (NICE CG32).', src: ['mnasf', 'nice_cg32'] },
+  omer: { name: 'עומר', role: 'רוקח קליני', icon: '💊', strong: ['meds', 'cardio', 'renal'], move: 'סקירת תרופות מובנית', where: 'בית המרקחת',
+    fact: 'סקירת תרופות לפי STOPP/START v3 ו-Beers 2023 מזהה מרשמים לא מתאימים; התאמת מינון לפינוי כליה היא חלק מכל סקירה.', src: ['stopp2023', 'beers2023'] },
+  dana: { name: 'דנה', role: 'עובדת סוציאלית', icon: '🤝', strong: ['goals'], move: 'שיחת מטרות ותמיכה במטפלים', where: 'מבואת בית החולים',
+    fact: 'תכנון השחרור מתחיל בקבלה ומשלב את המטופל/ת והמטפלים (NICE NG27); שיחה על מטרות מיישרת את הטיפול עם מה שחשוב לאדם.', src: ['nice_ng27', 'ahrq_teachback'] },
+};
+const TEAM_ORDER = ['shira', 'maya', 'ron', 'noa', 'omer', 'dana'];
+
+/* Leah's home: five fall hazards to find (CDC STEADI home checklist; Cochrane 2023 home-hazard reduction). */
+const HAZARDS = {
+  hz_rug: { t: 'שטיח קטן ומתקפל', fix: 'מסירים שטיחים קטנים או מקבעים אותם עם גב מונע החלקה — מכשול מעידה שכיח.' },
+  hz_light: { t: 'תאורה חלשה', fix: 'מגבירים תאורה בחדרים ובמעברים ומוסיפים מתג נגיש ליד הכניסה — ראייה טובה מפחיתה מעידות.' },
+  hz_pills: { t: 'קופסאות תרופות מפוזרות', fix: 'רשימה אחת מעודכנת וקופסת תרופות שבועית; תרופות מרדימות ולחץ דם הן גורמי סיכון לנפילה — סקירה עם הרוקח.' },
+  hz_reach: { t: 'מדף גבוה מדי במטבח', fix: 'מעבירים חפצים בשימוש יומיומי לגובה המותניים — בלי לטפס על כיסא או שרפרף.' },
+  hz_night: { t: 'הדרך לשירותים בלילה', fix: 'תאורת לילה בין המיטה לשירותים, מיטה בגובה שמאפשר לשבת עם כפות רגליים על הרצפה, וקימה בשלבים.' },
+};
+
+const RIVAL_LINES = [
+  { intro: 'היי, את/ה החדש/ה! גם אני התחלתי השבוע. בוא/י נראה מי מבינינו קורא/ת מטופל יותר מהר!', win: 'אוקיי… זה היה טוב. אבל אני אתאמן. נתראה במחלקה!', lose: 'חה! עוד תלמד/י. בהצלחה עם רבקה!' },
+  { intro: 'כבר שלושה תגים? גם אני! בקהילה זה שונה — אין מוניטור, יש רק את העיניים שלך. נבדוק?', win: 'בבית של מטופל רואים דברים שאין בתיק. אני מתחיל/ה להבין את זה.', lose: 'נראה לי שצריך לחזור לבסיס. ניפגש שוב.' },
+  { intro: 'שבעה תגים. זה הרגע. לפני המועצה — סבב אחד אחרון ביננו. בלי הנחות.', win: 'לך/י. המועצה מחכה לך. ו… תודה. למדתי ממך יותר משחשבתי.', lose: 'עוד לא. תתכונן/י ותחזור/י.' },
+];
+
+const COUNCIL = [
+  { id: 'judge0', acts: [0, 1], intro: 'ברוך/ה הבא/ה למועצה. ארבעה שופטים, אחד אחרי השני, בלי מנוחה. אני מתחילה מהבסיס: לראות את המטופל ואת המוח.' },
+  { id: 'judge1', acts: [2, 3], intro: 'לב, ריאה וכליה. כאן מספר אחד לא מספיק — צריך לראות את כל המערכת.' },
+  { id: 'judge2', acts: [4, 5], intro: 'זיהום, דימום וכאב. הסימנים במבוגר שקטים — נראה אם את/ה שומע/ת אותם.' },
+  { id: 'judge3', acts: [6], intro: 'הסבב שלי הוא הקשה מכולם: אין תשובה של הנחיה אחת. רק שיקול דעת ומטרות.' },
+  { id: 'champion', acts: [0, 1, 2, 3, 4, 5, 6], intro: 'הגעת עד אליי. אני לא בוחנת פרק — אני בוחנת אח/ות מומחה/ית. שש שאלות מכל המחלקה.' },
+];
 
 </script>
 <script>
@@ -1153,6 +1290,11 @@ const SOURCES = {
   wses_asbo: { t: 'WSES Bologna guidelines — ASBO', c: 'ten Broek RPG, et al. Bologna guidelines for diagnosis and management of adhesive small bowel obstruction (ASBO): 2017 update. World J Emerg Surg 2018;13:24.', u: pm('Bologna guidelines for diagnosis and management of adhesive small bowel obstruction 2017 update') },
   asco_dyspnea2021: { t: 'ASCO Dyspnea in advanced cancer 2021', c: 'Hui D, et al. Management of Dyspnea in Advanced Cancer: ASCO Guideline. J Clin Oncol 2021;39(12):1389–1411.', u: pm('Management of Dyspnea in Advanced Cancer: ASCO Guideline') },
   merck_labs: { t: 'Merck Manual — Normal laboratory values', c: 'Merck Manual Professional Version. Normal Laboratory Values (reference ranges vary by laboratory).', u: 'https://www.merckmanuals.com/professional/resources/normal-laboratory-values' },
+  steadi: { t: 'CDC STEADI — Timed Up and Go', c: 'Centers for Disease Control and Prevention. STEADI: Assessment — Timed Up & Go (TUG). An older adult who takes ≥12 seconds is at risk for falling.', u: 'https://www.cdc.gov/steadi/pdf/STEADI-Assessment-TUG-508.pdf' },
+  sherrington2019: { t: 'Cochrane 2019 — Exercise for preventing falls', c: 'Sherrington C, et al. Exercise for preventing falls in older people living in the community. Cochrane Database Syst Rev 2019;1:CD012424.', u: pm('Exercise for preventing falls in older people living in the community Sherrington 2019') },
+  clemson2023: { t: 'Cochrane 2023 — Environmental interventions for falls', c: 'Clemson L, et al. Environmental interventions for preventing falls in older people living in the community. Cochrane Database Syst Rev 2023;3:CD013258.', u: 'https://pubmed.ncbi.nlm.nih.gov/36893804/' },
+  iddsi: { t: 'IDDSI framework', c: 'International Dysphagia Diet Standardisation Initiative. The IDDSI Framework: texture-modified foods and thickened liquids.', u: 'https://iddsi.org/framework/' },
+  mnasf: { t: 'MNA-SF validation (2009)', c: 'Kaiser MJ, et al. Validation of the Mini Nutritional Assessment Short-Form (MNA-SF): a practical tool for identification of nutritional status. J Nutr Health Aging 2009;13(9):782–788.', u: pm('Validation of the Mini Nutritional Assessment short-form (MNA-SF) Kaiser 2009') },
   // pedagogy
   tanner2006: { t: 'Tanner Clinical Judgment Model (2006)', c: 'Tanner CA. Thinking like a nurse: a research-based model of clinical judgment in nursing. J Nurs Educ 2006;45(6):204–211.', u: pm('Thinking like a nurse: a research-based model of clinical judgment in nursing') },
   lasater2007: { t: 'Lasater Clinical Judgment Rubric (2007)', c: 'Lasater K. Clinical judgment development: using simulation to create an assessment rubric. J Nurs Educ 2007;46(11):496–503.', u: pm('Clinical judgment development: using simulation to create an assessment rubric') },
@@ -1267,7 +1409,24 @@ const Art = (() => {
     wood: { base: '#dcb58a', line: '#c49a6c', speck: '#e6c49c', dark: '#b88d5f' },
     carpet: { base: '#e2c39d', line: '#cfaa80', speck: '#ead0ae', dark: '#c49d72' },
   };
+  function drawGround(c, kind, base, tx, ty, px, py) {
+    const h = (a, b) => hash(tx * 13 + a, ty * 7 + b);
+    if (kind === 'grass' || kind === 'flowers' || kind === 'tallgrass') {
+      c.fillStyle = (tx + ty) % 2 ? '#9fd88c' : '#a7dc93'; c.fillRect(px, py, T, T);
+      c.fillStyle = '#8bcc78'; for (let i = 0; i < 6; i++) c.fillRect(px + h(i, 1) * 36 + 2, py + h(i, 2) * 34 + 3, 1.5, 4);
+      if (kind === 'flowers') ['#f472b6', '#fde047', '#ffffff', '#fb923c'].forEach((col, i) => { const fx = px + 6 + h(i, 5) * 28, fy = py + 6 + h(i, 6) * 26; circle(c, fx, fy, 2.6, col); circle(c, fx, fy, 1, '#a16207'); });
+      if (kind === 'tallgrass') { c.fillStyle = '#5fb35a'; c.fillRect(px + 1, py + 6, T - 2, T - 6); c.fillStyle = '#4c9e48'; for (let i = 0; i < 9; i++) { const bx = px + 2 + i * 4.2; c.beginPath(); c.moveTo(bx, py + 38); c.lineTo(bx + 2, py + 6 + (i % 3) * 3); c.lineTo(bx + 4, py + 38); c.fill(); } }
+      return;
+    }
+    if (kind === 'path') { c.fillStyle = '#e9dcc0'; c.fillRect(px, py, T, T); c.fillStyle = '#dccca9'; c.fillRect(px, py + 19, T, 2); c.fillRect(px + (ty % 2 ? 19 : 0), py, 2, 19); c.fillRect(px + (ty % 2 ? 0 : 19), py + 21, 2, 19); return; }
+    if (kind === 'road') { c.fillStyle = '#8c96a3'; c.fillRect(px, py, T, T); c.fillStyle = '#7f8a97'; for (let i = 0; i < 5; i++) c.fillRect(px + h(i, 3) * 36, py + h(i, 4) * 36, 2, 2);
+      if (ty % 2 === 0) { c.fillStyle = '#f8fafc'; if (tx % 2) c.fillRect(px + 8, py + T - 3, 24, 4); } return; }
+    drawFloor(c, base, tx, ty, px, py);
+    if (kind === 'mat') { c.fillStyle = '#5b8fd6'; c.fillRect(px, py + 2, T, T - 4); c.fillStyle = '#4a7cc2'; c.fillRect(px, py + 2, T, 3); }
+    if (kind === 'rug') { c.fillStyle = '#c2410c'; roundRect(c, px + 3, py + 8, 34, 24, 3); c.fill(); c.strokeStyle = '#fde68a'; c.lineWidth = 2; roundRect(c, px + 7, py + 12, 26, 16, 2); c.stroke(); c.fillStyle = '#9a3412'; c.fillRect(px + 30, py + 26, 7, 6); }
+  }
   function drawFloor(c, kind, tx, ty, px, py) {
+    if (kind === 'grass') return drawGround(c, 'grass', null, tx, ty, px, py);
     const f = FLOOR[kind] || FLOOR.hall;
     c.fillStyle = f.base; c.fillRect(px, py, T, T);
     if (kind === 'wood' || kind === 'carpet') {
@@ -1385,6 +1544,35 @@ const Art = (() => {
       c.fillStyle = '#f8fafc'; c.fillRect(x + 8, y, 8, 5); c.fillStyle = '#fbbf24'; c.fillRect(x + 22, y, 6, 5); circle(c, x + 9, y + 35, 2.5, '#1e293b'); circle(c, x + 31, y + 35, 2.5, '#1e293b'); },
     y(c, x, y) { ellipse(c, x + 20, y + 37, 10, 3, 'rgba(0,0,0,.25)'); c.fillStyle = '#facc15'; c.beginPath(); c.moveTo(x + 20, y + 4); c.lineTo(x + 31, y + 36); c.lineTo(x + 9, y + 36); c.closePath(); c.fill();
       c.fillStyle = '#111827'; c.fillRect(x + 19, y + 14, 3, 10); c.fillRect(x + 19, y + 27, 3, 3); },
+    Y(c, x, y) { // tree, canopy spills over the tile above
+      ellipse(c, x + 20, y + 36, 15, 4, 'rgba(0,0,0,.18)'); c.fillStyle = '#7c4a2a'; c.fillRect(x + 16, y + 20, 8, 18);
+      [[20, 6, 17, '#3f9142'], [9, 14, 11, '#4aa34d'], [31, 14, 11, '#4aa34d'], [20, -4, 12, '#56b358'], [14, 4, 8, '#63c065']].forEach(l => circle(c, x + l[0], y + l[1], l[2], l[3]));
+      circle(c, x + 14, y - 2, 3, 'rgba(255,255,255,.35)');
+    },
+    U(c, x, y, m, tx, ty, wallOnly) { // house: roof on the first row, wall with windows below
+      const pal = [['#e76f51', '#c2563c'], ['#5b8fd6', '#4473b8'], ['#2a9d8f', '#1f7a70']][Math.floor(tx / 8) % 3];
+      const roof = m.grid[ty - 1] && m.grid[ty - 1][tx] !== 'U' && !wallOnly;
+      if (roof) { c.fillStyle = pal[0]; c.fillRect(x - 1, y - 12, T + 2, T + 12); c.fillStyle = pal[1]; for (let i = -1; i < 4; i++) c.fillRect(x - 1, y - 6 + i * 10, T + 2, 2); c.fillStyle = 'rgba(0,0,0,.18)'; c.fillRect(x - 1, y + T - 4, T + 2, 4); return; }
+      c.fillStyle = '#fbf3e4'; c.fillRect(x, y, T, T); c.fillStyle = '#eadfca'; c.fillRect(x, y + T - 4, T, 4);
+      if (!wallOnly) { c.fillStyle = '#7dd3fc'; c.fillRect(x + 10, y + 9, 20, 16); c.fillStyle = '#ffffff'; c.fillRect(x + 19, y + 9, 2, 16); c.fillRect(x + 10, y + 16, 20, 2); c.fillStyle = '#9a6b45'; c.fillRect(x + 8, y + 25, 24, 3); }
+    },
+    E(c, x, y, m, tx, ty, wallOnly) { // hospital facade
+      const top = !m.grid[ty - 1] || m.grid[ty - 1][tx] !== 'E';
+      c.fillStyle = top ? '#e6eef3' : '#f7fbfd'; c.fillRect(x, y, T, T);
+      if (top) { c.fillStyle = '#c9d6df'; c.fillRect(x, y, T, 6); c.fillStyle = '#8fd0f3'; c.fillRect(x + 6, y + 14, 28, 18); c.fillStyle = '#ffffff'; c.fillRect(x + 19, y + 14, 2, 18);
+        if (tx === 11) { c.fillStyle = '#ffffff'; roundRect(c, x + 6, y + 8, 28, 28, 4); c.fill(); c.fillStyle = '#ef4444'; c.fillRect(x + 17, y + 12, 6, 20); c.fillRect(x + 10, y + 19, 20, 6); } }
+      else if (!wallOnly) { c.fillStyle = '#8fd0f3'; c.fillRect(x + 6, y + 6, 28, 22); c.fillStyle = '#ffffff'; c.fillRect(x + 19, y + 6, 2, 22); c.fillStyle = '#0e8f86'; c.fillRect(x, y + T - 6, T, 6); }
+    },
+    q(c, x, y) { ellipse(c, x + 20, y + 34, 16, 3, 'rgba(0,0,0,.18)'); c.fillStyle = '#9a6b45'; c.fillRect(x + 4, y + 14, 32, 6); c.fillRect(x + 4, y + 22, 32, 5); c.fillStyle = '#475569'; c.fillRect(x + 6, y + 27, 3, 8); c.fillRect(x + 31, y + 27, 3, 8); },
+    l(c, x, y) { ellipse(c, x + 20, y + 37, 7, 2, 'rgba(0,0,0,.2)'); c.fillStyle = '#334155'; c.fillRect(x + 18, y - 10, 4, 47); c.fillRect(x + 12, y - 12, 16, 4); circle(c, x + 20, y - 6, 5, '#fef3c7'); },
+    j(c, x, y) { c.fillStyle = '#334155'; c.fillRect(x + 18, y - 6, 3, 42); c.fillStyle = '#0e8f86'; roundRect(c, x + 8, y - 8, 24, 16, 3); c.fill(); c.fillStyle = '#ffffff'; c.fillRect(x + 12, y - 4, 16, 2); c.fillRect(x + 12, y, 10, 2); },
+    n(c, x, y) { c.fillStyle = '#f8fafc'; for (let i = 0; i < 4; i++) c.fillRect(x + 3 + i * 10, y + 10, 4, 24); c.fillRect(x, y + 16, T, 3); c.fillRect(x, y + 26, T, 3); },
+    p(c, x, y) { c.fillStyle = '#94a3b8'; c.fillRect(x + 2, y + 10, 3, 24); c.fillRect(x + 35, y + 10, 3, 24); c.fillStyle = '#cbd5e1'; c.fillRect(x, y + 10, T, 3); c.fillRect(x, y + 20, T, 3); c.fillStyle = '#5b8fd6'; c.fillRect(x, y + 34, T, 4); },
+    v(c, x, y) { ellipse(c, x + 20, y + 36, 14, 3, 'rgba(0,0,0,.2)'); c.fillStyle = '#334155'; c.fillRect(x + 8, y + 30, 26, 4); c.fillStyle = '#ef4444'; c.beginPath(); c.moveTo(x + 12, y + 30); c.lineTo(x + 20, y + 10); c.lineTo(x + 30, y + 30); c.closePath(); c.fill(); c.fillStyle = '#1e293b'; c.fillRect(x + 16, y + 6, 10, 4); c.fillRect(x + 26, y + 8, 3, 8); },
+    z(c, x, y) { c.fillStyle = '#c49a6c'; for (let i = 0; i < 3; i++) c.fillRect(x + 4 + i * 4, y + 26 - i * 8, 32 - i * 8, 8); c.fillStyle = '#94a3b8'; c.fillRect(x + 34, y + 4, 3, 30); },
+    a(c, x, y) { ellipse(c, x + 20, y + 36, 15, 3, 'rgba(0,0,0,.2)'); c.fillStyle = '#7c3aed'; roundRect(c, x + 6, y + 4, 28, 22, 6); c.fill(); c.fillStyle = '#8b5cf6'; roundRect(c, x + 4, y + 18, 32, 16, 5); c.fill(); c.fillStyle = '#6d28d9'; c.fillRect(x + 4, y + 16, 5, 18); c.fillRect(x + 31, y + 16, 5, 18); },
+    o(c, x, y) { ellipse(c, x + 20, y + 37, 7, 2, 'rgba(0,0,0,.2)'); c.fillStyle = '#475569'; c.fillRect(x + 19, y + 4, 2, 32); c.fillStyle = '#fde68a'; c.beginPath(); c.moveTo(x + 12, y + 8); c.lineTo(x + 28, y + 8); c.lineTo(x + 24, y - 4); c.lineTo(x + 16, y - 4); c.closePath(); c.fill(); },
+    G(c, x, y) { c.fillStyle = 'rgba(14,143,134,.15)'; c.fillRect(x + 2, y + 2, T - 4, T - 4); },
     k(c, x, y) { c.fillStyle = '#cbd5e1'; roundRect(c, x + 6, y + 6, 28, 16, 4); c.fill(); c.fillStyle = '#94a3b8'; roundRect(c, x + 10, y + 9, 20, 9, 4); c.fill();
       c.fillStyle = '#64748b'; c.fillRect(x + 19, y + 2, 2, 7); c.fillStyle = '#e2e8f0'; c.fillRect(x + 14, y + 22, 12, 16); },
   };
@@ -1404,14 +1592,19 @@ const Art = (() => {
         const below = at(x, y + 1);
         if (!WALLISH.has(below) && y < H - 1) { drawWallFront(c, px, py); if (WALL[ch]) WALL[ch](c, px, py); }
         else drawWallTop(c, px, py, x, y);
-      } else drawFloor(c, m.floor, x, y, px, py);
+      } else if (GROUND[ch]) drawGround(c, GROUND[ch], m.floor, x, y, px, py);
+      else drawFloor(c, m.floor, x, y, px, py);
     }
     if (m.id === 'hall') { c.fillStyle = 'rgba(45,212,191,.55)'; c.fillRect(T, 4 * T + 18, (W - 2) * T, 4); c.fillStyle = 'rgba(251,191,36,.45)'; c.fillRect(T, 4 * T + 24, (W - 2) * T, 2); }
     if (m.id === 'staff') { c.fillStyle = '#9fd5cd'; roundRect(c, 2 * T + 6, 2 * T + 6, 7 * T - 12, 4 * T - 12, 6); c.fill(); c.strokeStyle = '#d4a85a'; c.lineWidth = 2; roundRect(c, 2 * T + 12, 2 * T + 12, 7 * T - 24, 4 * T - 24, 4); c.stroke(); }
     // doors
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (at(x, y) === 'D') {
       const px = x * T, py = y * T;
-      if (y === 0) {
+      const up = at(x, y - 1);
+      if (up === 'U' || up === 'E') {
+        if (up === 'E') { FURN.E(c, px, py, m, x, y, true); c.fillStyle = '#7dd3fc'; c.fillRect(px + 4, py + 8, 32, 32); c.fillStyle = '#bae6fd'; c.fillRect(px + 6, py + 10, 13, 30); c.fillRect(px + 21, py + 10, 13, 30); c.fillStyle = '#0e8f86'; c.fillRect(px + 2, py + 4, 36, 5); }
+        else { FURN.U(c, px, py, m, x, y, true); c.fillStyle = '#7c4a2a'; roundRect(c, px + 9, py + 10, 22, 30, 3); c.fill(); c.fillStyle = '#92603a'; c.fillRect(px + 12, py + 14, 16, 10); c.fillRect(px + 12, py + 27, 16, 10); circle(c, px + 26, py + 26, 1.6, '#fde68a'); }
+      } else if (y === 0) {
         c.fillStyle = '#9fb7c6'; c.fillRect(px + 4, py + 2, 32, 38); c.fillStyle = '#c8dbe6'; c.fillRect(px + 6, py + 4, 28, 34);
         c.fillStyle = '#5fa59c'; c.fillRect(px + 2, py, 3, 40); c.fillRect(px + 35, py, 3, 40); c.fillRect(px + 2, py, 36, 3);
         c.fillStyle = 'rgba(251,191,36,.25)'; c.fillRect(px + 6, py + 30, 28, 8);
@@ -2251,7 +2444,7 @@ async function decide(prompt, options, correct, o) {
   const order = shuffle(options.map((_, i) => i));
   const gone = new Set(o.eliminated || []);
   if (B.guide) { shuffle(order.filter(i => i !== correct && !gone.has(i))).slice(0, 2).forEach(i => gone.add(i)); B.guide = false; }
-  if (B.consultCut != null) { gone.add(B.consultCut); B.consultCut = null; }
+  if (B.cut) { shuffle(order.filter(i => i !== correct && !gone.has(i))).slice(0, B.cut).forEach(i => gone.add(i)); B.cut = 0; }
   let first = true, conf = { value: 'maybe' }, firstConf = null;
   for (;;) {
     const opts = order.map(i => ({ label: options[i], disabled: gone.has(i), mark: gone.has(i) ? '✗' : '', cls: gone.has(i) ? 'gone' : '' }));
@@ -2328,7 +2521,7 @@ async function episodeBattle(ep, opts) {
       { icon: '🧠', label: 'החלטה', sub: 'שלב ' + (B.stage + 1) + ': ' + st.name, cls: 'primary' + (startHere ? '' : ' gold') },
       { icon: '📋', label: 'תיק', cls: 'mini' },
       { icon: '🎒', label: 'ציוד', cls: 'mini' },
-      { icon: '📞', label: B.used.consult ? 'ייעוץ ✓' : 'ייעוץ', cls: 'mini', disabled: !!B.used.consult },
+      { icon: '👥', label: 'צוות', cls: 'mini' },
       { icon: '🏃', label: 'יציאה', cls: 'mini' },
     ];
     const c = await UI.ask('', cells, { grid: true, extra: stepsHTML(B, episodeHint(B)) });
@@ -2361,11 +2554,8 @@ async function episodeBattle(ep, opts) {
     else if (c === 2) await UI.say('📋 ' + pt.n + ': ' + pt.s + (ep.tags ? ' · תגיות: ' + ep.tags.join(', ') : ''), { name: 'תיק המטופל', extra: vit(), tall: true });
     else if (c === 3) await useItemMenu('episode');
     else if (c === 4) {
-      B.used.consult = true;
-      const wrongs = ep[st.key].map((_, i) => i).filter(i => i !== ep[st.ck]);
-      B.consultCut = pick(wrongs);
       const crit = ep.c.filter(cc => cc[2] === 2).map(cc => cc[0]);
-      await UI.say('📞 רבקה: “' + (st.key === 'q' ? 'תסתכל/י על: ' + crit.join(', ') + '. מה מחבר ביניהם?' : STAGE_HINT[st.key]) + '” — ותשובה אחת שגויה כבר לא על השולחן.', { name: 'ייעוץ', extra: vit() });
+      await teamMenu(st.key === 'q' ? 'תסתכל/י על: ' + crit.join(', ') + '. מה מחבר ביניהם?' : STAGE_HINT[st.key], vit);
     }
     else if (c === 5) { const sure = await UI.ask('לצאת מהאירוע? אפשר לחזור אליו מאוחר יותר (ההתקדמות באירוע לא נשמרת).', [{ label: 'כן, אחזור אחר כך' }, { label: 'לא, ממשיכים' }]); if (sure === 0) result = 'leave'; }
   }
@@ -2429,10 +2619,12 @@ async function bossBattle(act) {
     const c = await UI.ask('', [
       { icon: '🧠', label: 'להשיב', sub: 'שאלה ' + (qi + 1), cls: 'primary gold' },
       { icon: '🎒', label: 'ציוד', cls: 'mini' },
+      { icon: '👥', label: 'צוות', cls: 'mini' },
       { icon: '🏳️', label: 'דחייה', cls: 'mini' },
     ], { grid: true, extra: '<div class="bhint">👉 5 תשובות נכונות מנצחות · 3 טעויות — נחזור לזה בהמשך</div>' });
-    if (c === 2) { result = 'leave'; break; }
+    if (c === 3) { result = 'leave'; break; }
     if (c === 1) { await useItemMenu('boss'); continue; }
+    if (c === 2) { await teamMenu(STAGE_HINT.q); continue; }
     const q = qs[qi++ % qs.length], e = q.e, st = q.st, pt = C.patients[e.p];
     const extra = chipsHTML(e.v.map(t => ({ t: '📈 ' + t, cls: 'vit' })));
     await UI.say(pt.n + ': ' + e.st, { name: A.leader + ' מציג/ה', extra });
@@ -2531,11 +2723,11 @@ async function quickBattle(o) {
   await battleTransition();
   const room = 1 + Math.floor(Math.random() * 4);
   startBattle({ kind: 'quick', scene: 'hall', hpLabel: 'יציבות', heroLabel: S.player.name,
-    enemy: o.trainer ? { name: o.trainer.name, person: o.trainer.look, type: Q.type, sub: o.trainer.role, barLabel: 'ספק' } : { name: 'קריאה מחדר ' + room, type: 'pager', ringing: true, sub: Q.title, barLabel: 'דחיפות' } });
+    enemy: o.trainer ? { name: o.trainer.name, person: o.trainer.look, type: Q.type, sub: o.trainer.role, barLabel: 'ספק' } : { name: o.community ? 'שיחה מהקהילה' : 'קריאה מחדר ' + room, type: 'pager', ringing: true, sub: Q.title, barLabel: 'דחיפות' } });
   const B = battle;
   const extra = chipsHTML((Q.v || []).map(t => ({ t: '📈 ' + t, cls: 'vit' })));
   await sleep(520);
-  await UI.say(o.trainer ? o.trainer.name + ': “' + pick(TRAINER_LINES[o.trainer.id].intro) + '”' : pick(PAGER_INTROS).replace('{r}', room), { name: o.trainer ? o.trainer.name : '📟' });
+  await UI.say(o.trainer ? o.trainer.name + ': “' + pick(TRAINER_LINES[o.trainer.id].intro) + '”' : o.community ? pick(COMMUNITY_INTROS) : pick(PAGER_INTROS).replace('{r}', room), { name: o.trainer ? o.trainer.name : o.community ? '📞 מהקהילה' : '📟' });
   await UI.say(Q.story, { name: Q.title, extra });
   const r = await decide(Q.q, Q.opts, Q.c, { name: Q.title, conf: true, extra,
     onWrong: async (first, conf) => {
@@ -2552,6 +2744,106 @@ async function quickBattle(o) {
   await Game.reward(r.first ? 18 : 8, r.first ? 6 : 3);
 }
 
+
+/* ============ 5. The team: interdisciplinary "party" moves ============ */
+const teamMax = m => m.evo ? 3 : 2;
+const teamRole = m => TEAM[m.id].role + (m.evo ? ' מומחה/ית' : '');
+async function teamMenu(rivkaHint, vit) {
+  const B = battle, type = B.enemy.type;
+  const extra = vit ? vit() : '';
+  const opts = [{ k: 'rivka', icon: '📞', label: 'רבקה — האחות האחראית', sub: B.used.consult ? 'כבר עזרה בקרב הזה' : 'פעם אחת בכל קרב · מסירה תשובה שגויה אחת', disabled: !!B.used.consult }];
+  (S.team || []).forEach(m => { const T = TEAM[m.id], eff = T.strong.includes(type);
+    opts.push({ k: m.id, icon: T.icon, label: T.name + ' · ' + teamRole(m), sub: (eff ? '⚡ יעיל/ה במיוחד נגד ' + TYPES[type].name : 'יעילות רגילה') + ' · “' + T.move + '” · PP ' + m.pp + '/' + teamMax(m), disabled: m.pp <= 0, cls: eff ? 'gold' : '' }); });
+  if (!(S.team || []).length) opts.push({ label: 'עוד אין חברי צוות — הם מחכים במחלקה, במבואה, בשיקום ובבית המרקחת', disabled: true });
+  const i = await UI.ask('👥 למי לקרוא? כל איש/אשת מקצוע חזק/ה נגד סוגי בעיות אחרים.', opts, { cancel: true, name: 'הצוות הבין-מקצועי', extra, tall: true });
+  if (i < 0 || !opts[i].k) return false;
+  const k = opts[i].k;
+  if (k === 'rivka') { B.used.consult = true; B.cut = (B.cut || 0) + 1; Sound.reveal(); await UI.say('📞 רבקה: “' + rivkaHint + '” — ותשובה שגויה אחת ירדה מהשולחן.', { name: 'רבקה', extra: vit ? vit() : '' }); return true; }
+  const m = S.team.find(x => x.id === k), T = TEAM[k], eff = T.strong.includes(type);
+  m.pp--; m.bond = (m.bond || 0) + 1;
+  B.cut = (B.cut || 0) + (eff ? 2 : 1);
+  if (eff) {
+    const n = Math.min(10, B.maxHp - B.hp); B.hp += n; if (n) healFx(n);
+    if (B.ep) { const j = B.ep.c.findIndex((cc, jj) => cc[2] === 2 && !B.found.has(jj)); if (j >= 0) { B.found.add(j); B.exposed = true; } }
+    addParticles(battleFrame().foe.x, battleFrame().foe.y, 16, { color: ['#fde047', '#ffffff', (TYPES[type] || TYPES.meds).color], speed: 120, star: true });
+    Sound.crit();
+  } else Sound.reveal();
+  await UI.say(T.icon + ' ' + T.name + ' משתמש/ת ב“' + T.move + '”! ' + (eff ? '⚡ יעיל במיוחד! שתי תשובות שגויות ירדו' + (B.ep ? ', ממצא קריטי נחשף' : '') + ' והיציבות עלתה.' : 'תשובה שגויה אחת ירדה.') + '\n📚 ' + T.fact,
+    { name: T.name + ' · ' + teamRole(m), extra: vit ? vit() : '', tall: true });
+  if (!m.evo && m.bond >= 4) {
+    m.evo = 1; m.pp = teamMax(m); Sound.levelUp(); screenFlash('#fde68a', 200);
+    await UI.say('✨ ' + T.name + ' התפתח/ה! עכשיו: ' + teamRole(m) + ' — PP מקסימלי 3.', { name: 'התפתחות' });
+  }
+  Game.save();
+  return true;
+}
+
+function questionsFrom(acts, n, types) {
+  let eps = C.episodes.filter(e => acts.includes(e.a) && (!types || types.includes(episodeType(e))));
+  if (!eps.length) eps = C.episodes.filter(e => acts.includes(e.a));
+  eps = shuffle(eps);
+  const out = [];
+  for (let i = 0; out.length < n; i++) out.push({ e: eps[i % eps.length], st: STAGES[(i + Math.floor(Math.random() * 4)) % 4] });
+  return out;
+}
+
+/* A panel-style battle (rival, recruitment, council): answer until the opponent is convinced or confidence runs out. */
+async function panelBattle(cfg) {
+  await battleTransition(cfg.boss ? 'boss' : 'battle');
+  startBattle({ kind: 'panel', scene: cfg.scene || 'conf', music: cfg.music || 'battle', hpLabel: 'ביטחון', heroLabel: S.player.name, hp: cfg.hp == null ? 100 : cfg.hp,
+    enemy: Object.assign({ barLabel: 'שכנוע' }, cfg.enemy) });
+  const B = battle, per = Math.ceil(100 / cfg.need);
+  await sleep(520);
+  await UI.say(cfg.enemy.name + ': “' + cfg.intro + '”', { name: cfg.enemy.name + ' · ' + cfg.enemy.sub });
+  let qi = 0, result = null, rights = 0;
+  while (!result) {
+    const c = await UI.ask('', [
+      { icon: '🧠', label: 'להשיב', sub: 'שאלה ' + (qi + 1) + ' · ' + rights + '/' + cfg.need + ' נכונות', cls: 'primary gold' },
+      { icon: '🎒', label: 'ציוד', cls: 'mini' },
+      { icon: '👥', label: 'צוות', cls: 'mini' },
+      { icon: '🏳️', label: cfg.noLeave ? '—' : 'פרישה', cls: 'mini', disabled: !!cfg.noLeave },
+    ], { grid: true, extra: '<div class="bhint">👉 ' + cfg.need + ' תשובות נכונות מנצחות · כל טעות מורידה ' + cfg.loss + ' ביטחון</div>' });
+    if (c === 3) { result = 'leave'; break; }
+    if (c === 1) { await useItemMenu('boss'); continue; }
+    if (c === 2) { await teamMenu(STAGE_HINT.q); continue; }
+    const q = cfg.qs[qi++ % cfg.qs.length], e = q.e, st = q.st, pt = C.patients[e.p];
+    const extra = chipsHTML(e.v.map(t => ({ t: '📈 ' + t, cls: 'vit' })));
+    await UI.say(pt.n + ': ' + e.st, { name: cfg.enemy.name + ' מציג/ה', extra });
+    const r = await decide(st.prompt, e[st.key], e[st.ck], { name: st.name, extra: extra + '<div class="bhint">💡 ' + esc(STAGE_TIP[st.key]) + '</div>', conf: true,
+      onWrong: async (first, conf) => {
+        if (first) recordConf(conf, false);
+        if (B.shield) { B.shield = false; await UI.say('🛡️ עצרת לבדוק שוב — הטעות לא עלתה בביטחון.'); return; }
+        const dmg = conf === 'sure' && first ? cfg.loss + 8 : cfg.loss;
+        await foeStrike(dmg); B.hp = Math.max(0, B.hp - dmg);
+        if (B.hp <= 0) return 'fail';
+        await UI.say(cfg.enemy.name + ': “לא בדיוק. ' + STAGE_HINT[st.key] + '”', { extra });
+      } });
+    if (r.fail) { result = 'fail'; break; }
+    if (r.first) { recordConf(r.conf, true); rights++; }
+    await heroStrike(r.first);
+    B.enemy.hp = Math.max(0, B.enemy.hp - (r.first ? per : Math.ceil(per / 2)));
+    await UI.say('✓ ' + e[st.key][e[st.ck]] + (EP_EVIDENCE[e.id] ? '\n📚 ' + EP_EVIDENCE[e.id].k : '\n💡 ' + e.pe), { extra, tall: true });
+    if (B.enemy.hp <= 0) result = 'win';
+  }
+  const hp = B.hp;
+  if (result === 'win') { Sound.good(); B.enemy.dyingT = null; }
+  endBattle();
+  return { result, hp };
+}
+
+/* Recruiting a team member: one case from their field. */
+async function recruitBattle(id) {
+  const T = TEAM[id], info = NPC_INFO[id];
+  const r = await panelBattle({ enemy: { name: T.name, person: info.look, type: T.strong[0], sub: T.role }, scene: 'hall', need: 2, loss: 25,
+    intro: 'רוצה שאצטרף לצוות שלך? תראה/י לי שאת/ה חושב/ת גם כמו ' + T.role + '. שני מקרים מהתחום שלי.', qs: questionsFrom([0, 1, 2, 3, 4, 5, 6].filter(a => a <= Game.unlockedAct()), 4, T.strong) });
+  if (r.result !== 'win') { await UI.say(T.name + ': “עוד לא — תחזור/י אליי כשתרגיש/י מוכן/ה.”', { name: T.name }); return false; }
+  S.team = S.team || []; S.team.push({ id, pp: 2, bond: 0, evo: 0 }); Game.save();
+  Sound.badge(); UI.toast(T.icon, T.name + ' הצטרף/ה לצוות!', T.role + ' · “' + T.move + '”');
+  await UI.say('🎉 ' + T.name + ' הצטרף/ה לצוות! בקרב: 👥 צוות → ' + T.name + '. ⚡ ' + T.name + ' יעיל/ה במיוחד נגד: ' + T.strong.map(t => TYPES[t].icon + ' ' + TYPES[t].name).join(', ') + '.\n📚 ' + T.fact, { name: '👥 הצוות שלך', tall: true });
+  await Game.reward(30, 10);
+  return true;
+}
+
 </script>
 <script>
 /* המשמרת — the ward: movement, NPCs, interaction, encounters, camera, rendering. */
@@ -2566,7 +2858,8 @@ const cam = { x: 0, y: 0 };
 function curMap() { return MAPS[S.map]; }
 function tileAt(x, y) { const g = curMap().grid; return (g[y] && g[y][x]) || '#'; }
 function npcAt(x, y) { return npcs.find(n => n.x === x && n.y === y && !n.hidden); }
-function blocked(x, y) { const t = tileAt(x, y); return BLOCK.has(t) || !!npcAt(x, y); }
+function barrierClosed(x, y) { const b = curMap().barriers; return !!(b && b[x + ',' + y] && (S.council || 0) < b[x + ',' + y]); }
+function blocked(x, y) { const t = tileAt(x, y); if (t === 'G') return barrierClosed(x, y) || !!npcAt(x, y); return BLOCK.has(t) || !!npcAt(x, y); }
 function bedAt(x, y) {
   const beds = curMap().beds; if (!beds) return undefined;
   if (Object.prototype.hasOwnProperty.call(beds, x + ',' + y)) return { key: x + ',' + y, who: beds[x + ',' + y] };
@@ -2596,6 +2889,8 @@ function tryMove(dir) {
   if (blocked(nx, ny)) return false;
   const door = curMap().doors[nx + ',' + ny];
   if (door && door.boss && !Game.bossReady()) { Game.lockedConference(); return false; }
+  if (door && door.needBadges && S.badges.length < door.needBadges) { Game.lockedDoor(door); return false; }
+  if (door && door.elite && S.badges.length < ACTS.length) { Game.lockedDoor(door); return false; }
   const run = Input.run || S.settings.autoRun;
   hero.move = { fx: hero.x, fy: hero.y, tx: nx, ty: ny, t: 0, dur: run ? 125 : 210 };
   hero.x = nx; hero.y = ny;
@@ -2606,7 +2901,12 @@ function onTileEntered() {
   const m = curMap(), door = m.doors[hero.x + ',' + hero.y];
   if (door) { Sound.door(); Game.goTo(door.to, door.x, door.y, door.dir); return; }
   if (checkTrainers()) return;
-  if (m.encounters && Game.tutorialDone() && S.settings.pager !== false) {
+  if (m.encounters === 'grass') {   // like tall grass: only the long grass rustles with calls from the community
+    if (tileAt(hero.x, hero.y) === ';' && Game.tutorialDone() && S.settings.pager !== false && ++encSteps > 3 && Math.random() < .22) {
+      encSteps = 0; hero.path = null; Sound.pager(); addParticles(hero.px - cam.x, hero.py - cam.y - 10, 8, { color: ['#5fb35a', '#a7dc93'], speed: 70, life: 450 });
+      Game.run(() => quickBattle({ community: true }));
+    }
+  } else if (m.encounters && Game.tutorialDone() && S.settings.pager !== false) {
     encSteps++;
     if (encSteps > 16 && Math.random() < .07) { encSteps = 0; hero.path = null; Sound.pager(); Game.run(() => quickBattle({})); }
   }
@@ -2741,6 +3041,8 @@ function interact() {
   if (n) { n.dir = Object.keys(DIRS).find(d => DIRS[d][0] === -dx && DIRS[d][1] === -dy) || n.dir; Game.run(() => Game.talk(n)); return; }
   const bed = bedAt(tx, ty);
   if (bed !== undefined) { Game.run(() => Game.visitPatient(bed.who)); return; }
+  const hid = m.hidden && m.hidden[tx + ',' + ty];
+  if (hid && !S.found[S.map + ':' + tx + ',' + ty]) { Game.run(() => Game.findHidden(tx, ty, hid)); return; }
   const hs = m.hotspots && m.hotspots[tx + ',' + ty];
   if (hs) { Game.run(() => Game.hotspot(hs)); return; }
   const t = tileAt(tx, ty);
@@ -2778,6 +3080,13 @@ function renderWorld() {
     Art.drawPatientInBed(ctx, x * TILE, y * TILE, who, clock, { sleep: !has });
     if (has) drawBubble(x * TILE + TILE / 2, y * TILE + 2, '!');
   }
+  // council barriers and hidden-item sparkles
+  if (m.barriers) for (const k in m.barriers) { const [x, y] = k.split(',').map(Number); if (!barrierClosed(x, y)) continue;
+    const px = x * TILE, py = y * TILE; ctx.fillStyle = '#64748b'; ctx.fillRect(px + 2, py + 4, 36, 4); ctx.fillRect(px + 2, py + 30, 36, 4);
+    for (let i = 0; i < 5; i++) { ctx.fillStyle = '#94a3b8'; ctx.fillRect(px + 4 + i * 7.5, py + 4, 3, 30); }
+    ctx.fillStyle = '#c27c0e'; circle(ctx, px + 20, py + 19, 6, '#fde68a'); heText(m.barriers[k], px + 20, py + 23, { size: 9, bold: true, color: '#7a4b04', align: 'center', ltr: true }); }
+  if (m.hidden) for (const k in m.hidden) { if (S.found[S.map + ':' + k]) continue; const [x, y] = k.split(',').map(Number), ph = (clock / 1400 + x * .37 + y * .21) % 1;
+    if (ph < .18) { const a = Math.sin(ph / .18 * Math.PI); ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#fffbe6'; const cx = x * TILE + 20, cy = y * TILE + 20; ctx.fillRect(cx - 5, cy - .8, 10, 1.6); ctx.fillRect(cx - .8, cy - 5, 1.6, 10); ctx.restore(); } }
   // people, sorted by depth
   const ents = npcs.filter(n => !n.hidden).map(n => ({ y: n.py, draw: () => {
     Art.drawPerson(ctx, n.px, n.py, n.look, { dir: n.dir, walking: !!n.move, phase: n.phase || 0, seed: n.seed });
@@ -2898,7 +3207,7 @@ function freshState() {
   return { v: 1, player: null, difficulty: 'normal', map: 0, x: 5, y: 5, dir: 'up', xp: 0, coins: 30, shift: 1, streak: 0, lastDay: '',
     badges: [], labBadge: false, episodes: {}, labRounds: {}, dex: {}, inv: { coffee: 0, calm: 1, torch: 0, guide: 0, shield: 0 },
     domains: {}, calib: {}, flags: {}, trainers: {}, visited: {}, daily: null, shiftLog: { eps: 0, xp: 0 },
-    stats: { steps: 0, codes: 0 }, settings: { sound: true, musicVol: .6, sfxVol: .8, textSpeed: 1, reduceFx: false, hc: false, zoom: 1, haptics: true, pager: true, autoRun: false } };
+    team: [], found: {}, hazards: {}, council: 0, councilHP: 100, rival: 0, stats: { steps: 0, codes: 0 }, settings: { sound: true, musicVol: .6, sfxVol: .8, textSpeed: 1, reduceFx: false, hc: false, zoom: 1, haptics: true, pager: true, autoRun: false } };
 }
 let S = freshState();
 window.S = S;
@@ -2931,6 +3240,10 @@ const Game = {
     if (n.id === 'rivka') return !this.tutorialDone() ? '!' : null;
     if (n.id === 'leader') return this.bossReady() && !S.badges.includes(this.bossAct()) ? '!' : null;
     if (n.id === 'tal') return this.tutorialDone() && Object.keys(S.labRounds).length < C.labRounds.length ? '?' : null;
+    if (TEAM[n.id]) return this.tutorialDone() && !(S.team || []).some(m => m.id === n.id) ? '?' : null;
+    if (n.id === 'michal') return Object.keys(S.hazards || {}).length < 5 ? '!' : null;
+    if (n.id === 'rachel') return !S.flags.teachback ? '!' : null;
+    if (/^judge|^champion/.test(n.id)) { const i = n.id === 'champion' ? 4 : +n.id.slice(5); return (S.council || 0) === i ? '!' : null; }
         return null;
   },
   questText() {
@@ -2947,7 +3260,7 @@ const Game = {
       return `${ACTS[bossA].badge} הביקור הגדול מחכה בחדר הישיבות — ${ACTS[bossA].leader}${extra}`;
     }
     if (names.length) return `פרק ${u + 1} · ${ACTS[u].name}: בקר/י את ${names.slice(0, 3).join(', ')} (${pr.done}/${pr.need} לביקור הגדול)`;
-    if (S.badges.length >= ACTS.length) return '🏆 כל שבעת התגים! משמרות חופשיות: חזרות, מעבדה ומעבדון';
+    if (S.badges.length >= ACTS.length) return S.flags.champion ? '🏆 אלוף/ת המועצה! משמרות חופשיות, מעבדון וצוות מלא' : '🏆 שבעה תגים! מועצת המומחים מחכה — הדלת המזרחית במבואה';
     return 'דבר/י עם רבקה — היא תכוון אותך';
   },
   refresh() { UI.hud(); UI.quest(this.state === 'OVERWORLD' || this.state === 'BATTLE' ? this.questText() : ''); },
@@ -2964,9 +3277,43 @@ const Game = {
   async transition(kind) { await this.cover(kind); },
   async goTo(mi, x, y, dir) {
     this.busy = true; await this.cover('fade');
+    if (MAPS[mi].id === 'council' && MAPS[S.map].id !== 'council') { S.council = 0; S.councilHP = 100; }   // the council restarts every visit
     loadMap(mi, x, y, dir); this.save();
     this.uncover(); this.busy = false;
     this.roomIntro();
+    setTimeout(() => this.checkRival(), 700);
+  },
+  async checkRival() {
+    const id = MAPS[S.map].id, n = S.rival || 0, b = S.badges.length;
+    const due = (n === 0 && id === 'lobby' && this.tutorialDone()) || (n === 1 && id === 'street' && b >= 3) || (n === 2 && id === 'lobby' && b >= ACTS.length);
+    if (!due || this.busy || UI.active || Panel.isOpen || this.state !== 'OVERWORLD') return;
+    await this.run(async () => {
+      const L = RIVAL_LINES[n], info = NPC_INFO.ido;
+      const spot = [[hero.x + 2, hero.y], [hero.x - 2, hero.y], [hero.x, hero.y + 2], [hero.x, hero.y - 2]].find(([x, y]) => !blocked(x, y) && !blocked((x + hero.x) / 2, (y + hero.y) / 2)) || [hero.x + 1, hero.y];
+      const r = { id: 'ido', x: spot[0], y: spot[1], dir: 'down', name: info.name, role: info.role, look: info.look, px: spot[0] * TILE + TILE / 2, py: spot[1] * TILE + TILE, bubble: '!', seed: 2 };
+      npcs.push(r); Sound.encounter(); await sleep(700); r.bubble = null;
+      const dx = Math.sign(hero.x - r.x), dy = Math.sign(hero.y - r.y);
+      if (Math.abs(hero.x - r.x) + Math.abs(hero.y - r.y) > 1) { r.move = { fx: r.x, fy: r.y, tx: r.x + dx, ty: r.y + dy, t: 0, dur: 220 }; r.x += dx; r.y += dy; await sleep(240); }
+      r.dir = Object.keys(DIRS).find(d => DIRS[d][0] === Math.sign(hero.x - r.x) && DIRS[d][1] === Math.sign(hero.y - r.y)) || 'down';
+      hero.dir = Object.keys(DIRS).find(d => DIRS[d][0] === -Math.sign(hero.x - r.x) && DIRS[d][1] === -Math.sign(hero.y - r.y)) || hero.dir;
+      await UI.say('עידו: “' + L.intro + '”', { name: 'עידו · היריב/ה שלך' });
+      const res = await panelBattle({ enemy: { name: 'עידו', person: 'ido', type: 'meds', sub: 'אח חדש · היריב' }, scene: 'hall', need: 3, loss: 30, music: 'battle',
+        intro: 'שלושה מקרים. מי שמשכנע ראשון — מנצח.', qs: questionsFrom([0, 1, 2, 3, 4, 5, 6].filter(a => a <= this.unlockedAct()), 6) });
+      S.rival = n + 1;
+      await UI.say('עידו: “' + (res.result === 'win' ? L.win : L.lose) + '”', { name: 'עידו' });
+      if (res.result === 'win') await this.reward(60 + n * 30, 25 + n * 10);
+      npcs = npcs.filter(x => x !== r); this.save();
+    });
+  },
+  async lockedDoor(door) {
+    if (this.busy) return;
+    this.run(() => UI.say(door.elite ? '🔒 גיל, שומר המועצה: “מועצת המומחים מקבלת רק מי שאסף/ה את שבעת התגים. יש לך ' + S.badges.length + '/7.”'
+      : '🔒 ' + (door.needBadges === 1 ? 'היציאה לקהילה נפתחת אחרי התג הראשון — קודם מכירים את המחלקה.' : 'ביקור הבית הזה נפתח אחרי ' + door.needBadges + ' תגים (יש לך ' + S.badges.length + ').')));
+  },
+  async findHidden(x, y, item) {
+    S.found[S.map + ':' + x + ',' + y] = 1; S.inv[item] = (S.inv[item] || 0) + 1; this.save();
+    Sound.coin(); addParticles(x * TILE + 20 - cam.x, y * TILE + 20 - cam.y, 14, { color: ['#fde047', '#ffffff'], speed: 90, star: true });
+    await UI.say('✨ מצאת משהו מוסתר: ' + ITEMS[item].icon + ' ' + ITEMS[item].name + '! (' + ITEMS[item].desc + ')');
   },
   roomIntro() {
     const id = MAPS[S.map].id, kind = id.startsWith('room') ? 'room1' : id, key = 'room_' + kind;
@@ -3114,6 +3461,42 @@ const Game = {
       if (!this.tutorialDone()) return say('“אחרי המסירה — נדבר.”');
       if (S.trainers[n.id] === S.shift) return say(TRAINER_LINES[n.id].done);
       await quickBattle({ trainer: n }); S.trainers[n.id] = S.shift; this.save();
+    } else if (TEAM[n.id]) {
+      const T = TEAM[n.id], m = (S.team || []).find(x => x.id === n.id);
+      if (!this.tutorialDone()) return say('“נדבר אחרי המסירה של רבקה.”');
+      if (m) return say('“' + T.fact + '” — ' + T.icon + ' “' + T.move + '” · PP ' + m.pp + '/' + teamMax(m) + (m.evo ? ' · מומחה/ית ✨' : ' · קשר ' + (m.bond || 0) + '/4 להתפתחות'));
+      if (n.id === 'omer') {
+        const c = await UI.ask('עומר: “בית המרקחת פתוח. מה צריך?”', [{ icon: '🤝', label: 'להצטרף לצוות?', sub: 'מקרה אחד או שניים מהתחום שלו' }, { icon: '🛒', label: 'לקנות ציוד' }, { icon: '💊', label: 'טיפ תרופתי' }], { name: n.name + ' · ' + n.role, cancel: true });
+        if (c === 1) return openShop();
+        if (c === 2) return say('“' + T.fact + '”');
+        if (c !== 0) return;
+      } else {
+        await say('“' + T.fact + '”');
+        const c = await UI.ask('לגייס את ' + T.name + ' לצוות? (' + T.role + ' · ⚡ חזק/ה נגד ' + T.strong.map(t => TYPES[t].icon + ' ' + TYPES[t].name).join(', ') + ')', [{ icon: '🤝', label: 'כן — אני מוכן/ה למקרה מהתחום' }, { label: 'אחר כך' }], { name: T.name });
+        if (c !== 0) return;
+      }
+      await recruitBattle(n.id);
+    } else if (n.id === 'liat') {
+      const c = await UI.ask('ליאת: “ברוך/ה הבא/ה למבואה! אפשר לתת לצוות שלך הפסקה קצרה.”', [{ icon: '🔄', label: 'מנוחה לצוות', sub: 'מחזיר את כל ה-PP' }, { icon: '🗺️', label: 'מה יש כאן?' }], { name: n.name + ' · ' + n.role, cancel: true });
+      if (c === 0) { (S.team || []).forEach(m => { m.pp = teamMax(m); }); Sound.heal(); this.save(); await say('“הצוות שלך נח ומוכן! 💚” — ' + ((S.team || []).length ? S.team.map(m => TEAM[m.id].icon).join(' ') + ' מלאים.' : 'עוד אין לך צוות — אנשי המקצוע מחכים בשיקום, בבית המרקחת, כאן במבואה ובמחלקה.')); }
+      if (c === 1) await say('“צפונה: מכון השיקום ובית המרקחת. דרומה: היציאה לקהילה וביקורי בית. מזרחה: מועצת המומחים — רק עם שבעה תגים.”');
+    } else if (n.id === 'gil') {
+      await say(S.badges.length >= ACTS.length ? '“שבעה תגים. המועצה מחכה. זכור/זכרי: ארבעה שופטים ויו״רית ברצף — הביטחון לא מתמלא בין הסבבים, אבל מותר להשתמש בציוד ובצוות.”' : '“המועצה פתוחה רק עם שבעה תגים. יש לך ' + S.badges.length + '. בהצלחה במחלקה!”');
+    } else if (n.id === 'cohen') {
+      await say(pick(['“אחרי השבר אמרו לי לנוח. הפיזיותרפיסטית אמרה דווקא לקום — וצדקה.”', '“אני עושה תרגילי שיווי משקל כל יום. אומרים שזה מוריד נפילות בכמעט רבע.”', '“הכי קשה זה לקום מהכיסא. מאיה בודקת לי את זה עם שעון — Timed Up and Go.”']));
+    } else if (n.id === 'neighbor') {
+      await say(pick(['“הבת שלי שמה לי פס מדבקה זוהר בדרך לשירותים. בלילה זה מציל.”', '“אמרו לי להוריד את השטיחים הקטנים. כמעט נפלתי על אחד בשבוע שעבר.”', '“אני יודעת בדיוק אילו כדורים אני לוקחת — יש לי דף אחד, מעודכן.”']));
+    } else if (n.id === 'michal') {
+      const k = Object.keys(S.hazards || {}).length;
+      await say(k >= 5 ? '“הבית מוכן. תודה — אמא תחזור למקום בטוח יותר.”' : '“אמא חוזרת הביתה בקרוב, ואני מפחדת שתיפול. תעזור/י לי למצוא את מה שמסוכן? (' + k + '/5 — גש/י לחפצים בבית)”');
+    } else if (n.id === 'rachel') {
+      if (S.flags.teachback) return say('“אני יודעת בדיוק מה הוא לוקח ומתי. תודה שהסברת — ושביקשת שאסביר בחזרה.”');
+      await say('“אברהם חוזר עם שלוש רשימות תרופות ואני מבולבלת. תסביר/י לי?” — זה הזמן ל-Teach-back: מסבירים, ואז מבקשים ממנה להסביר בחזרה.');
+      const r = await panelBattle({ enemy: { name: 'רחל', person: 'rachel', type: 'goals', sub: 'מטפלת עיקרית' }, scene: 'hall', need: 2, loss: 25,
+        intro: 'בוא/י נעבור על זה יחד. אני רוצה להבין באמת.', qs: shuffle(C.episodes.filter(e => ['med-reconciliation', 'caregiver-capacity', 'discharge', 'goals-hf'].includes(e.id))).map((e, i) => ({ e, st: STAGES[(i + 1) % 4] })) });
+      if (r.result === 'win') { S.flags.teachback = 1; Sound.badge(); await say('“עכשיו אני מבינה — ואני יכולה להסביר לבד.” 🎉 📚 Teach-back מאמת הבנה בפועל, לא חתימה על דף (AHRQ).'); await this.reward(80, 30); this.save(); }
+    } else if (/^judge|^champion/.test(n.id)) {
+      await this.councilTalk(n);
     } else if (n.id === 'leader') {
       const a = this.bossAct();
       if (S.badges.length >= ACTS.length) {
@@ -3169,8 +3552,48 @@ const Game = {
     else await UI.say(pick(['“תודה שבאת. כשמסבירים לי מה קורה, פחות מפחיד.”', '“הבת שלי תבוא בבוקר. תגיד/י לה שאני בסדר?”', '“פעם הייתי אח/ות בעצמי, את/ה יודע/ת?”', '“רק אל תשכח/י את המשקפיים שלי על השידה.”']), { name: pt.n });
   },
 
+  async councilTalk(n) {
+    const i = n.id === 'champion' ? 4 : +n.id.slice(5), cfg = COUNCIL[i], info = NPC_INFO[n.id];
+    if ((S.council || 0) > i) return UI.say('“כבר שכנעת אותי. המשך/המשיכי.”', { name: info.name });
+    if ((S.council || 0) < i) return UI.say('“קודם השופט/ת הקודם/ת.”', { name: info.name });
+    const r = await panelBattle({ enemy: { name: info.name, person: cfg.id, type: ACT_TYPE[cfg.acts[cfg.acts.length - 1]], sub: info.role }, scene: 'conf', music: 'boss', boss: true,
+      hp: S.councilHP, need: i === 4 ? 5 : 4, loss: 22, noLeave: true, intro: cfg.intro, qs: questionsFrom(cfg.acts, 10) });
+    if (r.result === 'win') {
+      S.council = i + 1; S.councilHP = r.hp; this.save();
+      if (i < 4) { Sound.badge(); await UI.say(info.name + ': “עברת. השער נפתח — הביטחון שלך נשאר ' + Math.round(r.hp) + '. השופט/ת הבא/ה מחכה.”', { name: info.name }); }
+      else await this.hallOfFame();
+    } else {
+      S.council = 0; S.councilHP = 100; this.save();
+      await UI.say(info.name + ': “הביטחון נגמר. המועצה מתחילה מחדש בכל ביקור — תחזור/י כשתהיה/י מוכן/ה.”', { name: info.name });
+      await this.goTo(8, 14, 4, 'left');
+    }
+  },
+  async hallOfFame() {
+    S.flags.champion = 1; this.save(); Sound.badge(); screenFlash('#fde68a', 400);
+    await UI.say('פרופ׳ דבורה אלמוג: “זה רשמי. את/ה אח/ות מומחה/ית קליני/ת בגריאטריה — ואלוף/ת מועצת המומחים.” 🏆', { name: 'היכל התהילה' });
+    await this.reward(300, 100);
+    await new Promise(res => Panel.open('🏆 היכל התהילה', `<div class="cert"><small>מועצת המומחים · משמרת ${S.shift}</small><h2>${esc(S.player.name)}</h2>
+      <p>ניצח/ה את ארבעת שופטי המועצה ואת היו״רית, אחרי שאסף/ה את שבעת התגים.</p>
+      <div class="badge-row big">${ACTS.map(A => `<i class="on">${A.badge}</i>`).join('')}</div>
+      <div class="pg-section">הצוות</div><div class="hof-team">${(S.team || []).map(m => `<span>${TEAM[m.id].icon} ${esc(TEAM[m.id].name)} · ${esc(teamRole(m))}</span>`).join('') || '<span>סולו — בלי צוות. מרשים.</span>'}</div>
+      <small>${Object.keys(S.episodes).length}/${C.episodes.length} אירועים · ${Object.values(S.dex).filter(v => v === 2).length}/${C.labs.length} במעבדון · רמה ${levelOf(S.xp)}</small></div>
+      <button class="btn-main" data-act="ok">חזרה לבית החולים</button>`, { cls: 'wide', onClose: res, bind: el => el.querySelector('[data-act=ok]').onclick = () => Panel.close() }));
+    await this.goTo(8, 14, 4, 'left');
+  },
   async hotspot(kind) {
     const f = S.flags;
+    if (kind.startsWith('hz_')) {
+      const H = HAZARDS[kind];
+      if (!S.hazards[kind]) { S.hazards[kind] = 1; Sound.reveal(); addParticles(hero.px - cam.x, hero.py - cam.y - 50, 10, { color: ['#fde047', '#fb923c'], speed: 80, star: true }); }
+      const n = Object.keys(S.hazards).length;
+      await UI.say('⚠️ מפגע ' + n + '/5: ' + H.t + '\n✅ ' + H.fix, { name: 'סיור בטיחות בבית', tall: true });
+      if (n === 5 && !f.hazardsDone) {
+        f.hazardsDone = 1; S.inv.shield = (S.inv.shield || 0) + 1; Sound.badge();
+        await UI.say('מיכל: “מצאת את כל החמישה! אני אסדר את זה לפני שאמא חוזרת הביתה.” 🎉\n📚 הערכת מפגעים בבית והפחתתם מונעת כ-343 נפילות לכל 1,000 מבוגרים בסיכון בשנה (Cochrane 2023). קיבלת 🛡️ בדיקה כפולה.', { name: 'מיכל', tall: true });
+        await this.reward(80, 30);
+      }
+      this.save(); return;
+    }
     if (kind === 'locker') {
       if (!f.intro_locker) { f.intro_locker = 1; S.inv.torch++; await UI.say('בלוקר: סטטוסקופ, פנס עט ופנקס כיס עם הערות מהמשמרת הקודמת. קיבלת 🔦 פנס בדיקה.'); }
       else await UI.say('הלוקר שלך. על הדלת: תמונה של כל הצוות מהמסיבה. כולם נראים עייפים ומאושרים.');
@@ -3194,7 +3617,7 @@ const Game = {
   async endShift() {
     const log = S.shiftLog;
     await this.cover('fade');
-    S.shift++; S.shiftLog = { eps: 0, xp: 0 }; this.touchDay(); this.makeDaily();
+    S.shift++; S.shiftLog = { eps: 0, xp: 0 }; (S.team || []).forEach(m => { m.pp = teamMax(m); }); this.touchDay(); this.makeDaily();
     loadMap(0, 2, 5, 'up'); this.uncover();
     Sound.heal();
     await UI.say('🌅 משמרת חדשה. סיכום המשמרת הקודמת: ' + log.eps + ' אירועים, +' + log.xp + ' XP. משמרת ' + S.shift + ' מתחילה — משימות חדשות על הלוח.');
@@ -3257,7 +3680,7 @@ const Game = {
     loadMap(S.map, S.x, S.y, S.dir);
     if (S.daily && S.daily.shift !== S.shift) this.makeDaily();
     this.save(); this.refresh();
-    this.roomIntro();
+    this.roomIntro(); setTimeout(() => this.checkRival(), 900);
   },
   continueGame() {
     const d = this.readSave(); if (!d) return;
@@ -3292,7 +3715,7 @@ function paintFaces() {
 /* ---------- menus ---------- */
 function openMenu() {
   if (Game.state !== 'OVERWORLD' || Game.busy) return;
-  const cards = [['journey', '🗺️', 'מפת המסע', 'פרקים, מטרות ותגים'], ['status', '📋', 'כרטיס אח/ות', 'רמה, תחומים, כיול'], ['inv', '🎒', 'ציוד', Object.values(S.inv).reduce((a, b) => a + b, 0) + ' פריטים'], ['patients', '🛏️', 'תיק מטופלים', Object.keys(S.episodes).length + '/' + C.episodes.length + ' אירועים'],
+  const cards = [['journey', '🗺️', 'מפת המסע', 'פרקים, מטרות ותגים'], ['team', '👥', 'הצוות שלי', (S.team || []).length + '/6 אנשי מקצוע'], ['status', '📋', 'כרטיס אח/ות', 'רמה, תחומים, כיול'], ['inv', '🎒', 'ציוד', Object.values(S.inv).reduce((a, b) => a + b, 0) + ' פריטים'], ['patients', '🛏️', 'תיק מטופלים', Object.keys(S.episodes).length + '/' + C.episodes.length + ' אירועים'],
     ['journal', '📖', 'יומן', 'פנינות ומסירות'], ['dex', '🧪', 'מעבדון', Object.values(S.dex).filter(v => v === 2).length + '/' + C.labs.length], ['daily', '🗓️', 'משימות המשמרת', 'משמרת ' + S.shift],
     ['map', '🚪', 'מעבר מהיר', 'בין חדרי המחלקה'], ['settings', '⚙️', 'הגדרות', 'סאונד, טקסט, נגישות'], ['save', '💾', 'שמירה וגיבוי', 'ייצוא / ייבוא'],
     ['evidence', '🔬', 'בסיס מחקרי', 'הנחיות ומקורות'], ['library', '📚', 'ספריית הידע', 'הגרסה המלאה'], ['help', '❓', 'עזרה', 'מקשים ומהלך'], ['title', '🏠', 'למסך הפתיחה', 'נשמר אוטומטית']];
@@ -3301,7 +3724,7 @@ function openMenu() {
     <div class="menu-footer"><span>${esc(S.player.name)} · ${titleFor(levelOf(S.xp))}</span><span>משמרת ${S.shift} · ${DIFF[S.difficulty].name}</span></div>`, { cls: 'game-menu-panel', bind: el => {
     el.querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
       const m = b.dataset.m;
-      ({ journey: () => openJourney(), evidence: openEvidence, status: openStatus, inv: openInventory, patients: openPatients, journal: openJournal, dex: openDex, daily: openDaily, map: openMap, settings: openSettings, save: openSave, help: openHelp,
+      ({ team: openTeam, journey: () => openJourney(), evidence: openEvidence, status: openStatus, inv: openInventory, patients: openPatients, journal: openJournal, dex: openDex, daily: openDaily, map: openMap, settings: openSettings, save: openSave, help: openHelp,
         library: () => { UI.toast('📚', 'הספרייה זמינה בגרסה המלאה', 'פתחו את game/library/index.html מהמאגר', true); },
         title: () => { Game.save(); Panel.close(true); Game.state = 'TITLE'; UI.hide(); UI.quest(''); Game.showTitle(); } })[m]();
     });
@@ -3382,7 +3805,7 @@ function openReview() {
     { cls: 'wide', bind: el => el.querySelectorAll('[data-ep]').forEach(b => b.onclick = () => { const e = C.episodes.find(x => x.id === b.dataset.ep); Panel.close(true); Game.run(() => episodeBattle(e)); }) });
 }
 function openMap() {
-  const rows = MAPS.map((m, i) => `<div class="panel-item"><span><b>${esc(m.name)}</b><br><small>${esc(m.sub)}</small></span><button class="system-btn" data-go="${i}" ${S.visited[i] && i !== S.map && !(i === 7 && !Game.bossReady()) ? '' : 'disabled'}>${i === S.map ? '📍 כאן' : S.visited[i] ? 'ללכת' : '—'}</button></div>`).join('');
+  const rows = MAPS.map((m, i) => `<div class="panel-item"><span><b>${esc(m.name)}</b><br><small>${esc(m.sub)}</small></span><button class="system-btn" data-go="${i}" ${S.visited[i] && i !== S.map && !(i === 7 && !Game.bossReady()) && m.id !== 'council' ? '' : 'disabled'}>${i === S.map ? '📍 כאן' : S.visited[i] ? 'ללכת' : '—'}</button></div>`).join('');
   Panel.open('🗺️ מפת המחלקה', `<div class="panel-list">${rows}</div>${backBtn}`, { bind: el => { bindBack(el); el.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
     const i = +b.dataset.go, m = MAPS[i]; const d = Object.values(m.doors)[0]; const back = MAPS[d.to].doors; const k = Object.keys(back).find(k2 => back[k2].to === i);
     const ent = k ? back[k] : { x: 2, y: 2, dir: 'down' }; Panel.close(true); Game.goTo(i, ent.x, ent.y, ent.dir);
@@ -3436,6 +3859,19 @@ function openHelp() {
     <div class="journal-entry"><b>📟 במסדרון</b>קריאות ביפר וצוות שעוצר אותך עם שאלה — חזרה מרווחת על מה שכבר למדת.</div>
     <div class="journal-entry warn"><b>⚠️ חשוב</b>כלי למידה בלבד. אינו מחליף טווחי מעבדה מקומיים, פרוטוקול מוסדי או שיקול דעת קליני בזמן אמת.</div>
     </div>${Game.state === 'OVERWORLD' ? backBtn : ''}`, { bind: bindBack });
+}
+
+/* ---------- the team (party screen) ---------- */
+function openTeam() {
+  const cards = TEAM_ORDER.map(id => { const T = TEAM[id], m = (S.team || []).find(x => x.id === id);
+    if (!m) return `<div class="tm-card locked"><canvas class="npc-face" data-look="${NPC_INFO[id].look}" width="64" height="64"></canvas><div><b>??? · ${esc(T.role)}</b><small>מחכה ל/ה במקום: ${esc(T.where)}. דבר/י איתו/ה ופתור/י מקרה מהתחום.</small></div></div>`;
+    return `<div class="tm-card"><canvas class="npc-face" data-look="${NPC_INFO[id].look}" width="64" height="64"></canvas><div><b>${T.icon} ${esc(T.name)} · ${esc(teamRole(m))}${m.evo ? ' ✨' : ''}</b>
+      <small>“${esc(T.move)}” · ⚡ חזק/ה נגד ${T.strong.map(t => TYPES[t].icon + ' ' + TYPES[t].name).join(', ')}</small>
+      <div class="tm-meters"><span>PP</span><div class="pg-bar"><div style="width:${m.pp / teamMax(m) * 100}%;background:linear-gradient(90deg,#2b9fd8,#7edcf0)"></div></div><b>${m.pp}/${teamMax(m)}</b>
+      <span>קשר</span><div class="pg-bar"><div style="width:${Math.min(1, (m.bond || 0) / 4) * 100}%;background:linear-gradient(90deg,#f0b232,#f7d27a)"></div></div><b>${m.evo ? 'מומחה/ית' : (m.bond || 0) + '/4'}</b></div>
+      <div class="evid-k">📚 ${esc(T.fact)}</div><div class="srcs">${srcLinks(T.src)}</div></div></div>`; }).join('');
+  Panel.open('👥 הצוות שלי', `<div class="menu-context"><small>איך זה עובד</small><div>בקרב: 👥 צוות → איש/אשת מקצוע. נגד בעיה מהתחום שלהם — ⚡ יעיל במיוחד (מסירים 2 תשובות שגויות, חושפים ממצא ומחזקים יציבות). PP מתחדש בסיום משמרת או אצל ליאת במבואה. אחרי 4 שימושים — התפתחות למומחה/ית.</div></div>
+    <div class="panel-list">${cards}</div>${Game.state === 'OVERWORLD' ? backBtn : ''}`, { cls: 'wide', bind: el => { bindBack(el); paintFaces(); } });
 }
 
 /* ---------- the journey ---------- */

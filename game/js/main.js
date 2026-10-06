@@ -10,7 +10,7 @@ function freshState() {
   return { v: 1, player: null, difficulty: 'normal', map: 0, x: 5, y: 5, dir: 'up', xp: 0, coins: 30, shift: 1, streak: 0, lastDay: '',
     badges: [], labBadge: false, episodes: {}, labRounds: {}, dex: {}, inv: { coffee: 0, calm: 1, torch: 0, guide: 0, shield: 0 },
     domains: {}, calib: {}, flags: {}, trainers: {}, visited: {}, daily: null, shiftLog: { eps: 0, xp: 0 },
-    stats: { steps: 0, codes: 0 }, settings: { sound: true, musicVol: .6, sfxVol: .8, textSpeed: 1, reduceFx: false, hc: false, zoom: 1, haptics: true, pager: true, autoRun: false } };
+    team: [], found: {}, hazards: {}, council: 0, councilHP: 100, rival: 0, stats: { steps: 0, codes: 0 }, settings: { sound: true, musicVol: .6, sfxVol: .8, textSpeed: 1, reduceFx: false, hc: false, zoom: 1, haptics: true, pager: true, autoRun: false } };
 }
 let S = freshState();
 window.S = S;
@@ -43,6 +43,10 @@ const Game = {
     if (n.id === 'rivka') return !this.tutorialDone() ? '!' : null;
     if (n.id === 'leader') return this.bossReady() && !S.badges.includes(this.bossAct()) ? '!' : null;
     if (n.id === 'tal') return this.tutorialDone() && Object.keys(S.labRounds).length < C.labRounds.length ? '?' : null;
+    if (TEAM[n.id]) return this.tutorialDone() && !(S.team || []).some(m => m.id === n.id) ? '?' : null;
+    if (n.id === 'michal') return Object.keys(S.hazards || {}).length < 5 ? '!' : null;
+    if (n.id === 'rachel') return !S.flags.teachback ? '!' : null;
+    if (/^judge|^champion/.test(n.id)) { const i = n.id === 'champion' ? 4 : +n.id.slice(5); return (S.council || 0) === i ? '!' : null; }
         return null;
   },
   questText() {
@@ -59,7 +63,7 @@ const Game = {
       return `${ACTS[bossA].badge} הביקור הגדול מחכה בחדר הישיבות — ${ACTS[bossA].leader}${extra}`;
     }
     if (names.length) return `פרק ${u + 1} · ${ACTS[u].name}: בקר/י את ${names.slice(0, 3).join(', ')} (${pr.done}/${pr.need} לביקור הגדול)`;
-    if (S.badges.length >= ACTS.length) return '🏆 כל שבעת התגים! משמרות חופשיות: חזרות, מעבדה ומעבדון';
+    if (S.badges.length >= ACTS.length) return S.flags.champion ? '🏆 אלוף/ת המועצה! משמרות חופשיות, מעבדון וצוות מלא' : '🏆 שבעה תגים! מועצת המומחים מחכה — הדלת המזרחית במבואה';
     return 'דבר/י עם רבקה — היא תכוון אותך';
   },
   refresh() { UI.hud(); UI.quest(this.state === 'OVERWORLD' || this.state === 'BATTLE' ? this.questText() : ''); },
@@ -76,9 +80,43 @@ const Game = {
   async transition(kind) { await this.cover(kind); },
   async goTo(mi, x, y, dir) {
     this.busy = true; await this.cover('fade');
+    if (MAPS[mi].id === 'council' && MAPS[S.map].id !== 'council') { S.council = 0; S.councilHP = 100; }   // the council restarts every visit
     loadMap(mi, x, y, dir); this.save();
     this.uncover(); this.busy = false;
     this.roomIntro();
+    setTimeout(() => this.checkRival(), 700);
+  },
+  async checkRival() {
+    const id = MAPS[S.map].id, n = S.rival || 0, b = S.badges.length;
+    const due = (n === 0 && id === 'lobby' && this.tutorialDone()) || (n === 1 && id === 'street' && b >= 3) || (n === 2 && id === 'lobby' && b >= ACTS.length);
+    if (!due || this.busy || UI.active || Panel.isOpen || this.state !== 'OVERWORLD') return;
+    await this.run(async () => {
+      const L = RIVAL_LINES[n], info = NPC_INFO.ido;
+      const spot = [[hero.x + 2, hero.y], [hero.x - 2, hero.y], [hero.x, hero.y + 2], [hero.x, hero.y - 2]].find(([x, y]) => !blocked(x, y) && !blocked((x + hero.x) / 2, (y + hero.y) / 2)) || [hero.x + 1, hero.y];
+      const r = { id: 'ido', x: spot[0], y: spot[1], dir: 'down', name: info.name, role: info.role, look: info.look, px: spot[0] * TILE + TILE / 2, py: spot[1] * TILE + TILE, bubble: '!', seed: 2 };
+      npcs.push(r); Sound.encounter(); await sleep(700); r.bubble = null;
+      const dx = Math.sign(hero.x - r.x), dy = Math.sign(hero.y - r.y);
+      if (Math.abs(hero.x - r.x) + Math.abs(hero.y - r.y) > 1) { r.move = { fx: r.x, fy: r.y, tx: r.x + dx, ty: r.y + dy, t: 0, dur: 220 }; r.x += dx; r.y += dy; await sleep(240); }
+      r.dir = Object.keys(DIRS).find(d => DIRS[d][0] === Math.sign(hero.x - r.x) && DIRS[d][1] === Math.sign(hero.y - r.y)) || 'down';
+      hero.dir = Object.keys(DIRS).find(d => DIRS[d][0] === -Math.sign(hero.x - r.x) && DIRS[d][1] === -Math.sign(hero.y - r.y)) || hero.dir;
+      await UI.say('עידו: “' + L.intro + '”', { name: 'עידו · היריב/ה שלך' });
+      const res = await panelBattle({ enemy: { name: 'עידו', person: 'ido', type: 'meds', sub: 'אח חדש · היריב' }, scene: 'hall', need: 3, loss: 30, music: 'battle',
+        intro: 'שלושה מקרים. מי שמשכנע ראשון — מנצח.', qs: questionsFrom([0, 1, 2, 3, 4, 5, 6].filter(a => a <= this.unlockedAct()), 6) });
+      S.rival = n + 1;
+      await UI.say('עידו: “' + (res.result === 'win' ? L.win : L.lose) + '”', { name: 'עידו' });
+      if (res.result === 'win') await this.reward(60 + n * 30, 25 + n * 10);
+      npcs = npcs.filter(x => x !== r); this.save();
+    });
+  },
+  async lockedDoor(door) {
+    if (this.busy) return;
+    this.run(() => UI.say(door.elite ? '🔒 גיל, שומר המועצה: “מועצת המומחים מקבלת רק מי שאסף/ה את שבעת התגים. יש לך ' + S.badges.length + '/7.”'
+      : '🔒 ' + (door.needBadges === 1 ? 'היציאה לקהילה נפתחת אחרי התג הראשון — קודם מכירים את המחלקה.' : 'ביקור הבית הזה נפתח אחרי ' + door.needBadges + ' תגים (יש לך ' + S.badges.length + ').')));
+  },
+  async findHidden(x, y, item) {
+    S.found[S.map + ':' + x + ',' + y] = 1; S.inv[item] = (S.inv[item] || 0) + 1; this.save();
+    Sound.coin(); addParticles(x * TILE + 20 - cam.x, y * TILE + 20 - cam.y, 14, { color: ['#fde047', '#ffffff'], speed: 90, star: true });
+    await UI.say('✨ מצאת משהו מוסתר: ' + ITEMS[item].icon + ' ' + ITEMS[item].name + '! (' + ITEMS[item].desc + ')');
   },
   roomIntro() {
     const id = MAPS[S.map].id, kind = id.startsWith('room') ? 'room1' : id, key = 'room_' + kind;
@@ -226,6 +264,42 @@ const Game = {
       if (!this.tutorialDone()) return say('“אחרי המסירה — נדבר.”');
       if (S.trainers[n.id] === S.shift) return say(TRAINER_LINES[n.id].done);
       await quickBattle({ trainer: n }); S.trainers[n.id] = S.shift; this.save();
+    } else if (TEAM[n.id]) {
+      const T = TEAM[n.id], m = (S.team || []).find(x => x.id === n.id);
+      if (!this.tutorialDone()) return say('“נדבר אחרי המסירה של רבקה.”');
+      if (m) return say('“' + T.fact + '” — ' + T.icon + ' “' + T.move + '” · PP ' + m.pp + '/' + teamMax(m) + (m.evo ? ' · מומחה/ית ✨' : ' · קשר ' + (m.bond || 0) + '/4 להתפתחות'));
+      if (n.id === 'omer') {
+        const c = await UI.ask('עומר: “בית המרקחת פתוח. מה צריך?”', [{ icon: '🤝', label: 'להצטרף לצוות?', sub: 'מקרה אחד או שניים מהתחום שלו' }, { icon: '🛒', label: 'לקנות ציוד' }, { icon: '💊', label: 'טיפ תרופתי' }], { name: n.name + ' · ' + n.role, cancel: true });
+        if (c === 1) return openShop();
+        if (c === 2) return say('“' + T.fact + '”');
+        if (c !== 0) return;
+      } else {
+        await say('“' + T.fact + '”');
+        const c = await UI.ask('לגייס את ' + T.name + ' לצוות? (' + T.role + ' · ⚡ חזק/ה נגד ' + T.strong.map(t => TYPES[t].icon + ' ' + TYPES[t].name).join(', ') + ')', [{ icon: '🤝', label: 'כן — אני מוכן/ה למקרה מהתחום' }, { label: 'אחר כך' }], { name: T.name });
+        if (c !== 0) return;
+      }
+      await recruitBattle(n.id);
+    } else if (n.id === 'liat') {
+      const c = await UI.ask('ליאת: “ברוך/ה הבא/ה למבואה! אפשר לתת לצוות שלך הפסקה קצרה.”', [{ icon: '🔄', label: 'מנוחה לצוות', sub: 'מחזיר את כל ה-PP' }, { icon: '🗺️', label: 'מה יש כאן?' }], { name: n.name + ' · ' + n.role, cancel: true });
+      if (c === 0) { (S.team || []).forEach(m => { m.pp = teamMax(m); }); Sound.heal(); this.save(); await say('“הצוות שלך נח ומוכן! 💚” — ' + ((S.team || []).length ? S.team.map(m => TEAM[m.id].icon).join(' ') + ' מלאים.' : 'עוד אין לך צוות — אנשי המקצוע מחכים בשיקום, בבית המרקחת, כאן במבואה ובמחלקה.')); }
+      if (c === 1) await say('“צפונה: מכון השיקום ובית המרקחת. דרומה: היציאה לקהילה וביקורי בית. מזרחה: מועצת המומחים — רק עם שבעה תגים.”');
+    } else if (n.id === 'gil') {
+      await say(S.badges.length >= ACTS.length ? '“שבעה תגים. המועצה מחכה. זכור/זכרי: ארבעה שופטים ויו״רית ברצף — הביטחון לא מתמלא בין הסבבים, אבל מותר להשתמש בציוד ובצוות.”' : '“המועצה פתוחה רק עם שבעה תגים. יש לך ' + S.badges.length + '. בהצלחה במחלקה!”');
+    } else if (n.id === 'cohen') {
+      await say(pick(['“אחרי השבר אמרו לי לנוח. הפיזיותרפיסטית אמרה דווקא לקום — וצדקה.”', '“אני עושה תרגילי שיווי משקל כל יום. אומרים שזה מוריד נפילות בכמעט רבע.”', '“הכי קשה זה לקום מהכיסא. מאיה בודקת לי את זה עם שעון — Timed Up and Go.”']));
+    } else if (n.id === 'neighbor') {
+      await say(pick(['“הבת שלי שמה לי פס מדבקה זוהר בדרך לשירותים. בלילה זה מציל.”', '“אמרו לי להוריד את השטיחים הקטנים. כמעט נפלתי על אחד בשבוע שעבר.”', '“אני יודעת בדיוק אילו כדורים אני לוקחת — יש לי דף אחד, מעודכן.”']));
+    } else if (n.id === 'michal') {
+      const k = Object.keys(S.hazards || {}).length;
+      await say(k >= 5 ? '“הבית מוכן. תודה — אמא תחזור למקום בטוח יותר.”' : '“אמא חוזרת הביתה בקרוב, ואני מפחדת שתיפול. תעזור/י לי למצוא את מה שמסוכן? (' + k + '/5 — גש/י לחפצים בבית)”');
+    } else if (n.id === 'rachel') {
+      if (S.flags.teachback) return say('“אני יודעת בדיוק מה הוא לוקח ומתי. תודה שהסברת — ושביקשת שאסביר בחזרה.”');
+      await say('“אברהם חוזר עם שלוש רשימות תרופות ואני מבולבלת. תסביר/י לי?” — זה הזמן ל-Teach-back: מסבירים, ואז מבקשים ממנה להסביר בחזרה.');
+      const r = await panelBattle({ enemy: { name: 'רחל', person: 'rachel', type: 'goals', sub: 'מטפלת עיקרית' }, scene: 'hall', need: 2, loss: 25,
+        intro: 'בוא/י נעבור על זה יחד. אני רוצה להבין באמת.', qs: shuffle(C.episodes.filter(e => ['med-reconciliation', 'caregiver-capacity', 'discharge', 'goals-hf'].includes(e.id))).map((e, i) => ({ e, st: STAGES[(i + 1) % 4] })) });
+      if (r.result === 'win') { S.flags.teachback = 1; Sound.badge(); await say('“עכשיו אני מבינה — ואני יכולה להסביר לבד.” 🎉 📚 Teach-back מאמת הבנה בפועל, לא חתימה על דף (AHRQ).'); await this.reward(80, 30); this.save(); }
+    } else if (/^judge|^champion/.test(n.id)) {
+      await this.councilTalk(n);
     } else if (n.id === 'leader') {
       const a = this.bossAct();
       if (S.badges.length >= ACTS.length) {
@@ -281,8 +355,48 @@ const Game = {
     else await UI.say(pick(['“תודה שבאת. כשמסבירים לי מה קורה, פחות מפחיד.”', '“הבת שלי תבוא בבוקר. תגיד/י לה שאני בסדר?”', '“פעם הייתי אח/ות בעצמי, את/ה יודע/ת?”', '“רק אל תשכח/י את המשקפיים שלי על השידה.”']), { name: pt.n });
   },
 
+  async councilTalk(n) {
+    const i = n.id === 'champion' ? 4 : +n.id.slice(5), cfg = COUNCIL[i], info = NPC_INFO[n.id];
+    if ((S.council || 0) > i) return UI.say('“כבר שכנעת אותי. המשך/המשיכי.”', { name: info.name });
+    if ((S.council || 0) < i) return UI.say('“קודם השופט/ת הקודם/ת.”', { name: info.name });
+    const r = await panelBattle({ enemy: { name: info.name, person: cfg.id, type: ACT_TYPE[cfg.acts[cfg.acts.length - 1]], sub: info.role }, scene: 'conf', music: 'boss', boss: true,
+      hp: S.councilHP, need: i === 4 ? 5 : 4, loss: 22, noLeave: true, intro: cfg.intro, qs: questionsFrom(cfg.acts, 10) });
+    if (r.result === 'win') {
+      S.council = i + 1; S.councilHP = r.hp; this.save();
+      if (i < 4) { Sound.badge(); await UI.say(info.name + ': “עברת. השער נפתח — הביטחון שלך נשאר ' + Math.round(r.hp) + '. השופט/ת הבא/ה מחכה.”', { name: info.name }); }
+      else await this.hallOfFame();
+    } else {
+      S.council = 0; S.councilHP = 100; this.save();
+      await UI.say(info.name + ': “הביטחון נגמר. המועצה מתחילה מחדש בכל ביקור — תחזור/י כשתהיה/י מוכן/ה.”', { name: info.name });
+      await this.goTo(8, 14, 4, 'left');
+    }
+  },
+  async hallOfFame() {
+    S.flags.champion = 1; this.save(); Sound.badge(); screenFlash('#fde68a', 400);
+    await UI.say('פרופ׳ דבורה אלמוג: “זה רשמי. את/ה אח/ות מומחה/ית קליני/ת בגריאטריה — ואלוף/ת מועצת המומחים.” 🏆', { name: 'היכל התהילה' });
+    await this.reward(300, 100);
+    await new Promise(res => Panel.open('🏆 היכל התהילה', `<div class="cert"><small>מועצת המומחים · משמרת ${S.shift}</small><h2>${esc(S.player.name)}</h2>
+      <p>ניצח/ה את ארבעת שופטי המועצה ואת היו״רית, אחרי שאסף/ה את שבעת התגים.</p>
+      <div class="badge-row big">${ACTS.map(A => `<i class="on">${A.badge}</i>`).join('')}</div>
+      <div class="pg-section">הצוות</div><div class="hof-team">${(S.team || []).map(m => `<span>${TEAM[m.id].icon} ${esc(TEAM[m.id].name)} · ${esc(teamRole(m))}</span>`).join('') || '<span>סולו — בלי צוות. מרשים.</span>'}</div>
+      <small>${Object.keys(S.episodes).length}/${C.episodes.length} אירועים · ${Object.values(S.dex).filter(v => v === 2).length}/${C.labs.length} במעבדון · רמה ${levelOf(S.xp)}</small></div>
+      <button class="btn-main" data-act="ok">חזרה לבית החולים</button>`, { cls: 'wide', onClose: res, bind: el => el.querySelector('[data-act=ok]').onclick = () => Panel.close() }));
+    await this.goTo(8, 14, 4, 'left');
+  },
   async hotspot(kind) {
     const f = S.flags;
+    if (kind.startsWith('hz_')) {
+      const H = HAZARDS[kind];
+      if (!S.hazards[kind]) { S.hazards[kind] = 1; Sound.reveal(); addParticles(hero.px - cam.x, hero.py - cam.y - 50, 10, { color: ['#fde047', '#fb923c'], speed: 80, star: true }); }
+      const n = Object.keys(S.hazards).length;
+      await UI.say('⚠️ מפגע ' + n + '/5: ' + H.t + '\n✅ ' + H.fix, { name: 'סיור בטיחות בבית', tall: true });
+      if (n === 5 && !f.hazardsDone) {
+        f.hazardsDone = 1; S.inv.shield = (S.inv.shield || 0) + 1; Sound.badge();
+        await UI.say('מיכל: “מצאת את כל החמישה! אני אסדר את זה לפני שאמא חוזרת הביתה.” 🎉\n📚 הערכת מפגעים בבית והפחתתם מונעת כ-343 נפילות לכל 1,000 מבוגרים בסיכון בשנה (Cochrane 2023). קיבלת 🛡️ בדיקה כפולה.', { name: 'מיכל', tall: true });
+        await this.reward(80, 30);
+      }
+      this.save(); return;
+    }
     if (kind === 'locker') {
       if (!f.intro_locker) { f.intro_locker = 1; S.inv.torch++; await UI.say('בלוקר: סטטוסקופ, פנס עט ופנקס כיס עם הערות מהמשמרת הקודמת. קיבלת 🔦 פנס בדיקה.'); }
       else await UI.say('הלוקר שלך. על הדלת: תמונה של כל הצוות מהמסיבה. כולם נראים עייפים ומאושרים.');
@@ -306,7 +420,7 @@ const Game = {
   async endShift() {
     const log = S.shiftLog;
     await this.cover('fade');
-    S.shift++; S.shiftLog = { eps: 0, xp: 0 }; this.touchDay(); this.makeDaily();
+    S.shift++; S.shiftLog = { eps: 0, xp: 0 }; (S.team || []).forEach(m => { m.pp = teamMax(m); }); this.touchDay(); this.makeDaily();
     loadMap(0, 2, 5, 'up'); this.uncover();
     Sound.heal();
     await UI.say('🌅 משמרת חדשה. סיכום המשמרת הקודמת: ' + log.eps + ' אירועים, +' + log.xp + ' XP. משמרת ' + S.shift + ' מתחילה — משימות חדשות על הלוח.');
@@ -369,7 +483,7 @@ const Game = {
     loadMap(S.map, S.x, S.y, S.dir);
     if (S.daily && S.daily.shift !== S.shift) this.makeDaily();
     this.save(); this.refresh();
-    this.roomIntro();
+    this.roomIntro(); setTimeout(() => this.checkRival(), 900);
   },
   continueGame() {
     const d = this.readSave(); if (!d) return;
@@ -404,7 +518,7 @@ function paintFaces() {
 /* ---------- menus ---------- */
 function openMenu() {
   if (Game.state !== 'OVERWORLD' || Game.busy) return;
-  const cards = [['journey', '🗺️', 'מפת המסע', 'פרקים, מטרות ותגים'], ['status', '📋', 'כרטיס אח/ות', 'רמה, תחומים, כיול'], ['inv', '🎒', 'ציוד', Object.values(S.inv).reduce((a, b) => a + b, 0) + ' פריטים'], ['patients', '🛏️', 'תיק מטופלים', Object.keys(S.episodes).length + '/' + C.episodes.length + ' אירועים'],
+  const cards = [['journey', '🗺️', 'מפת המסע', 'פרקים, מטרות ותגים'], ['team', '👥', 'הצוות שלי', (S.team || []).length + '/6 אנשי מקצוע'], ['status', '📋', 'כרטיס אח/ות', 'רמה, תחומים, כיול'], ['inv', '🎒', 'ציוד', Object.values(S.inv).reduce((a, b) => a + b, 0) + ' פריטים'], ['patients', '🛏️', 'תיק מטופלים', Object.keys(S.episodes).length + '/' + C.episodes.length + ' אירועים'],
     ['journal', '📖', 'יומן', 'פנינות ומסירות'], ['dex', '🧪', 'מעבדון', Object.values(S.dex).filter(v => v === 2).length + '/' + C.labs.length], ['daily', '🗓️', 'משימות המשמרת', 'משמרת ' + S.shift],
     ['map', '🚪', 'מעבר מהיר', 'בין חדרי המחלקה'], ['settings', '⚙️', 'הגדרות', 'סאונד, טקסט, נגישות'], ['save', '💾', 'שמירה וגיבוי', 'ייצוא / ייבוא'],
     ['evidence', '🔬', 'בסיס מחקרי', 'הנחיות ומקורות'], ['library', '📚', 'ספריית הידע', 'הגרסה המלאה'], ['help', '❓', 'עזרה', 'מקשים ומהלך'], ['title', '🏠', 'למסך הפתיחה', 'נשמר אוטומטית']];
@@ -413,7 +527,7 @@ function openMenu() {
     <div class="menu-footer"><span>${esc(S.player.name)} · ${titleFor(levelOf(S.xp))}</span><span>משמרת ${S.shift} · ${DIFF[S.difficulty].name}</span></div>`, { cls: 'game-menu-panel', bind: el => {
     el.querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
       const m = b.dataset.m;
-      ({ journey: () => openJourney(), evidence: openEvidence, status: openStatus, inv: openInventory, patients: openPatients, journal: openJournal, dex: openDex, daily: openDaily, map: openMap, settings: openSettings, save: openSave, help: openHelp,
+      ({ team: openTeam, journey: () => openJourney(), evidence: openEvidence, status: openStatus, inv: openInventory, patients: openPatients, journal: openJournal, dex: openDex, daily: openDaily, map: openMap, settings: openSettings, save: openSave, help: openHelp,
         library: () => { window.open('library/index.html', '_blank', 'noopener'); },
         title: () => { Game.save(); Panel.close(true); Game.state = 'TITLE'; UI.hide(); UI.quest(''); Game.showTitle(); } })[m]();
     });
@@ -494,7 +608,7 @@ function openReview() {
     { cls: 'wide', bind: el => el.querySelectorAll('[data-ep]').forEach(b => b.onclick = () => { const e = C.episodes.find(x => x.id === b.dataset.ep); Panel.close(true); Game.run(() => episodeBattle(e)); }) });
 }
 function openMap() {
-  const rows = MAPS.map((m, i) => `<div class="panel-item"><span><b>${esc(m.name)}</b><br><small>${esc(m.sub)}</small></span><button class="system-btn" data-go="${i}" ${S.visited[i] && i !== S.map && !(i === 7 && !Game.bossReady()) ? '' : 'disabled'}>${i === S.map ? '📍 כאן' : S.visited[i] ? 'ללכת' : '—'}</button></div>`).join('');
+  const rows = MAPS.map((m, i) => `<div class="panel-item"><span><b>${esc(m.name)}</b><br><small>${esc(m.sub)}</small></span><button class="system-btn" data-go="${i}" ${S.visited[i] && i !== S.map && !(i === 7 && !Game.bossReady()) && m.id !== 'council' ? '' : 'disabled'}>${i === S.map ? '📍 כאן' : S.visited[i] ? 'ללכת' : '—'}</button></div>`).join('');
   Panel.open('🗺️ מפת המחלקה', `<div class="panel-list">${rows}</div>${backBtn}`, { bind: el => { bindBack(el); el.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
     const i = +b.dataset.go, m = MAPS[i]; const d = Object.values(m.doors)[0]; const back = MAPS[d.to].doors; const k = Object.keys(back).find(k2 => back[k2].to === i);
     const ent = k ? back[k] : { x: 2, y: 2, dir: 'down' }; Panel.close(true); Game.goTo(i, ent.x, ent.y, ent.dir);
@@ -548,6 +662,19 @@ function openHelp() {
     <div class="journal-entry"><b>📟 במסדרון</b>קריאות ביפר וצוות שעוצר אותך עם שאלה — חזרה מרווחת על מה שכבר למדת.</div>
     <div class="journal-entry warn"><b>⚠️ חשוב</b>כלי למידה בלבד. אינו מחליף טווחי מעבדה מקומיים, פרוטוקול מוסדי או שיקול דעת קליני בזמן אמת.</div>
     </div>${Game.state === 'OVERWORLD' ? backBtn : ''}`, { bind: bindBack });
+}
+
+/* ---------- the team (party screen) ---------- */
+function openTeam() {
+  const cards = TEAM_ORDER.map(id => { const T = TEAM[id], m = (S.team || []).find(x => x.id === id);
+    if (!m) return `<div class="tm-card locked"><canvas class="npc-face" data-look="${NPC_INFO[id].look}" width="64" height="64"></canvas><div><b>??? · ${esc(T.role)}</b><small>מחכה ל/ה במקום: ${esc(T.where)}. דבר/י איתו/ה ופתור/י מקרה מהתחום.</small></div></div>`;
+    return `<div class="tm-card"><canvas class="npc-face" data-look="${NPC_INFO[id].look}" width="64" height="64"></canvas><div><b>${T.icon} ${esc(T.name)} · ${esc(teamRole(m))}${m.evo ? ' ✨' : ''}</b>
+      <small>“${esc(T.move)}” · ⚡ חזק/ה נגד ${T.strong.map(t => TYPES[t].icon + ' ' + TYPES[t].name).join(', ')}</small>
+      <div class="tm-meters"><span>PP</span><div class="pg-bar"><div style="width:${m.pp / teamMax(m) * 100}%;background:linear-gradient(90deg,#2b9fd8,#7edcf0)"></div></div><b>${m.pp}/${teamMax(m)}</b>
+      <span>קשר</span><div class="pg-bar"><div style="width:${Math.min(1, (m.bond || 0) / 4) * 100}%;background:linear-gradient(90deg,#f0b232,#f7d27a)"></div></div><b>${m.evo ? 'מומחה/ית' : (m.bond || 0) + '/4'}</b></div>
+      <div class="evid-k">📚 ${esc(T.fact)}</div><div class="srcs">${srcLinks(T.src)}</div></div></div>`; }).join('');
+  Panel.open('👥 הצוות שלי', `<div class="menu-context"><small>איך זה עובד</small><div>בקרב: 👥 צוות → איש/אשת מקצוע. נגד בעיה מהתחום שלהם — ⚡ יעיל במיוחד (מסירים 2 תשובות שגויות, חושפים ממצא ומחזקים יציבות). PP מתחדש בסיום משמרת או אצל ליאת במבואה. אחרי 4 שימושים — התפתחות למומחה/ית.</div></div>
+    <div class="panel-list">${cards}</div>${Game.state === 'OVERWORLD' ? backBtn : ''}`, { cls: 'wide', bind: el => { bindBack(el); paintFaces(); } });
 }
 
 /* ---------- the journey ---------- */
