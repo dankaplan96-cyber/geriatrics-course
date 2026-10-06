@@ -525,3 +525,37 @@ body.in-battle #quest-box{display:none!important}
 #msg-opts.grid .opt.mini{min-height:30px}
 .bhint .btags{display:inline-flex;margin:0 8px 0 0;vertical-align:middle}
 .bhint .btags span{font-weight:600}
+
+/* v1.3 — the journey */
+#quest-box{cursor:pointer}
+#quest-box:hover{background:#fff1cc!important}
+.jmap{width:100%;height:auto;aspect-ratio:700/150;flex-shrink:0;display:block;margin:2px 0 4px}
+.jpath{fill:none;stroke:#d1dfe9;stroke-width:6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:2 12}
+.jpath.reach{stroke:#0e8f86;stroke-dasharray:none;opacity:.55}
+.jn{cursor:pointer}
+.jn .jr-bg{fill:#ffffff;stroke:#c9d8e4;stroke-width:3}
+.jn .jr-ring{fill:none;stroke:#0e8f86;stroke-width:4;transform:rotate(-90deg)}
+.jn.done .jr-bg{fill:#fff4dc;stroke:#e0a93b}
+.jn.done .jr-ring{stroke:#e0a93b}
+.jn.cur .jr-bg{fill:#e9faf7;stroke:#0e8f86;animation:jpulse 1.6s ease-in-out infinite}
+.jn.locked{opacity:.55}
+.jn.sel .jr-bg{stroke-width:5}
+.jn .je{font-size:22px;text-anchor:middle}
+.jn .jt{font-size:12px;font-weight:800;fill:#24425c;text-anchor:middle;font-family:Rubik,sans-serif}
+.jn:focus{outline:none}.jn:focus .jr-bg{stroke:#c27c0e}
+@keyframes jpulse{50%{stroke-width:6}}
+.jdetail{display:flex;flex-direction:column;gap:6px;border-top:1px dashed #d1dfe9;padding-top:8px}
+.ch-head{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:12px;background:linear-gradient(270deg,#e9faf7,#fff8e8);border:1px solid #b9d9d4}
+.ch-medal{width:58px;height:58px;flex-shrink:0;border-radius:50%;display:grid;place-items:center;font-size:30px;background:radial-gradient(circle at 35% 30%,#fff,#ffe7b0 60%,#f2b544);border:3px solid #e0a93b;box-shadow:0 4px 12px #c98a1c44}
+.ch-head small{display:block;font-size:11px;color:#0e7a72;font-weight:700}
+.ch-head b{display:block;font-size:18px;color:#0f2a40}
+.ch-head span{display:block;font-size:12.5px;color:#47627a;line-height:1.5;margin-top:2px}
+.ch-goals{padding-inline-start:20px;display:flex;flex-direction:column;gap:3px;font-size:13px;line-height:1.5}
+.ch-goals li::marker{color:#0e8f86}
+.ch-pts{display:flex;flex-wrap:wrap;gap:8px}
+.ch-pts span{display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 10px 3px 4px;border-radius:99px;background:#f7fbfd;border:1px solid #d1dfe9}
+.ch-pts canvas{width:28px;height:28px;border-radius:50%;border:1px solid #c3d4e2}
+.story-next{padding:9px 12px;border-radius:10px;background:#f1faf8;border:1px solid #b9e3dc;font-size:13px;line-height:1.6}
+.story-next b{display:block;color:#0e7a72;margin-bottom:2px}
+.story-next span{color:#47627a}
+.story-next .jr{display:block;margin-top:3px;font-weight:700;color:#b26c06}

@@ -539,6 +539,40 @@ body.in-battle #quest-box{display:none!important}
 .bhint .btags{display:inline-flex;margin:0 8px 0 0;vertical-align:middle}
 .bhint .btags span{font-weight:600}
 
+/* v1.3 — the journey */
+#quest-box{cursor:pointer}
+#quest-box:hover{background:#fff1cc!important}
+.jmap{width:100%;height:auto;aspect-ratio:700/150;flex-shrink:0;display:block;margin:2px 0 4px}
+.jpath{fill:none;stroke:#d1dfe9;stroke-width:6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:2 12}
+.jpath.reach{stroke:#0e8f86;stroke-dasharray:none;opacity:.55}
+.jn{cursor:pointer}
+.jn .jr-bg{fill:#ffffff;stroke:#c9d8e4;stroke-width:3}
+.jn .jr-ring{fill:none;stroke:#0e8f86;stroke-width:4;transform:rotate(-90deg)}
+.jn.done .jr-bg{fill:#fff4dc;stroke:#e0a93b}
+.jn.done .jr-ring{stroke:#e0a93b}
+.jn.cur .jr-bg{fill:#e9faf7;stroke:#0e8f86;animation:jpulse 1.6s ease-in-out infinite}
+.jn.locked{opacity:.55}
+.jn.sel .jr-bg{stroke-width:5}
+.jn .je{font-size:22px;text-anchor:middle}
+.jn .jt{font-size:12px;font-weight:800;fill:#24425c;text-anchor:middle;font-family:Rubik,sans-serif}
+.jn:focus{outline:none}.jn:focus .jr-bg{stroke:#c27c0e}
+@keyframes jpulse{50%{stroke-width:6}}
+.jdetail{display:flex;flex-direction:column;gap:6px;border-top:1px dashed #d1dfe9;padding-top:8px}
+.ch-head{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:12px;background:linear-gradient(270deg,#e9faf7,#fff8e8);border:1px solid #b9d9d4}
+.ch-medal{width:58px;height:58px;flex-shrink:0;border-radius:50%;display:grid;place-items:center;font-size:30px;background:radial-gradient(circle at 35% 30%,#fff,#ffe7b0 60%,#f2b544);border:3px solid #e0a93b;box-shadow:0 4px 12px #c98a1c44}
+.ch-head small{display:block;font-size:11px;color:#0e7a72;font-weight:700}
+.ch-head b{display:block;font-size:18px;color:#0f2a40}
+.ch-head span{display:block;font-size:12.5px;color:#47627a;line-height:1.5;margin-top:2px}
+.ch-goals{padding-inline-start:20px;display:flex;flex-direction:column;gap:3px;font-size:13px;line-height:1.5}
+.ch-goals li::marker{color:#0e8f86}
+.ch-pts{display:flex;flex-wrap:wrap;gap:8px}
+.ch-pts span{display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 10px 3px 4px;border-radius:99px;background:#f7fbfd;border:1px solid #d1dfe9}
+.ch-pts canvas{width:28px;height:28px;border-radius:50%;border:1px solid #c3d4e2}
+.story-next{padding:9px 12px;border-radius:10px;background:#f1faf8;border:1px solid #b9e3dc;font-size:13px;line-height:1.6}
+.story-next b{display:block;color:#0e7a72;margin-bottom:2px}
+.story-next span{color:#47627a}
+.story-next .jr{display:block;margin-top:3px;font-weight:700;color:#b26c06}
+
 </style>
 </head>
 <body class="on-title">
@@ -1011,6 +1045,41 @@ const COFFEE_PEARLS = [
   'מטרת הטיפול נקבעת עם המטופל — לא רק בשבילו.',
 ];
 
+/* The journey: what each chapter teaches (shown on the journey map and chapter cards). */
+const ACT_INFO = [
+  { story: 'היום הראשון במחלקה. לפני תרופות מתקדמות — לומדים לראות: מה השתנה מה-baseline, ומה המספרים באמת אומרים.',
+    goals: ['לזהות אורתוסטזיס ונפילה שנגרמת מתרופה', 'לפרש אנמיה: Hb, MCV, RDW, ferritin ו-retic יחד', 'לחפש גורם הפיך לאי-שקט לפני שמוסיפים תרופה', 'להתאים מינון לפינוי כליה במבוגר עם מסת שריר נמוכה', 'לזהות פגיעת לחץ מוקדמת'] },
+  { story: 'המוח המבוגר מגיב לכל דבר — זיהום, תרופה, כאב. הפרק מלמד להבחין בין “סתם בלבול” לבין חירום נוירולוגי.',
+    goals: ['להפעיל מסלול שבץ: LKW, גלוקוז, חסר מוקדי', 'לזהות דליריום היפואקטיבי — השקט שמטעה', 'לפתוח differential כשההכרה לא חוזרת אחרי פרכוס', 'לסקור בליעה לפני אכילה אחרי שבץ'] },
+  { story: 'לב וריאות במבוגר: מספר “סביר” יכול להסתיר מטופל לא יציב. לומדים לשאול קודם “האם יציב?”.',
+    goals: ['להבחין בין דופק חריג לבין חוסר יציבות המודינמית', 'לזהות גודש ב-HF וטיפול-יתר במשתנים', 'להבין ש-SpO₂ אינו אוורור (COPD והיפרקפניה)', 'לחשוד ב-PE לפי דפוס ולא לפי בדיקה אחת'] },
+  { story: 'מים, מלחים וסוכר: בגריאטריה התיקון עצמו יכול להזיק. הפרק עוסק בקצב, בזהירות ובתרופות שמאחורי המספר.',
+    goals: ['לנהל היפרקלמיה עם שינויי ECG לפי סדר עדיפויות', 'לתקן היפו/היפרנתרמיה בקצב בטוח', 'לזהות טיפול-יתר בסוכרת ו-euglycemic DKA', 'לקרוא חומצה-בסיס שלמה ו-refeeding'] },
+  { story: 'זיהום במבוגר לא תמיד בא עם חום. כאן לומדים לזהות פגיעה באיברים, דימום סמוי ותגובות לטיפול.',
+    goals: ['לזהות ספסיס לפי תפקוד איברים — לא לפי WBC', 'לפרש DIC, המוליזה ודימום סמוי', 'לפעול מהר בנויטרופניה עם חום ובתגובת עירוי', 'לשלב stewardship, מינון ובקרת זיהומים'] },
+  { story: 'כאב, נפילות ובטן: איך מקלים בלי להזיק, ואיך לא מפספסים חירום שמתחבא מאחורי “עוד כאב”.',
+    goals: ['לנהל חבלת ראש במטופל על נוגד קרישה', 'להקל כאב בבטחה — אופיואידים, NSAIDs ודימום', 'לזהות תסמונת מדור וחסימת מעי', 'לטפל בדליריום ובתפקוד אחרי שבר ירך ובקוצר נשימה פליאטיבי'] },
+  { story: 'הפרק של המומחה/ית: אין הנחיה אחת שפותרת הכל. מאזנים סיכון, מטרות ותפקוד — ומכינים את הבית.',
+    goals: ['לבצע deprescribing מובנה במטופל עם ריבוי תרופות', 'לפרש טרופונין וסיכון QT בהקשר', 'לבנות תכנית שמתאימה למטרות המטופל/ת', 'להכין שחרור בטוח: התאמת תרופות ומטפלים מוכנים'] },
+];
+
+/* How an expert thinks at each decision (Tanner: noticing → interpreting → responding → reflecting). */
+const STAGE_TIP = {
+  q: 'איך חושבים: מה השתנה מה-baseline? איזה מנגנון אחד מסביר את רוב הממצאים הקריטיים?',
+  g: 'איך חושבים: מטרה היא מה צריך לקרות למטופל — בטיחות, פרפוזיה ותפקוד — לא שם של פעולה.',
+  x: 'איך חושבים: פעולה טובה מטפלת בגורם, בטוחה לגוף מבוגר ושברירי, וכוללת ניטור.',
+  r: 'איך חושבים: איזה ממצא מדיד יראה בוודאות שהתכנית עובדת — ושהמטופל/ת חוזר/ת לתפקוד?',
+};
+
+/* First visit to each room: what it is for. */
+const ROOM_INTRO = {
+  staff: 'חדר הצוות — הבסיס שלך: לוקר, לוח המשמרת, מכונת הקפה ושולה מהקפיטריה. הספה כאן מסיימת משמרת.',
+  hall: 'מסדרון המחלקה. רבקה בעמדת האחיות במרכז. החדרים למעלה, המעבדה בקצה, חדר הישיבות למטה. מתמחים וביפר יעצרו אותך לשאלות חזרה.',
+  room1: 'חדר 1. לחץ/י על מיטה כדי לגשת למטופלת. ❗ מעל מיטה = יש אירוע חדש.',
+  lab: 'המעבדה של טל: סבבי מעבדה קריטיים (קריאת פאנל שלם) והמעבדון — 78 בדיקות לזהות. המחשב כאן פותח את המעבדון.',
+  conf: 'חדר הישיבות: כאן מתקיים הביקור הגדול של כל פרק. ניצחון = תג, ותג פותח את הפרק הבא אצל כל המטופלים.',
+};
+
 </script>
 <script>
 /* המשמרת — the evidence layer.
@@ -1357,6 +1426,18 @@ const Art = (() => {
     return cv;
   }
   function clearLayers() { layers.clear(); }
+  /* Day light: soft shafts from every window onto the floor, with a few drifting dust motes. */
+  function sunlight(c, mi, t) {
+    if (reduceFx()) return;
+    const g = MAPS[mi].grid;
+    for (let y = 0; y < g.length - 1; y++) for (let x = 0; x < g[0].length; x++) {
+      if (g[y][x] !== 'O' || WALLISH.has(g[y + 1][x])) continue;
+      const px = x * T, py = y * T + 30, len = T * 3.2;
+      const gr = c.createLinearGradient(0, py, 0, py + len); gr.addColorStop(0, 'rgba(255,236,170,.30)'); gr.addColorStop(1, 'rgba(255,236,170,0)');
+      c.fillStyle = gr; c.beginPath(); c.moveTo(px + 6, py); c.lineTo(px + 34, py); c.lineTo(px + 34 + 26, py + len); c.lineTo(px + 6 + 14, py + len); c.closePath(); c.fill();
+      for (let i = 0; i < 4; i++) { const k = ((t / 6000 + i * .27 + x * .13) % 1); circle(c, px + 14 + i * 8 + k * 22, py + k * len * .9, 1.1, 'rgba(255,255,255,' + (.7 * (1 - k)) + ')'); }
+    }
+  }
 
   /* Animated bits drawn over the layer every frame. */
   function mapAnim(c, mi, t) {
@@ -1379,14 +1460,47 @@ const Art = (() => {
 
   /* ================= people ================= */
   // Chibi figure, feet at (x, y). size ≈ height in logical px (46 in the ward).
+  const OUTLINE = 'drop-shadow(1px 0 0 #2a3d50) drop-shadow(-1px 0 0 #2a3d50) drop-shadow(0 1px 0 #2a3d50) drop-shadow(0 -1px 0 #2a3d50)';
+  const OUTLINE_OK = (() => { try { const t = document.createElement('canvas').getContext('2d'); t.filter = 'blur(1px)'; return t.filter === 'blur(1px)'; } catch (e) { return false; } })();
+  /* Characters are drawn once per pose (look, direction, walk frame, blink, size) into a cached sprite
+     with a dark contour baked in — the outline filter is far too slow to run every frame. */
+  const sprites = new Map();
   function drawPerson(c, x, y, look, o) {
+    o = o || {};
+    const size = o.size || 46;
+    if (!OUTLINE_OK || o.raw) return personRaw(c, x, y, look, o);
+    const TAU = Math.PI * 2, walkF = o.walking ? Math.round((((o.phase || 0) % TAU) + TAU) % TAU / (Math.PI / 4)) % 8 : -1;
+    const blink = (clock + (o.seed || 0) * 900) % 3800 < 120;
+    const key = [typeof look === 'string' ? look : JSON.stringify(look), o.dir || 'down', walkF, blink ? 1 : 0, size, o.flash ? 1 : 0, dpr].join('|');
+    let spr = sprites.get(key);
+    if (!spr) {
+      const k = dpr, pad = 4, w = Math.ceil(size * .8 + pad * 2), h = Math.ceil(size * 1.4 + pad * 2);
+      const raw = document.createElement('canvas'); raw.width = w * k; raw.height = h * k;
+      const rc = raw.getContext('2d'); rc.scale(k, k);
+      personRaw(rc, w / 2, h - pad, look, Object.assign({}, o, { shadow: false, walking: walkF >= 0, phase: walkF < 0 ? 0 : walkF * Math.PI / 4, blinkForce: blink, bob: 0, alpha: null }));
+      const out = document.createElement('canvas'); out.width = raw.width; out.height = raw.height;
+      const oc = out.getContext('2d'), d = Math.max(1, Math.round(k * size / 60)), col = '#2a3d50';
+      oc.filter = `drop-shadow(${d}px 0 0 ${col}) drop-shadow(-${d}px 0 0 ${col}) drop-shadow(0 ${d}px 0 ${col}) drop-shadow(0 -${d}px 0 ${col})`;
+      oc.drawImage(raw, 0, 0);
+      spr = { c: out, w, h, pad };
+      if (sprites.size > 700) sprites.clear();
+      sprites.set(key, spr);
+    }
+    const sc = size / 46;
+    c.save();
+    if (o.alpha != null) c.globalAlpha *= o.alpha;
+    if (o.shadow !== false) ellipse(c, x, y - sc, 12 * sc, 4 * sc, 'rgba(0,0,0,.22)');
+    c.drawImage(spr.c, x - spr.w / 2, y - spr.h + spr.pad + (o.bob || 0), spr.w, spr.h);
+    c.restore();
+  }
+  function personRaw(c, x, y, look, o) {
     o = o || {};
     const L = typeof look === 'string' ? LOOKS[look] : look;
     const s = (o.size || 46) / 46, dir = o.dir || 'down', ph = o.phase || 0;
     const walk = o.walking ? Math.sin(ph) : 0;
     c.save(); c.translate(x, y); c.scale(s, s);
     if (o.alpha != null) c.globalAlpha = o.alpha;
-    if (o.shadow !== false) ellipse(c, 0, -1, 12, 4, 'rgba(0,0,0,.28)');
+    if (o.shadow !== false) ellipse(c, 0, -1, 12, 4, 'rgba(0,0,0,.22)');
     const side = dir === 'left' || dir === 'right';
     if (dir === 'right') c.scale(-1, 1);   // side art faces left; mirror it for right
     const fl = o.flash;
@@ -1437,9 +1551,10 @@ const Art = (() => {
       c.beginPath(); c.arc(0, hy - 2, 12.6, Math.PI * 1.02, Math.PI * 1.98); c.fill();
       c.beginPath(); c.ellipse(-6, hy - 7, 7, 4.5, -.3, 0, 6.28); c.fill(); c.beginPath(); c.ellipse(5, hy - 8, 7, 4, .3, 0, 6.28); c.fill();
       if (L.hairStyle === 'bun') circle(c, 0, hy - 13, 5, H);
+      c.save(); c.globalAlpha *= .28; ellipse(c, -4, hy - 10, 4.5, 1.6, '#ffffff'); c.restore(); c.fillStyle = H;
       if (L.hairStyle === 'bob' || L.hairStyle === 'long') { roundRect(c, -13, hy - 6, 5, L.hairStyle === 'long' ? 20 : 13, 3); c.fill(); roundRect(c, 8, hy - 6, 5, L.hairStyle === 'long' ? 20 : 13, 3); c.fill(); }
       if (L.hairStyle === 'curly') for (let i = 0; i < 6; i++) circle(c, -10 + i * 4, hy - 10 + (i % 2) * 2, 4, H);
-      const blink = (clock + (o.seed || 0) * 900) % 3800 < 120;
+      const blink = o.blinkForce != null ? o.blinkForce : (clock + (o.seed || 0) * 900) % 3800 < 120;
       if (blink) { c.fillStyle = '#1e293b'; c.fillRect(-6.5, hy, 4, 1.2); c.fillRect(2.5, hy, 4, 1.2); }
       else { circle(c, -4.5, hy, 2, '#1e293b'); circle(c, 4.5, hy, 2, '#1e293b'); circle(c, -5.1, hy - .7, .7, '#fff'); circle(c, 3.9, hy - .7, .7, '#fff'); }
       if (L.glasses) { c.strokeStyle = '#1e293b'; c.lineWidth = 1.1; c.beginPath(); c.arc(-4.5, hy, 3.6, 0, 6.28); c.moveTo(8.1, hy); c.arc(4.5, hy, 3.6, 0, 6.28); c.stroke(); }
@@ -1659,6 +1774,8 @@ const Art = (() => {
       drawSky(ctx, w, wy + wh, wy + wh); sun(ctx, wx + ww * .2, wy + 24, 11); skyline(ctx, w, h, wy + wh, 3); ctx.restore();
       ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5; ctx.strokeRect(wx, wy, ww, wh); ctx.fillStyle = '#ffffff'; ctx.fillRect(wx + ww / 2 - 2, wy, 4, wh);
       ctx.fillStyle = '#7dd3c8'; ctx.globalAlpha = .7; ctx.fillRect(wx - 16, wy - 6, 18, wh + 14); ctx.fillRect(wx + ww - 2, wy - 6, 18, wh + 14); ctx.globalAlpha = 1;
+      if (!reduceFx()) { const gr = ctx.createLinearGradient(0, wy + wh, 0, h); gr.addColorStop(0, 'rgba(255,236,170,.32)'); gr.addColorStop(1, 'rgba(255,236,170,0)');
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(wx + 10, wy + wh); ctx.lineTo(wx + ww - 10, wy + wh); ctx.lineTo(wx + ww - 70, h); ctx.lineTo(wx - 40, h); ctx.closePath(); ctx.fill(); }
     }
     ctx.fillStyle = lin(0, horizon, 0, h, [[0, kind === 'conf' ? '#e2c39d' : kind === 'lab' ? '#e3edf5' : '#eef3e8'], [1, kind === 'conf' ? '#c49d72' : kind === 'lab' ? '#b9cad8' : '#c8d9cf']]);
     ctx.fillRect(0, horizon, w, h - horizon);
@@ -1706,7 +1823,7 @@ const Art = (() => {
     ctx.fillStyle = lin(0, horizon, 0, h, [[0, '#bfe3c2'], [1, '#93cc9c']]); ctx.fillRect(0, horizon, w, h - horizon);
   }
 
-  return { sun, clouds, mapLayer, clearLayers, mapAnim, drawPerson, drawPatientInBed, drawBust, drawCreature, battleBackdrop, platform, title, cutsceneBg, skyline, stars, moon };
+  return { sunlight, sun, clouds, mapLayer, clearLayers, mapAnim, drawPerson, drawPatientInBed, drawBust, drawCreature, battleBackdrop, platform, title, cutsceneBg, skyline, stars, moon };
 })();
 
 </script>
@@ -2110,6 +2227,18 @@ function episodeHint(B) {
   if (B.stage === 0 && B.found.size < 2) return 'עוד ממצא אחד או שניים — או, אם התמונה ברורה, 🧠 החלטה.';
   return 'שלב ' + (B.stage + 1) + ' מתוך 4: לחץ/י 🧠 החלטה — ' + st.prompt;
 }
+/* A lab test mentioned in a finding → its short explanation from the Labdex (and mark it seen). */
+const LAB_ALIAS = { creat: ['CR', 'CREATININE'], hba1c: ['A1C', 'HBA1C'], troponin: ['TROPONIN', 'HS-TN'], glucose: ['GLUCOSE'], phos: ['PHOS'], co2: ['HCO3'], paco2: ['PACO2'], ph: ['PH'], ldl: ['LDL'], egfr: ['EGFR'], bun: ['BUN'], retic: ['RETIC', 'RETICULOCYTES'], ddimer: ['D-DIMER'], tsat: ['TSAT'], ca: ['CA', 'CALCIUM'], plt: ['PLT'], wbc: ['WBC'], anc: ['ANC'] };
+function labKeys(l) { const k = [l.en.toUpperCase().replace(/[₀-₉]/g, d => '0123456789'['₀₁₂₃₄₅₆₇₈₉'.indexOf(d)]).split(/[\s/(]/)[0].replace(/[^A-Z0-9-]/g, '')].concat(LAB_ALIAS[l.id] || []); return k.filter(x => x); }
+/* A lab test mentioned in a finding → its short explanation from the Labdex (and mark it seen). */
+function labInfo(text) {
+  const T = ' ' + String(text).toUpperCase().replace(/[₀-₉]/g, d => '0123456789'['₀₁₂₃₄₅₆₇₈₉'.indexOf(d)]) + ' ';
+  const hit = k => new RegExp('[^A-Z0-9]' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^A-Z0-9]').test(T);
+  const l = C.labs.find(x => labKeys(x).some(hit));
+  if (!l) return '';
+  if (!S.dex[l.id]) S.dex[l.id] = 1;
+  return '\n📖 ' + l.en + ' — ' + l.what + (l.range ? ' (טווח: ' + l.range + ' ' + l.unit + ')' : '');
+}
 function chipsHTML(list, cls) { return `<div class="chips ${cls || ''}">` + list.map(c => typeof c === 'string' ? `<span>${esc(c)}</span>` : `<span class="${c.cls || ''}">${esc(c.t)}</span>`).join('') + '</div>'; }
 
 function invOptions() {
@@ -2177,7 +2306,10 @@ async function episodeBattle(ep, opts) {
   B.scoreClues = 0;
   const vit = (hint) => stepsHTML(B, hint) + chipsHTML(ep.v.map(t => ({ t: '📈 ' + t, cls: 'vit' })).concat([...B.found].map(j => ({ t: (ep.c[j][2] === 2 ? '★ ' : ep.c[j][2] === 1 ? '◆ ' : '· ') + ep.c[j][0] + ': ' + ep.c[j][1], cls: 'r' + ep.c[j][2] }))));
   await sleep(520);
-  await UI.say(pick(BATTLE_INTROS).replace('{n}', /^[“"]/.test(ep.t) ? ep.t : '“' + ep.t + '”'), { extra: vit() });
+  const actEps = C.episodes.filter(e => e.a === ep.a), idxInAct = actEps.indexOf(ep) + 1;
+  const prev = C.episodes.filter(e => e.p === ep.p && S.episodes[e.id] && e.id !== ep.id).pop();
+  await UI.say(pick(BATTLE_INTROS).replace('{n}', /^[“"]/.test(ep.t) ? ep.t : '“' + ep.t + '”'), { name: 'פרק ' + (ep.a + 1) + ' · ' + ACTS[ep.a].name + ' · אירוע ' + idxInAct + '/' + actEps.length, extra: vit() });
+  if (prev) await UI.say('בפעם הקודמת אצל ' + pt.n.split(',')[0] + ': “' + prev.t + '” — ' + prev.r[prev.rc] + '.', { name: '📖 עד עכשיו בסיפור', extra: vit() });
   await UI.say(pt.n + ' — ' + ep.st, { name: 'סיפור המקרה', extra: vit() });
   if (!S.flags.battleTut) {
     S.flags.battleTut = 1; Game.save();
@@ -2203,7 +2335,7 @@ async function episodeBattle(ep, opts) {
     if (c === 0) await assess();
     else if (c === 1) {
       const r = await decide(st.prompt, ep[st.key], ep[st.ck], {
-        name: 'שלב ' + (B.stage + 1) + ' · ' + st.name, cancel: true, conf: true, extra: vit('בחר/י רמת ביטחון ואז את התשובה הנכונה ביותר.'),
+        name: 'שלב ' + (B.stage + 1) + ' · ' + st.name, cancel: true, conf: true, extra: vit(STAGE_TIP[st.key]),
         onWrong: async (first, conf) => {
           if (first) { recordConf(conf, false); domain(st.dom, 0, 1); }
           if (B.shield) { B.shield = false; await UI.say('🛡️ הבדיקה הכפולה תפסה את הטעות לפני שהגיעה למטופל. ' + STAGE_HINT[st.key]); return; }
@@ -2248,11 +2380,11 @@ async function episodeBattle(ep, opts) {
     if (cc[2] === 2) {
       B.exposed = true; B.scoreClues++; B.xp += 5; Sound.reveal();
       addParticles(battleFrame().foe.x, battleFrame().foe.y, 10, { color: ['#a3e635', '#fde68a'], speed: 90, star: true });
-      await UI.say('★ ממצא קריטי! ' + cc[0] + ': ' + cc[1] + ' — הבעיה נחשפת; ההחלטה הבאה תפגע חזק יותר.', { extra: vit() });
-    } else if (cc[2] === 1) { Sound.blip(); await UI.say('◆ ממצא תומך: ' + cc[0] + ': ' + cc[1] + '.', { extra: vit() }); }
+      await UI.say('★ ממצא קריטי! ' + cc[0] + ': ' + cc[1] + ' — זה ממצא שמשנה את ההחלטה. הבעיה נחשפת, וההחלטה הבאה תפגע חזק יותר.' + labInfo(cc[0] + ' ' + cc[1]), { extra: vit(), tall: true });
+    } else if (cc[2] === 1) { Sound.blip(); await UI.say('◆ ממצא תומך: ' + cc[0] + ': ' + cc[1] + ' — מחזק את התמונה, אבל לבד לא היה משנה את ההחלטה.' + labInfo(cc[0] + ' ' + cc[1]), { extra: vit(), tall: true }); }
     else {
       await foeStrike(D.noise); B.hp = Math.max(1, B.hp - D.noise);
-      await UI.say('· ' + cc[0] + ': ' + cc[1] + ' — רעש. זה לא משנה את ההחלטה, והזמן עבר.', { extra: vit() });
+      await UI.say('· ' + cc[0] + ': ' + cc[1] + ' — רעש: נכון, אבל לא קשור לשאלה הקלינית. בגריאטריה קל לטבוע בנתונים — המיומנות היא לבחור מה לבדוק.' + labInfo(cc[0] + ' ' + cc[1]), { extra: vit(), tall: true });
     }
   }
 
@@ -2626,6 +2758,7 @@ function renderWorld() {
   ctx.save(); ctx.translate(-cam.x, -cam.y);
   ctx.drawImage(Art.mapLayer(S.map), 0, 0, W, H);
   Art.mapAnim(ctx, S.map, clock);
+  Art.sunlight(ctx, S.map, clock);
   // door plates
   if (m.labels) for (const k in m.labels) {
     const [x, y] = k.split(',').map(Number), cx = x * TILE + TILE / 2, cy = y === 0 ? y * TILE + 12 : y * TILE + 20;
@@ -2833,6 +2966,15 @@ const Game = {
     this.busy = true; await this.cover('fade');
     loadMap(mi, x, y, dir); this.save();
     this.uncover(); this.busy = false;
+    this.roomIntro();
+  },
+  roomIntro() {
+    const id = MAPS[S.map].id, kind = id.startsWith('room') ? 'room1' : id, key = 'room_' + kind;
+    if (!ROOM_INTRO[kind] || S.flags[key] || (kind === 'staff' && !this.tutorialDone())) return;
+    setTimeout(() => {
+      if (this.busy || UI.active || Panel.isOpen || this.state !== 'OVERWORLD') return;   // try again on the next visit
+      this.run(async () => { S.flags[key] = 1; await UI.say('📍 ' + ROOM_INTRO[kind], { name: MAPS[S.map].name }); });
+    }, 600);
   },
 
   /* ---------- rewards & records ---------- */
@@ -2871,6 +3013,7 @@ const Game = {
       <div class="badge-row big">${ACTS.map((B, i) => `<i class="${S.badges.includes(i) ? 'on' : ''}">${B.badge}</i>`).join('')}</div>
       <button class="btn-main" data-act="ok">${all ? 'לתעודה 🎓' : 'ממשיכים ←'}</button>`, { onClose: res, bind: el => el.querySelector('[data-act=ok]').onclick = () => Panel.close() }));
     if (all && !S.flags.finale) { S.flags.finale = true; this.save(); await this.certificate(); }
+    else if (next) await chapterCard(act + 1);
     loadMap(S.map, hero.x, hero.y, hero.dir);
   },
   certificate() {
@@ -2891,6 +3034,7 @@ const Game = {
     const crit = ep.c.filter(c => c[2] === 2);
     const html = `
       <div class="db-top ${r.win ? 'win' : 'lose'}"><div class="db-stars">${stars}</div><div><b>${esc(ep.t)}</b><small>${esc(pt.n)} · ${esc(ACTS[ep.a].name)}${r.win ? ` · +${r.xp} XP · +${r.coins} 🪙` : ' · קוד — נלמד מזה'}</small></div></div>
+      ${r.win ? `<div class="story-next"><b>📖 המשך הסיפור</b>${esc(ep.r[ep.rc])}.${(() => { const nx = this.availableEpisode(ep.p); return nx ? ` <span>הבא אצל ${esc(pt.n.split(',')[0])}: “${esc(nx.t)}”.</span>` : ''; })()}<span class="jr">${journeyLine()}</span></div>` : ''}
       <div class="pg-section">ארבע ההחלטות</div>
       ${STAGES.map(st => `<div class="db-row"><span>${st.name}</span><b>${esc(ep[st.key][ep[st.ck]])}</b></div>`).join('')}
       <div class="pg-section">★ ממצאים קריטיים</div>
@@ -2997,6 +3141,7 @@ const Game = {
     if (!S.daily) this.makeDaily();
     await say('“המשימה הראשונה: לאה בחדר 1. היא כמעט נפלה בקימה לשירותים. לכי/לך — ה-❗ יראה לך לאן.”');
     this.save();
+    await chapterCard(0);
   },
 
   async visitPatient(who) {
@@ -3112,6 +3257,7 @@ const Game = {
     loadMap(S.map, S.x, S.y, S.dir);
     if (S.daily && S.daily.shift !== S.shift) this.makeDaily();
     this.save(); this.refresh();
+    this.roomIntro();
   },
   continueGame() {
     const d = this.readSave(); if (!d) return;
@@ -3146,16 +3292,16 @@ function paintFaces() {
 /* ---------- menus ---------- */
 function openMenu() {
   if (Game.state !== 'OVERWORLD' || Game.busy) return;
-  const cards = [['status', '📋', 'כרטיס אח/ות', 'רמה, תחומים, כיול'], ['inv', '🎒', 'ציוד', Object.values(S.inv).reduce((a, b) => a + b, 0) + ' פריטים'], ['patients', '🛏️', 'תיק מטופלים', Object.keys(S.episodes).length + '/' + C.episodes.length + ' אירועים'],
+  const cards = [['journey', '🗺️', 'מפת המסע', 'פרקים, מטרות ותגים'], ['status', '📋', 'כרטיס אח/ות', 'רמה, תחומים, כיול'], ['inv', '🎒', 'ציוד', Object.values(S.inv).reduce((a, b) => a + b, 0) + ' פריטים'], ['patients', '🛏️', 'תיק מטופלים', Object.keys(S.episodes).length + '/' + C.episodes.length + ' אירועים'],
     ['journal', '📖', 'יומן', 'פנינות ומסירות'], ['dex', '🧪', 'מעבדון', Object.values(S.dex).filter(v => v === 2).length + '/' + C.labs.length], ['daily', '🗓️', 'משימות המשמרת', 'משמרת ' + S.shift],
-    ['map', '🗺️', 'מפת המחלקה', 'מעבר מהיר'], ['settings', '⚙️', 'הגדרות', 'סאונד, טקסט, נגישות'], ['save', '💾', 'שמירה וגיבוי', 'ייצוא / ייבוא'],
+    ['map', '🚪', 'מעבר מהיר', 'בין חדרי המחלקה'], ['settings', '⚙️', 'הגדרות', 'סאונד, טקסט, נגישות'], ['save', '💾', 'שמירה וגיבוי', 'ייצוא / ייבוא'],
     ['evidence', '🔬', 'בסיס מחקרי', 'הנחיות ומקורות'], ['library', '📚', 'ספריית הידע', 'הגרסה המלאה'], ['help', '❓', 'עזרה', 'מקשים ומהלך'], ['title', '🏠', 'למסך הפתיחה', 'נשמר אוטומטית']];
   Panel.open('☰ תפריט', `<div class="menu-context"><small>המשימה</small><div>${esc(Game.questText())}</div></div>
     <div class="game-menu-grid">${cards.map(c => `<button class="game-menu-card" data-m="${c[0]}"><b>${c[1]} ${c[2]}</b><small>${c[3]}</small></button>`).join('')}</div>
     <div class="menu-footer"><span>${esc(S.player.name)} · ${titleFor(levelOf(S.xp))}</span><span>משמרת ${S.shift} · ${DIFF[S.difficulty].name}</span></div>`, { cls: 'game-menu-panel', bind: el => {
     el.querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
       const m = b.dataset.m;
-      ({ evidence: openEvidence, status: openStatus, inv: openInventory, patients: openPatients, journal: openJournal, dex: openDex, daily: openDaily, map: openMap, settings: openSettings, save: openSave, help: openHelp,
+      ({ journey: () => openJourney(), evidence: openEvidence, status: openStatus, inv: openInventory, patients: openPatients, journal: openJournal, dex: openDex, daily: openDaily, map: openMap, settings: openSettings, save: openSave, help: openHelp,
         library: () => { UI.toast('📚', 'הספרייה זמינה בגרסה המלאה', 'פתחו את game/library/index.html מהמאגר', true); },
         title: () => { Game.save(); Panel.close(true); Game.state = 'TITLE'; UI.hide(); UI.quest(''); Game.showTitle(); } })[m]();
     });
@@ -3290,6 +3436,46 @@ function openHelp() {
     <div class="journal-entry"><b>📟 במסדרון</b>קריאות ביפר וצוות שעוצר אותך עם שאלה — חזרה מרווחת על מה שכבר למדת.</div>
     <div class="journal-entry warn"><b>⚠️ חשוב</b>כלי למידה בלבד. אינו מחליף טווחי מעבדה מקומיים, פרוטוקול מוסדי או שיקול דעת קליני בזמן אמת.</div>
     </div>${Game.state === 'OVERWORLD' ? backBtn : ''}`, { bind: bindBack });
+}
+
+/* ---------- the journey ---------- */
+function journeyLine() {
+  if (S.badges.length >= ACTS.length) return '';
+  const a = Game.bossAct(), p = Game.actProgress(a);
+  return p.done >= p.need ? ` 🏅 הביקור הגדול של פרק ${a + 1} פתוח!` : ` 🗺️ פרק ${a + 1}: עוד ${p.need - p.done} אירועים לביקור הגדול.`;
+}
+function actSources(a) { const ids = []; Game.actEps(a).forEach(e => (EP_EVIDENCE[e.id] ? EP_EVIDENCE[e.id].s : []).forEach(id => { if (!ids.includes(id)) ids.push(id); })); return ids; }
+function chapterHTML(a) {
+  const A = ACTS[a], I = ACT_INFO[a], p = Game.actProgress(a);
+  const pts = [...new Set(Game.actEps(a).map(e => e.p))];
+  return `<div class="ch-head"><div class="ch-medal">${A.badge}</div><div><small>פרק ${a + 1} מתוך ${ACTS.length}</small><b>${esc(A.name)}</b><span>${esc(I.story)}</span></div></div>
+    <div class="pg-section">🎯 מה תלמד/י בפרק</div><ul class="ch-goals">${I.goals.map(g => `<li>${esc(g)}</li>`).join('')}</ul>
+    <div class="pg-section">🛏️ המטופלים בפרק</div><div class="ch-pts">${pts.map(id => `<span><canvas class="pt-face" data-who="${id}" width="120" height="120"></canvas>${esc(C.patients[id].n)}</span>`).join('')}</div>
+    <div class="pg-section">🏅 בסוף הפרק</div><div class="menu-context"><div>${p.total} אירועים. אחרי ${p.need} נפתח הביקור הגדול עם ${esc(A.leader)} (${esc(A.role)}) — ניצחון מעניק את ${A.badge} ${esc(A.badgeName)}.</div></div>
+    <div class="pg-section">📚 ההנחיות שעליהן הפרק בנוי</div><div class="srcs">${srcLinks(actSources(a))}</div>`;
+}
+function chapterCard(a) {
+  return new Promise(res => Panel.open('📖 פרק חדש במסע', chapterHTML(a) + '<div class="db-btns"><button class="btn-main" data-act="ok">יוצאים לדרך ←</button><button class="system-btn" data-act="map">🗺️ מפת המסע</button></div>',
+    { cls: 'wide', onClose: res, bind: el => { paintFaces(); el.querySelector('[data-act=ok]').onclick = () => Panel.close(); el.querySelector('[data-act=map]').onclick = () => { Panel.onClose = null; openJourney(a); res(); }; } }));
+}
+function openJourney(sel) {
+  const cur = Game.bossAct(), all = S.badges.length >= ACTS.length;
+  sel = sel == null ? cur : sel;
+  const W = 700, H = 150, pts = ACTS.map((_, i) => ({ x: W - 88 - i * ((W - 176) / 6), y: i % 2 ? 105 : 45 }));
+  const path = pts.map((q, i) => (i ? 'L' : 'M') + q.x + ' ' + q.y).join(' ');
+  const done = i => S.badges.includes(i), locked = i => !all && i > cur;
+  const reach = pts.slice(0, Math.min(cur, 6) + 1).map((q, i) => (i ? 'L' : 'M') + q.x + ' ' + q.y).join(' ');
+  const nodes = ACTS.map((A, i) => { const pr = Game.actProgress(i);
+    return `<g class="jn ${done(i) ? 'done' : locked(i) ? 'locked' : 'cur'}${i === sel ? ' sel' : ''}" data-act="${i}" transform="translate(${pts[i].x} ${pts[i].y})" tabindex="0" role="button" aria-label="פרק ${i + 1}">
+      <circle r="24" class="jr-bg"/><circle r="24" class="jr-ring" style="stroke-dasharray:${Math.round(pr.done / pr.total * 151)} 151"/><text class="je" y="7">${locked(i) ? '🔒' : A.badge}</text>
+      <text class="jt" y="${i % 2 ? 44 : -34}">${i + 1}. ${esc(A.name)}</text></g>`; }).join('');
+  const total = Object.keys(S.episodes).length;
+  Panel.open('🗺️ מפת המסע', `<div class="menu-context"><small>ההתקדמות</small><div>${S.badges.length}/7 תגים · ${total}/${C.episodes.length} אירועים · רמה ${levelOf(S.xp)} — ${esc(titleFor(levelOf(S.xp)))}. ${esc(Game.questText())}</div></div>
+    <svg class="jmap" viewBox="0 0 ${W} ${H}" role="group" aria-label="מפת הפרקים"><path d="${path}" class="jpath"/><path d="${reach}" class="jpath reach"/>${nodes}</svg>
+    <div class="jdetail">${chapterHTML(sel)}</div>${Game.state === 'OVERWORLD' ? backBtn : ''}`, { cls: 'wide', bind: el => {
+    bindBack(el); paintFaces();
+    el.querySelectorAll('.jn').forEach(n => { const go = () => openJourney(+n.dataset.act); n.onclick = go; n.onkeydown = e => { if (e.key === 'Enter') go(); }; });
+  } });
 }
 
 /* ---------- research basis ---------- */
@@ -3449,6 +3635,7 @@ function boot() {
   window.addEventListener('orientationchange', () => setTimeout(applyOrientation, 200));
   setupTouch();
   $('menu-btn').onclick = () => openMenu();
+  $('quest-box').onclick = () => { if (Game.state === 'OVERWORLD' && !Game.busy) openJourney(); };
   $('btn-new').onclick = () => { if (Game.readSave()) { Panel.open('⚠️ משמרת חדשה', '<p>יש שמירה קיימת. משחק חדש ימחק אותה (אפשר לייצא גיבוי קודם מהתפריט).</p><div class="db-btns"><button class="btn-main" data-a="y">כן, משמרת חדשה</button><button class="system-btn" data-a="n">ביטול</button></div>', { bind: el => { el.querySelector('[data-a=y]').onclick = () => { Panel.close(true); Game.newGameDialog(); }; el.querySelector('[data-a=n]').onclick = () => Panel.close(); } }); } else Game.newGameDialog(); };
   $('btn-continue').onclick = () => Game.continueGame();
   $('btn-settings').onclick = () => openSettings();

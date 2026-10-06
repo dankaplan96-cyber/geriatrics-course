@@ -78,6 +78,15 @@ const Game = {
     this.busy = true; await this.cover('fade');
     loadMap(mi, x, y, dir); this.save();
     this.uncover(); this.busy = false;
+    this.roomIntro();
+  },
+  roomIntro() {
+    const id = MAPS[S.map].id, kind = id.startsWith('room') ? 'room1' : id, key = 'room_' + kind;
+    if (!ROOM_INTRO[kind] || S.flags[key] || (kind === 'staff' && !this.tutorialDone())) return;
+    setTimeout(() => {
+      if (this.busy || UI.active || Panel.isOpen || this.state !== 'OVERWORLD') return;   // try again on the next visit
+      this.run(async () => { S.flags[key] = 1; await UI.say('📍 ' + ROOM_INTRO[kind], { name: MAPS[S.map].name }); });
+    }, 600);
   },
 
   /* ---------- rewards & records ---------- */
@@ -116,6 +125,7 @@ const Game = {
       <div class="badge-row big">${ACTS.map((B, i) => `<i class="${S.badges.includes(i) ? 'on' : ''}">${B.badge}</i>`).join('')}</div>
       <button class="btn-main" data-act="ok">${all ? 'לתעודה 🎓' : 'ממשיכים ←'}</button>`, { onClose: res, bind: el => el.querySelector('[data-act=ok]').onclick = () => Panel.close() }));
     if (all && !S.flags.finale) { S.flags.finale = true; this.save(); await this.certificate(); }
+    else if (next) await chapterCard(act + 1);
     loadMap(S.map, hero.x, hero.y, hero.dir);
   },
   certificate() {
@@ -136,6 +146,7 @@ const Game = {
     const crit = ep.c.filter(c => c[2] === 2);
     const html = `
       <div class="db-top ${r.win ? 'win' : 'lose'}"><div class="db-stars">${stars}</div><div><b>${esc(ep.t)}</b><small>${esc(pt.n)} · ${esc(ACTS[ep.a].name)}${r.win ? ` · +${r.xp} XP · +${r.coins} 🪙` : ' · קוד — נלמד מזה'}</small></div></div>
+      ${r.win ? `<div class="story-next"><b>📖 המשך הסיפור</b>${esc(ep.r[ep.rc])}.${(() => { const nx = this.availableEpisode(ep.p); return nx ? ` <span>הבא אצל ${esc(pt.n.split(',')[0])}: “${esc(nx.t)}”.</span>` : ''; })()}<span class="jr">${journeyLine()}</span></div>` : ''}
       <div class="pg-section">ארבע ההחלטות</div>
       ${STAGES.map(st => `<div class="db-row"><span>${st.name}</span><b>${esc(ep[st.key][ep[st.ck]])}</b></div>`).join('')}
       <div class="pg-section">★ ממצאים קריטיים</div>
@@ -242,6 +253,7 @@ const Game = {
     if (!S.daily) this.makeDaily();
     await say('“המשימה הראשונה: לאה בחדר 1. היא כמעט נפלה בקימה לשירותים. לכי/לך — ה-❗ יראה לך לאן.”');
     this.save();
+    await chapterCard(0);
   },
 
   async visitPatient(who) {
@@ -357,6 +369,7 @@ const Game = {
     loadMap(S.map, S.x, S.y, S.dir);
     if (S.daily && S.daily.shift !== S.shift) this.makeDaily();
     this.save(); this.refresh();
+    this.roomIntro();
   },
   continueGame() {
     const d = this.readSave(); if (!d) return;
@@ -391,16 +404,16 @@ function paintFaces() {
 /* ---------- menus ---------- */
 function openMenu() {
   if (Game.state !== 'OVERWORLD' || Game.busy) return;
-  const cards = [['status', '📋', 'כרטיס אח/ות', 'רמה, תחומים, כיול'], ['inv', '🎒', 'ציוד', Object.values(S.inv).reduce((a, b) => a + b, 0) + ' פריטים'], ['patients', '🛏️', 'תיק מטופלים', Object.keys(S.episodes).length + '/' + C.episodes.length + ' אירועים'],
+  const cards = [['journey', '🗺️', 'מפת המסע', 'פרקים, מטרות ותגים'], ['status', '📋', 'כרטיס אח/ות', 'רמה, תחומים, כיול'], ['inv', '🎒', 'ציוד', Object.values(S.inv).reduce((a, b) => a + b, 0) + ' פריטים'], ['patients', '🛏️', 'תיק מטופלים', Object.keys(S.episodes).length + '/' + C.episodes.length + ' אירועים'],
     ['journal', '📖', 'יומן', 'פנינות ומסירות'], ['dex', '🧪', 'מעבדון', Object.values(S.dex).filter(v => v === 2).length + '/' + C.labs.length], ['daily', '🗓️', 'משימות המשמרת', 'משמרת ' + S.shift],
-    ['map', '🗺️', 'מפת המחלקה', 'מעבר מהיר'], ['settings', '⚙️', 'הגדרות', 'סאונד, טקסט, נגישות'], ['save', '💾', 'שמירה וגיבוי', 'ייצוא / ייבוא'],
+    ['map', '🚪', 'מעבר מהיר', 'בין חדרי המחלקה'], ['settings', '⚙️', 'הגדרות', 'סאונד, טקסט, נגישות'], ['save', '💾', 'שמירה וגיבוי', 'ייצוא / ייבוא'],
     ['evidence', '🔬', 'בסיס מחקרי', 'הנחיות ומקורות'], ['library', '📚', 'ספריית הידע', 'הגרסה המלאה'], ['help', '❓', 'עזרה', 'מקשים ומהלך'], ['title', '🏠', 'למסך הפתיחה', 'נשמר אוטומטית']];
   Panel.open('☰ תפריט', `<div class="menu-context"><small>המשימה</small><div>${esc(Game.questText())}</div></div>
     <div class="game-menu-grid">${cards.map(c => `<button class="game-menu-card" data-m="${c[0]}"><b>${c[1]} ${c[2]}</b><small>${c[3]}</small></button>`).join('')}</div>
     <div class="menu-footer"><span>${esc(S.player.name)} · ${titleFor(levelOf(S.xp))}</span><span>משמרת ${S.shift} · ${DIFF[S.difficulty].name}</span></div>`, { cls: 'game-menu-panel', bind: el => {
     el.querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
       const m = b.dataset.m;
-      ({ evidence: openEvidence, status: openStatus, inv: openInventory, patients: openPatients, journal: openJournal, dex: openDex, daily: openDaily, map: openMap, settings: openSettings, save: openSave, help: openHelp,
+      ({ journey: () => openJourney(), evidence: openEvidence, status: openStatus, inv: openInventory, patients: openPatients, journal: openJournal, dex: openDex, daily: openDaily, map: openMap, settings: openSettings, save: openSave, help: openHelp,
         library: () => { window.open('library/index.html', '_blank', 'noopener'); },
         title: () => { Game.save(); Panel.close(true); Game.state = 'TITLE'; UI.hide(); UI.quest(''); Game.showTitle(); } })[m]();
     });
@@ -535,6 +548,46 @@ function openHelp() {
     <div class="journal-entry"><b>📟 במסדרון</b>קריאות ביפר וצוות שעוצר אותך עם שאלה — חזרה מרווחת על מה שכבר למדת.</div>
     <div class="journal-entry warn"><b>⚠️ חשוב</b>כלי למידה בלבד. אינו מחליף טווחי מעבדה מקומיים, פרוטוקול מוסדי או שיקול דעת קליני בזמן אמת.</div>
     </div>${Game.state === 'OVERWORLD' ? backBtn : ''}`, { bind: bindBack });
+}
+
+/* ---------- the journey ---------- */
+function journeyLine() {
+  if (S.badges.length >= ACTS.length) return '';
+  const a = Game.bossAct(), p = Game.actProgress(a);
+  return p.done >= p.need ? ` 🏅 הביקור הגדול של פרק ${a + 1} פתוח!` : ` 🗺️ פרק ${a + 1}: עוד ${p.need - p.done} אירועים לביקור הגדול.`;
+}
+function actSources(a) { const ids = []; Game.actEps(a).forEach(e => (EP_EVIDENCE[e.id] ? EP_EVIDENCE[e.id].s : []).forEach(id => { if (!ids.includes(id)) ids.push(id); })); return ids; }
+function chapterHTML(a) {
+  const A = ACTS[a], I = ACT_INFO[a], p = Game.actProgress(a);
+  const pts = [...new Set(Game.actEps(a).map(e => e.p))];
+  return `<div class="ch-head"><div class="ch-medal">${A.badge}</div><div><small>פרק ${a + 1} מתוך ${ACTS.length}</small><b>${esc(A.name)}</b><span>${esc(I.story)}</span></div></div>
+    <div class="pg-section">🎯 מה תלמד/י בפרק</div><ul class="ch-goals">${I.goals.map(g => `<li>${esc(g)}</li>`).join('')}</ul>
+    <div class="pg-section">🛏️ המטופלים בפרק</div><div class="ch-pts">${pts.map(id => `<span><canvas class="pt-face" data-who="${id}" width="120" height="120"></canvas>${esc(C.patients[id].n)}</span>`).join('')}</div>
+    <div class="pg-section">🏅 בסוף הפרק</div><div class="menu-context"><div>${p.total} אירועים. אחרי ${p.need} נפתח הביקור הגדול עם ${esc(A.leader)} (${esc(A.role)}) — ניצחון מעניק את ${A.badge} ${esc(A.badgeName)}.</div></div>
+    <div class="pg-section">📚 ההנחיות שעליהן הפרק בנוי</div><div class="srcs">${srcLinks(actSources(a))}</div>`;
+}
+function chapterCard(a) {
+  return new Promise(res => Panel.open('📖 פרק חדש במסע', chapterHTML(a) + '<div class="db-btns"><button class="btn-main" data-act="ok">יוצאים לדרך ←</button><button class="system-btn" data-act="map">🗺️ מפת המסע</button></div>',
+    { cls: 'wide', onClose: res, bind: el => { paintFaces(); el.querySelector('[data-act=ok]').onclick = () => Panel.close(); el.querySelector('[data-act=map]').onclick = () => { Panel.onClose = null; openJourney(a); res(); }; } }));
+}
+function openJourney(sel) {
+  const cur = Game.bossAct(), all = S.badges.length >= ACTS.length;
+  sel = sel == null ? cur : sel;
+  const W = 700, H = 150, pts = ACTS.map((_, i) => ({ x: W - 88 - i * ((W - 176) / 6), y: i % 2 ? 105 : 45 }));
+  const path = pts.map((q, i) => (i ? 'L' : 'M') + q.x + ' ' + q.y).join(' ');
+  const done = i => S.badges.includes(i), locked = i => !all && i > cur;
+  const reach = pts.slice(0, Math.min(cur, 6) + 1).map((q, i) => (i ? 'L' : 'M') + q.x + ' ' + q.y).join(' ');
+  const nodes = ACTS.map((A, i) => { const pr = Game.actProgress(i);
+    return `<g class="jn ${done(i) ? 'done' : locked(i) ? 'locked' : 'cur'}${i === sel ? ' sel' : ''}" data-act="${i}" transform="translate(${pts[i].x} ${pts[i].y})" tabindex="0" role="button" aria-label="פרק ${i + 1}">
+      <circle r="24" class="jr-bg"/><circle r="24" class="jr-ring" style="stroke-dasharray:${Math.round(pr.done / pr.total * 151)} 151"/><text class="je" y="7">${locked(i) ? '🔒' : A.badge}</text>
+      <text class="jt" y="${i % 2 ? 44 : -34}">${i + 1}. ${esc(A.name)}</text></g>`; }).join('');
+  const total = Object.keys(S.episodes).length;
+  Panel.open('🗺️ מפת המסע', `<div class="menu-context"><small>ההתקדמות</small><div>${S.badges.length}/7 תגים · ${total}/${C.episodes.length} אירועים · רמה ${levelOf(S.xp)} — ${esc(titleFor(levelOf(S.xp)))}. ${esc(Game.questText())}</div></div>
+    <svg class="jmap" viewBox="0 0 ${W} ${H}" role="group" aria-label="מפת הפרקים"><path d="${path}" class="jpath"/><path d="${reach}" class="jpath reach"/>${nodes}</svg>
+    <div class="jdetail">${chapterHTML(sel)}</div>${Game.state === 'OVERWORLD' ? backBtn : ''}`, { cls: 'wide', bind: el => {
+    bindBack(el); paintFaces();
+    el.querySelectorAll('.jn').forEach(n => { const go = () => openJourney(+n.dataset.act); n.onclick = go; n.onkeydown = e => { if (e.key === 'Enter') go(); }; });
+  } });
 }
 
 /* ---------- research basis ---------- */
@@ -694,6 +747,7 @@ function boot() {
   window.addEventListener('orientationchange', () => setTimeout(applyOrientation, 200));
   setupTouch();
   $('menu-btn').onclick = () => openMenu();
+  $('quest-box').onclick = () => { if (Game.state === 'OVERWORLD' && !Game.busy) openJourney(); };
   $('btn-new').onclick = () => { if (Game.readSave()) { Panel.open('⚠️ משמרת חדשה', '<p>יש שמירה קיימת. משחק חדש ימחק אותה (אפשר לייצא גיבוי קודם מהתפריט).</p><div class="db-btns"><button class="btn-main" data-a="y">כן, משמרת חדשה</button><button class="system-btn" data-a="n">ביטול</button></div>', { bind: el => { el.querySelector('[data-a=y]').onclick = () => { Panel.close(true); Game.newGameDialog(); }; el.querySelector('[data-a=n]').onclick = () => Panel.close(); } }); } else Game.newGameDialog(); };
   $('btn-continue').onclick = () => Game.continueGame();
   $('btn-settings').onclick = () => openSettings();

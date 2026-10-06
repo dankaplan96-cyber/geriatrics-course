@@ -182,6 +182,18 @@ function episodeHint(B) {
   if (B.stage === 0 && B.found.size < 2) return 'עוד ממצא אחד או שניים — או, אם התמונה ברורה, 🧠 החלטה.';
   return 'שלב ' + (B.stage + 1) + ' מתוך 4: לחץ/י 🧠 החלטה — ' + st.prompt;
 }
+/* A lab test mentioned in a finding → its short explanation from the Labdex (and mark it seen). */
+const LAB_ALIAS = { creat: ['CR', 'CREATININE'], hba1c: ['A1C', 'HBA1C'], troponin: ['TROPONIN', 'HS-TN'], glucose: ['GLUCOSE'], phos: ['PHOS'], co2: ['HCO3'], paco2: ['PACO2'], ph: ['PH'], ldl: ['LDL'], egfr: ['EGFR'], bun: ['BUN'], retic: ['RETIC', 'RETICULOCYTES'], ddimer: ['D-DIMER'], tsat: ['TSAT'], ca: ['CA', 'CALCIUM'], plt: ['PLT'], wbc: ['WBC'], anc: ['ANC'] };
+function labKeys(l) { const k = [l.en.toUpperCase().replace(/[₀-₉]/g, d => '0123456789'['₀₁₂₃₄₅₆₇₈₉'.indexOf(d)]).split(/[\s/(]/)[0].replace(/[^A-Z0-9-]/g, '')].concat(LAB_ALIAS[l.id] || []); return k.filter(x => x); }
+/* A lab test mentioned in a finding → its short explanation from the Labdex (and mark it seen). */
+function labInfo(text) {
+  const T = ' ' + String(text).toUpperCase().replace(/[₀-₉]/g, d => '0123456789'['₀₁₂₃₄₅₆₇₈₉'.indexOf(d)]) + ' ';
+  const hit = k => new RegExp('[^A-Z0-9]' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^A-Z0-9]').test(T);
+  const l = C.labs.find(x => labKeys(x).some(hit));
+  if (!l) return '';
+  if (!S.dex[l.id]) S.dex[l.id] = 1;
+  return '\n📖 ' + l.en + ' — ' + l.what + (l.range ? ' (טווח: ' + l.range + ' ' + l.unit + ')' : '');
+}
 function chipsHTML(list, cls) { return `<div class="chips ${cls || ''}">` + list.map(c => typeof c === 'string' ? `<span>${esc(c)}</span>` : `<span class="${c.cls || ''}">${esc(c.t)}</span>`).join('') + '</div>'; }
 
 function invOptions() {
@@ -249,7 +261,10 @@ async function episodeBattle(ep, opts) {
   B.scoreClues = 0;
   const vit = (hint) => stepsHTML(B, hint) + chipsHTML(ep.v.map(t => ({ t: '📈 ' + t, cls: 'vit' })).concat([...B.found].map(j => ({ t: (ep.c[j][2] === 2 ? '★ ' : ep.c[j][2] === 1 ? '◆ ' : '· ') + ep.c[j][0] + ': ' + ep.c[j][1], cls: 'r' + ep.c[j][2] }))));
   await sleep(520);
-  await UI.say(pick(BATTLE_INTROS).replace('{n}', /^[“"]/.test(ep.t) ? ep.t : '“' + ep.t + '”'), { extra: vit() });
+  const actEps = C.episodes.filter(e => e.a === ep.a), idxInAct = actEps.indexOf(ep) + 1;
+  const prev = C.episodes.filter(e => e.p === ep.p && S.episodes[e.id] && e.id !== ep.id).pop();
+  await UI.say(pick(BATTLE_INTROS).replace('{n}', /^[“"]/.test(ep.t) ? ep.t : '“' + ep.t + '”'), { name: 'פרק ' + (ep.a + 1) + ' · ' + ACTS[ep.a].name + ' · אירוע ' + idxInAct + '/' + actEps.length, extra: vit() });
+  if (prev) await UI.say('בפעם הקודמת אצל ' + pt.n.split(',')[0] + ': “' + prev.t + '” — ' + prev.r[prev.rc] + '.', { name: '📖 עד עכשיו בסיפור', extra: vit() });
   await UI.say(pt.n + ' — ' + ep.st, { name: 'סיפור המקרה', extra: vit() });
   if (!S.flags.battleTut) {
     S.flags.battleTut = 1; Game.save();
@@ -275,7 +290,7 @@ async function episodeBattle(ep, opts) {
     if (c === 0) await assess();
     else if (c === 1) {
       const r = await decide(st.prompt, ep[st.key], ep[st.ck], {
-        name: 'שלב ' + (B.stage + 1) + ' · ' + st.name, cancel: true, conf: true, extra: vit('בחר/י רמת ביטחון ואז את התשובה הנכונה ביותר.'),
+        name: 'שלב ' + (B.stage + 1) + ' · ' + st.name, cancel: true, conf: true, extra: vit(STAGE_TIP[st.key]),
         onWrong: async (first, conf) => {
           if (first) { recordConf(conf, false); domain(st.dom, 0, 1); }
           if (B.shield) { B.shield = false; await UI.say('🛡️ הבדיקה הכפולה תפסה את הטעות לפני שהגיעה למטופל. ' + STAGE_HINT[st.key]); return; }
@@ -320,11 +335,11 @@ async function episodeBattle(ep, opts) {
     if (cc[2] === 2) {
       B.exposed = true; B.scoreClues++; B.xp += 5; Sound.reveal();
       addParticles(battleFrame().foe.x, battleFrame().foe.y, 10, { color: ['#a3e635', '#fde68a'], speed: 90, star: true });
-      await UI.say('★ ממצא קריטי! ' + cc[0] + ': ' + cc[1] + ' — הבעיה נחשפת; ההחלטה הבאה תפגע חזק יותר.', { extra: vit() });
-    } else if (cc[2] === 1) { Sound.blip(); await UI.say('◆ ממצא תומך: ' + cc[0] + ': ' + cc[1] + '.', { extra: vit() }); }
+      await UI.say('★ ממצא קריטי! ' + cc[0] + ': ' + cc[1] + ' — זה ממצא שמשנה את ההחלטה. הבעיה נחשפת, וההחלטה הבאה תפגע חזק יותר.' + labInfo(cc[0] + ' ' + cc[1]), { extra: vit(), tall: true });
+    } else if (cc[2] === 1) { Sound.blip(); await UI.say('◆ ממצא תומך: ' + cc[0] + ': ' + cc[1] + ' — מחזק את התמונה, אבל לבד לא היה משנה את ההחלטה.' + labInfo(cc[0] + ' ' + cc[1]), { extra: vit(), tall: true }); }
     else {
       await foeStrike(D.noise); B.hp = Math.max(1, B.hp - D.noise);
-      await UI.say('· ' + cc[0] + ': ' + cc[1] + ' — רעש. זה לא משנה את ההחלטה, והזמן עבר.', { extra: vit() });
+      await UI.say('· ' + cc[0] + ': ' + cc[1] + ' — רעש: נכון, אבל לא קשור לשאלה הקלינית. בגריאטריה קל לטבוע בנתונים — המיומנות היא לבחור מה לבדוק.' + labInfo(cc[0] + ' ' + cc[1]), { extra: vit(), tall: true });
     }
   }
 

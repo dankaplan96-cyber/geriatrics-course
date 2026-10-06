@@ -202,6 +202,7 @@ function renderWorld() {
   ctx.save(); ctx.translate(-cam.x, -cam.y);
   ctx.drawImage(Art.mapLayer(S.map), 0, 0, W, H);
   Art.mapAnim(ctx, S.map, clock);
+  Art.sunlight(ctx, S.map, clock);
   // door plates
   if (m.labels) for (const k in m.labels) {
     const [x, y] = k.split(',').map(Number), cx = x * TILE + TILE / 2, cy = y === 0 ? y * TILE + 12 : y * TILE + 20;

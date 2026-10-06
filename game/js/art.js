@@ -170,6 +170,18 @@ const Art = (() => {
     return cv;
   }
   function clearLayers() { layers.clear(); }
+  /* Day light: soft shafts from every window onto the floor, with a few drifting dust motes. */
+  function sunlight(c, mi, t) {
+    if (reduceFx()) return;
+    const g = MAPS[mi].grid;
+    for (let y = 0; y < g.length - 1; y++) for (let x = 0; x < g[0].length; x++) {
+      if (g[y][x] !== 'O' || WALLISH.has(g[y + 1][x])) continue;
+      const px = x * T, py = y * T + 30, len = T * 3.2;
+      const gr = c.createLinearGradient(0, py, 0, py + len); gr.addColorStop(0, 'rgba(255,236,170,.30)'); gr.addColorStop(1, 'rgba(255,236,170,0)');
+      c.fillStyle = gr; c.beginPath(); c.moveTo(px + 6, py); c.lineTo(px + 34, py); c.lineTo(px + 34 + 26, py + len); c.lineTo(px + 6 + 14, py + len); c.closePath(); c.fill();
+      for (let i = 0; i < 4; i++) { const k = ((t / 6000 + i * .27 + x * .13) % 1); circle(c, px + 14 + i * 8 + k * 22, py + k * len * .9, 1.1, 'rgba(255,255,255,' + (.7 * (1 - k)) + ')'); }
+    }
+  }
 
   /* Animated bits drawn over the layer every frame. */
   function mapAnim(c, mi, t) {
@@ -192,14 +204,47 @@ const Art = (() => {
 
   /* ================= people ================= */
   // Chibi figure, feet at (x, y). size ≈ height in logical px (46 in the ward).
+  const OUTLINE = 'drop-shadow(1px 0 0 #2a3d50) drop-shadow(-1px 0 0 #2a3d50) drop-shadow(0 1px 0 #2a3d50) drop-shadow(0 -1px 0 #2a3d50)';
+  const OUTLINE_OK = (() => { try { const t = document.createElement('canvas').getContext('2d'); t.filter = 'blur(1px)'; return t.filter === 'blur(1px)'; } catch (e) { return false; } })();
+  /* Characters are drawn once per pose (look, direction, walk frame, blink, size) into a cached sprite
+     with a dark contour baked in — the outline filter is far too slow to run every frame. */
+  const sprites = new Map();
   function drawPerson(c, x, y, look, o) {
+    o = o || {};
+    const size = o.size || 46;
+    if (!OUTLINE_OK || o.raw) return personRaw(c, x, y, look, o);
+    const TAU = Math.PI * 2, walkF = o.walking ? Math.round((((o.phase || 0) % TAU) + TAU) % TAU / (Math.PI / 4)) % 8 : -1;
+    const blink = (clock + (o.seed || 0) * 900) % 3800 < 120;
+    const key = [typeof look === 'string' ? look : JSON.stringify(look), o.dir || 'down', walkF, blink ? 1 : 0, size, o.flash ? 1 : 0, dpr].join('|');
+    let spr = sprites.get(key);
+    if (!spr) {
+      const k = dpr, pad = 4, w = Math.ceil(size * .8 + pad * 2), h = Math.ceil(size * 1.4 + pad * 2);
+      const raw = document.createElement('canvas'); raw.width = w * k; raw.height = h * k;
+      const rc = raw.getContext('2d'); rc.scale(k, k);
+      personRaw(rc, w / 2, h - pad, look, Object.assign({}, o, { shadow: false, walking: walkF >= 0, phase: walkF < 0 ? 0 : walkF * Math.PI / 4, blinkForce: blink, bob: 0, alpha: null }));
+      const out = document.createElement('canvas'); out.width = raw.width; out.height = raw.height;
+      const oc = out.getContext('2d'), d = Math.max(1, Math.round(k * size / 60)), col = '#2a3d50';
+      oc.filter = `drop-shadow(${d}px 0 0 ${col}) drop-shadow(-${d}px 0 0 ${col}) drop-shadow(0 ${d}px 0 ${col}) drop-shadow(0 -${d}px 0 ${col})`;
+      oc.drawImage(raw, 0, 0);
+      spr = { c: out, w, h, pad };
+      if (sprites.size > 700) sprites.clear();
+      sprites.set(key, spr);
+    }
+    const sc = size / 46;
+    c.save();
+    if (o.alpha != null) c.globalAlpha *= o.alpha;
+    if (o.shadow !== false) ellipse(c, x, y - sc, 12 * sc, 4 * sc, 'rgba(0,0,0,.22)');
+    c.drawImage(spr.c, x - spr.w / 2, y - spr.h + spr.pad + (o.bob || 0), spr.w, spr.h);
+    c.restore();
+  }
+  function personRaw(c, x, y, look, o) {
     o = o || {};
     const L = typeof look === 'string' ? LOOKS[look] : look;
     const s = (o.size || 46) / 46, dir = o.dir || 'down', ph = o.phase || 0;
     const walk = o.walking ? Math.sin(ph) : 0;
     c.save(); c.translate(x, y); c.scale(s, s);
     if (o.alpha != null) c.globalAlpha = o.alpha;
-    if (o.shadow !== false) ellipse(c, 0, -1, 12, 4, 'rgba(0,0,0,.28)');
+    if (o.shadow !== false) ellipse(c, 0, -1, 12, 4, 'rgba(0,0,0,.22)');
     const side = dir === 'left' || dir === 'right';
     if (dir === 'right') c.scale(-1, 1);   // side art faces left; mirror it for right
     const fl = o.flash;
@@ -250,9 +295,10 @@ const Art = (() => {
       c.beginPath(); c.arc(0, hy - 2, 12.6, Math.PI * 1.02, Math.PI * 1.98); c.fill();
       c.beginPath(); c.ellipse(-6, hy - 7, 7, 4.5, -.3, 0, 6.28); c.fill(); c.beginPath(); c.ellipse(5, hy - 8, 7, 4, .3, 0, 6.28); c.fill();
       if (L.hairStyle === 'bun') circle(c, 0, hy - 13, 5, H);
+      c.save(); c.globalAlpha *= .28; ellipse(c, -4, hy - 10, 4.5, 1.6, '#ffffff'); c.restore(); c.fillStyle = H;
       if (L.hairStyle === 'bob' || L.hairStyle === 'long') { roundRect(c, -13, hy - 6, 5, L.hairStyle === 'long' ? 20 : 13, 3); c.fill(); roundRect(c, 8, hy - 6, 5, L.hairStyle === 'long' ? 20 : 13, 3); c.fill(); }
       if (L.hairStyle === 'curly') for (let i = 0; i < 6; i++) circle(c, -10 + i * 4, hy - 10 + (i % 2) * 2, 4, H);
-      const blink = (clock + (o.seed || 0) * 900) % 3800 < 120;
+      const blink = o.blinkForce != null ? o.blinkForce : (clock + (o.seed || 0) * 900) % 3800 < 120;
       if (blink) { c.fillStyle = '#1e293b'; c.fillRect(-6.5, hy, 4, 1.2); c.fillRect(2.5, hy, 4, 1.2); }
       else { circle(c, -4.5, hy, 2, '#1e293b'); circle(c, 4.5, hy, 2, '#1e293b'); circle(c, -5.1, hy - .7, .7, '#fff'); circle(c, 3.9, hy - .7, .7, '#fff'); }
       if (L.glasses) { c.strokeStyle = '#1e293b'; c.lineWidth = 1.1; c.beginPath(); c.arc(-4.5, hy, 3.6, 0, 6.28); c.moveTo(8.1, hy); c.arc(4.5, hy, 3.6, 0, 6.28); c.stroke(); }
@@ -472,6 +518,8 @@ const Art = (() => {
       drawSky(ctx, w, wy + wh, wy + wh); sun(ctx, wx + ww * .2, wy + 24, 11); skyline(ctx, w, h, wy + wh, 3); ctx.restore();
       ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 5; ctx.strokeRect(wx, wy, ww, wh); ctx.fillStyle = '#ffffff'; ctx.fillRect(wx + ww / 2 - 2, wy, 4, wh);
       ctx.fillStyle = '#7dd3c8'; ctx.globalAlpha = .7; ctx.fillRect(wx - 16, wy - 6, 18, wh + 14); ctx.fillRect(wx + ww - 2, wy - 6, 18, wh + 14); ctx.globalAlpha = 1;
+      if (!reduceFx()) { const gr = ctx.createLinearGradient(0, wy + wh, 0, h); gr.addColorStop(0, 'rgba(255,236,170,.32)'); gr.addColorStop(1, 'rgba(255,236,170,0)');
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(wx + 10, wy + wh); ctx.lineTo(wx + ww - 10, wy + wh); ctx.lineTo(wx + ww - 70, h); ctx.lineTo(wx - 40, h); ctx.closePath(); ctx.fill(); }
     }
     ctx.fillStyle = lin(0, horizon, 0, h, [[0, kind === 'conf' ? '#e2c39d' : kind === 'lab' ? '#e3edf5' : '#eef3e8'], [1, kind === 'conf' ? '#c49d72' : kind === 'lab' ? '#b9cad8' : '#c8d9cf']]);
     ctx.fillRect(0, horizon, w, h - horizon);
@@ -519,5 +567,5 @@ const Art = (() => {
     ctx.fillStyle = lin(0, horizon, 0, h, [[0, '#bfe3c2'], [1, '#93cc9c']]); ctx.fillRect(0, horizon, w, h - horizon);
   }
 
-  return { sun, clouds, mapLayer, clearLayers, mapAnim, drawPerson, drawPatientInBed, drawBust, drawCreature, battleBackdrop, platform, title, cutsceneBg, skyline, stars, moon };
+  return { sunlight, sun, clouds, mapLayer, clearLayers, mapAnim, drawPerson, drawPatientInBed, drawBust, drawCreature, battleBackdrop, platform, title, cutsceneBg, skyline, stars, moon };
 })();
