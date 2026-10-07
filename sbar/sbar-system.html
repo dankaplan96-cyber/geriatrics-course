@@ -574,6 +574,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
     <div class="network-safety-status" id="networkSafetyMessage">בודק את תיקיית הרשת…</div>
     <div class="network-safety-actions">
       <button class="btn primary" type="button" id="networkSafetyRetry">התחבר לתיקייה השמורה</button>
+      <button class="btn" type="button" id="networkSafetyReload" hidden>טען מחדש מהרשת (ביטול השינוי האחרון שלי)</button>
       <button class="btn" type="button" id="networkSafetyChoose">בחר תיקייה אחרת</button>
     </div>
   </div>
@@ -1791,6 +1792,7 @@ function mergeThreeWay(base,local,remote,path='',conflicts=[]){
     for(const k of keys){const v=mergeThreeWay(bo[k],lo[k],ro[k],path?`${path}.${k}`:k,conflicts);if(v!==undefined)out[k]=v}
     return out;
   }
+  if(/(^|\.)(nurseGroups|shiftRoomSides)(\.|$)/.test(path))return netClone(remote); // derived division data, recomputed automatically
   conflicts.push(path||'(root)');return netClone(local);
 }
 function userConflictPaths(paths){return [...new Set(paths.filter(p=>p&&p!=='updatedAt'&&!p.endsWith('.updatedAt')))];}
@@ -1802,6 +1804,7 @@ function setNetworkReady(ready,message=''){
   if(msg&&message)msg.textContent=message;
   if(gate){gate.classList.toggle('open',!networkReady);gate.setAttribute('aria-hidden',networkReady?'true':'false')}
   document.body.classList.toggle('network-locked',!networkReady);
+  const reload=$('#networkSafetyReload');if(reload)reload.hidden=networkReady||!(networkConflict||networkDirty||hasNetworkPending());
 }
 function markNetworkHealthy(message='מסונכרן'){
   networkLastSuccessfulRead=Date.now();
@@ -2194,7 +2197,7 @@ async function networkSaveNow(force=false,allowCreate=false,recovery=false){
       if(real.length){
         networkConflict=true;networkPendingRemote={...central,conflictPaths:real};networkDirty=true;
         setNetworkStatus(`התנגשות באותו מידע (${real.length}) · העבודה ננעלה`,'warn');
-        lockForNetwork('מחשב אחר שינה את אותו מידע. יש לטעון מחדש מתיקיית הרשת לפני המשך עבודה.');
+        lockForNetwork(`מחשב אחר שינה את אותו מידע (${real.length} שדות). לחצו “טען מחדש מהרשת” כדי לקבל את הנתונים העדכניים, ואז בצעו שוב את השינוי שלכם.`);
         return false;
       }
       candidate=normalize(merged);state=candidate;safeLocalSet(STORAGE_KEY,JSON.stringify(state));networkMergeCount++;
@@ -2244,7 +2247,7 @@ async function networkPull({force=false,silent=false}={}){
       const modalOpen=!!document.querySelector('#patientModal.open');
       if(!force&&networkDirty){
         const conflicts=[],merged=mergeThreeWay(networkBaseState||state,state,data.state,'',conflicts),real=userConflictPaths(conflicts);
-        if(real.length||modalOpen){networkPendingRemote={...data,conflictPaths:real};networkConflict=real.length>0;setNetworkStatus(real.length?'התנגשות מידע · העבודה ננעלה':'עדכון חדש מהרשת · העבודה ננעלה','warn');lockForNetwork(real.length?'מידע השתנה במחשב אחר. טען מחדש מהרשת.':'קיים עדכון חדש ברשת בזמן עריכה. טען מחדש לפני המשך.');return false}
+        if(real.length||modalOpen){networkPendingRemote={...data,conflictPaths:real};networkConflict=real.length>0;setNetworkStatus(real.length?'התנגשות מידע · העבודה ננעלה':'עדכון חדש מהרשת · העבודה ננעלה','warn');lockForNetwork(real.length?'מידע השתנה במחשב אחר. לחצו “טען מחדש מהרשת”.':'קיים עדכון חדש ברשת בזמן עריכה. לחצו “טען מחדש מהרשת”.');return false}
         state=normalize(merged);state.updatedAt=new Date().toISOString();networkRevision=data.revision;networkBaseState=netClone(data.state);safeLocalSet(STORAGE_KEY,JSON.stringify(state));networkDirty=true;networkLastGoodState=netClone(data.state);renderAll();setTimeout(()=>networkSaveNow(false),100);return true;
       }
       // Forced refresh is intentionally network-authoritative. Local unsaved data is never allowed
@@ -2255,6 +2258,16 @@ async function networkPull({force=false,silent=false}={}){
     if(data.revision<networkRevision){networkConflict=true;setNetworkStatus('אי־התאמה בגרסת המאגר · העבודה ננעלה','warn');lockForNetwork('המאגר המרכזי מציג גרסה ישנה מהגרסה שנקראה קודם. אין לבצע שינויים.');return false}
     networkRevision=data.revision;networkBaseState=networkBaseState||netClone(data.state);networkLastOk=data.updatedAt||networkLastOk;networkLastGoodState=netClone(data.state);setNetworkStatus(`מסונכרן · ${workingDirHandle.name} · ${networkTimeLabel(networkLastOk)}`,'connected');markNetworkHealthy(`מסונכרן לתיקייה ${workingDirHandle.name}`);return true;
   }catch(e){console.warn('Direct folder pull failed',e);setNetworkStatus('לא ניתן לקרוא מתיקיית הרשת · העבודה ננעלה','warn');lockForNetwork(`לא ניתן לקרוא את המאגר המרכזי: ${e?.message||'שגיאת רשת'}`);return false}
+}
+async function discardLocalAndReload(){
+  if(!confirm('לטעון מחדש את הנתונים העדכניים מתיקיית הרשת?\n\nהשינוי האחרון שנעשה במחשב הזה ולא נשמר יבוטל. אחרי הטעינה בדקו את המטופל ששיניתם ועדכנו שוב אם צריך.'))return false;
+  try{
+    if(!await ensureWorkingFolder(true))return false;
+    const data=await readCentralPayload();
+    if(!data||!data.state){alert('לא נמצא מאגר מרכזי בתיקייה. בחרו את תיקיית המחלקה הנכונה.');return false}
+    clearNetworkPendingRecord();networkDirty=false;networkConflict=false;networkPendingRemote=null;
+    applyRemotePayload(data);startDirectPolling();bindNetworkLifecycleListeners();toast('הנתונים נטענו מחדש מתיקיית הרשת');return true;
+  }catch(e){alert(`הטעינה נכשלה: ${e?.message||'שגיאה'}`);return false}
 }
 async function forceNetworkSave(){
   if(!await ensureWorkingFolder(true))return;
@@ -2296,7 +2309,7 @@ async function networkInit(){
   const connectBtn=$('#connectNetworkFolder');if(connectBtn)connectBtn.onclick=connectWorkingFolder;
   const localBtn=$('#continueLocalOnly');if(localBtn){localBtn.style.display='none';localBtn.disabled=true}
   const gateRetry=$('#networkSafetyRetry');if(gateRetry)gateRetry.onclick=async()=>{setNetworkReady(false,'מנסה לקרוא מחדש את המאגר המרכזי…');await directFolderAction()};
-  const gateChoose=$('#networkSafetyChoose');if(gateChoose)gateChoose.onclick=async()=>{workingDirHandle=null;dataDirHandle=null;reportsDirHandle=null;backupsDirHandle=null;await connectWorkingFolder()};
+  const gateReload=$('#networkSafetyReload');if(gateReload)gateReload.onclick=discardLocalAndReload;const gateChoose=$('#networkSafetyChoose');if(gateChoose)gateChoose.onclick=async()=>{workingDirHandle=null;dataDirHandle=null;reportsDirHandle=null;backupsDirHandle=null;await connectWorkingFolder()};
   if(!folderSupported()){setNetworkStatus('חיבור רשת דורש Chrome או Edge עדכניים','warn');lockForNetwork('פתח את המערכת ב־Chrome או Edge עדכניים.');return}
   workingDirHandle=await idbGetHandle();
   if(!workingDirHandle){networkPermissionPending=false;setNetworkStatus('חיבור ראשון · בחר תיקיית מחלקה','warn');lockForNetwork('חיבור ראשון במחשב זה: בחר פעם אחת את תיקיית הרשת של המחלקה.');return}
