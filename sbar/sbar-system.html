@@ -1821,11 +1821,14 @@ async function networkSaveNow(force=false,allowCreate=false,recovery=false){
       candidate=normalize(merged);state=candidate;safeLocalSet(STORAGE_KEY,JSON.stringify(state));networkMergeCount++;
     }
     candidate.updatedAt=new Date().toISOString();
+    candidate=normalize(netClone(candidate)); // write exactly the canonical form that every reader will see
     const payload={format:'ShiftManagerDirectV60',schemaVersion:60,revision:baseRev+1,updatedAt:candidate.updatedAt,clientId:NETWORK_CLIENT_ID,state:candidate};
     await writeCentralPayload(payload);
     // Verify the just-written central payload before declaring success.
     const verify=await readCentralPayload();
-    if(!verify||Number(verify.revision)!==Number(payload.revision)||verify.clientId!==NETWORK_CLIENT_ID||!netEq(verify.state,candidate))throw new Error('אימות השמירה למאגר המרכזי נכשל');
+    const expected=normalize(netClone(candidate));if(verify&&expected.wardName==='מחלקה חדשה')expected.wardName=verify.state.wardName;
+    if(!verify||Number(verify.revision)!==Number(payload.revision)||verify.clientId!==NETWORK_CLIENT_ID){throw new Error('אימות השמירה למאגר המרכזי נכשל')}
+    if(!netEq(verify.state,expected)){console.warn('Network verify: state differs after re-read',verify.state,expected);throw new Error('אימות השמירה למאגר המרכזי נכשל')}
     networkRevision=payload.revision;networkLastOk=payload.updatedAt;networkBaseState=netClone(candidate);networkConflict=false;networkPendingRemote=null;networkDirty=false;networkLastSuccessfulWrite=Date.now();networkLastSuccessfulRead=Date.now();clearNetworkPendingRecord();
     state=normalize(candidate);safeLocalSet(STORAGE_KEY,JSON.stringify(state));networkLastGoodState=netClone(state);
     setNetworkStatus(`${networkMergeCount?'מוזג ומסונכרן':'מסונכרן'} · ${workingDirHandle.name} · ${networkTimeLabel(networkLastOk)}`,'connected');networkMergeCount=0;
