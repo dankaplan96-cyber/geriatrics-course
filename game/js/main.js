@@ -10,7 +10,7 @@ function freshState() {
   return { v: 1, player: null, difficulty: 'normal', map: 0, x: 5, y: 5, dir: 'up', xp: 0, coins: 30, shift: 1, streak: 0, lastDay: '',
     badges: [], labBadge: false, episodes: {}, labRounds: {}, dex: {}, inv: { coffee: 0, calm: 1, torch: 0, guide: 0, shield: 0 },
     domains: {}, calib: {}, flags: {}, trainers: {}, visited: {}, daily: null, shiftLog: { eps: 0, xp: 0 },
-    team: [], found: {}, hazards: {}, council: 0, councilHP: 100, rival: 0, stats: { steps: 0, codes: 0 }, settings: { sound: true, musicVol: .6, sfxVol: .8, textSpeed: 1, reduceFx: false, hc: false, zoom: 1, haptics: true, pager: true, autoRun: false } };
+    know: {}, team: [], found: {}, hazards: {}, council: 0, councilHP: 100, rival: 0, stats: { steps: 0, codes: 0 }, settings: { sound: true, musicVol: .6, sfxVol: .8, textSpeed: 1, reduceFx: false, hc: false, zoom: 1, haptics: true, pager: true, autoRun: false } };
 }
 let S = freshState();
 window.S = S;
@@ -101,7 +101,7 @@ const Game = {
       hero.dir = Object.keys(DIRS).find(d => DIRS[d][0] === -Math.sign(hero.x - r.x) && DIRS[d][1] === -Math.sign(hero.y - r.y)) || hero.dir;
       await UI.say('עידו: “' + L.intro + '”', { name: 'עידו · היריב/ה שלך' });
       const res = await panelBattle({ enemy: { name: 'עידו', person: 'ido', type: 'meds', sub: 'אח חדש · היריב' }, scene: 'hall', need: 3, loss: 30, music: 'battle',
-        intro: 'שלושה מקרים. מי שמשכנע ראשון — מנצח.', qs: questionsFrom([0, 1, 2, 3, 4, 5, 6].filter(a => a <= this.unlockedAct()), 6) });
+        intro: 'שלושה מקרים. מי שמשכנע ראשון — מנצח.', qs: Core.questions(null, 8, this.unlockedAct()) });
       S.rival = n + 1;
       await UI.say('עידו: “' + (res.result === 'win' ? L.win : L.lose) + '”', { name: 'עידו' });
       if (res.result === 'win') await this.reward(60 + n * 30, 25 + n * 10);
@@ -185,6 +185,7 @@ const Game = {
     const html = `
       <div class="db-top ${r.win ? 'win' : 'lose'}"><div class="db-stars">${stars}</div><div><b>${esc(ep.t)}</b><small>${esc(pt.n)} · ${esc(ACTS[ep.a].name)}${r.win ? ` · +${r.xp} XP · +${r.coins} 🪙` : ' · קוד — נלמד מזה'}</small></div></div>
       ${r.win ? `<div class="story-next"><b>📖 המשך הסיפור</b>${esc(ep.r[ep.rc])}.${(() => { const nx = this.availableEpisode(ep.p); return nx ? ` <span>הבא אצל ${esc(pt.n.split(',')[0])}: “${esc(nx.t)}”.</span>` : ''; })()}<span class="jr">${journeyLine()}</span></div>` : ''}
+      <div class="pl-row"><small>תחומי ליבה:</small>${Core.chips(ep)}</div>
       <div class="pg-section">ארבע ההחלטות</div>
       ${STAGES.map(st => `<div class="db-row"><span>${st.name}</span><b>${esc(ep[st.key][ep[st.ck]])}</b></div>`).join('')}
       <div class="pg-section">★ ממצאים קריטיים</div>
@@ -322,6 +323,7 @@ const Game = {
     const say = t => UI.say(t, { name: 'רבקה · האחות האחראית' });
     await say('“' + S.player.name + '! טוב שהגעת. משמרת בוקר, מחלקה מלאה, ואני צריכה מישהו/י עם עיניים טובות.”');
     await this.explainLoop(say);
+    await say('“ותדע/י למה את/ה כאן: המטרה היא להגיע לרמת אח/ות מומחה/ית קליני/ת בגריאטריה. ארבעה תחומי ליבה ייבחנו לאורך כל הדרך — 🫀 קרדיולוגיה, 🧓 גרונטולוגיה, 🧠 נוירולוגיה ו-💊 פרמקולוגיה. בסוף, מועצת המומחים תבחן כל אחד מהם.”');
     await say('“הנה — שני ☕ קפה ו-🔦 פנס לדרך. ותזכור/י: בגריאטריה “חולשה” היא תיאור, לא אבחנה.”');
     S.inv.coffee += 2; S.inv.torch += 1; S.flags.tutorial = true;
     if (!S.daily) this.makeDaily();
@@ -360,10 +362,10 @@ const Game = {
     if ((S.council || 0) > i) return UI.say('“כבר שכנעת אותי. המשך/המשיכי.”', { name: info.name });
     if ((S.council || 0) < i) return UI.say('“קודם השופט/ת הקודם/ת.”', { name: info.name });
     const r = await panelBattle({ enemy: { name: info.name, person: cfg.id, type: ACT_TYPE[cfg.acts[cfg.acts.length - 1]], sub: info.role }, scene: 'conf', music: 'boss', boss: true,
-      hp: S.councilHP, need: i === 4 ? 5 : 4, loss: 22, noLeave: true, intro: cfg.intro, qs: questionsFrom(cfg.acts, 10) });
+      hp: S.councilHP, need: i === 4 ? 5 : 4, loss: 22, noLeave: true, intro: cfg.intro, qs: Core.questions(cfg.pillar, 12) });
     if (r.result === 'win') {
       S.council = i + 1; S.councilHP = r.hp; this.save();
-      if (i < 4) { Sound.badge(); await UI.say(info.name + ': “עברת. השער נפתח — הביטחון שלך נשאר ' + Math.round(r.hp) + '. השופט/ת הבא/ה מחכה.”', { name: info.name }); }
+      if (i < 4) { Sound.badge(); await UI.say(info.name + ': “עברת את ' + PILLARS[cfg.pillar].icon + ' ' + PILLARS[cfg.pillar].full + '. השער נפתח — הביטחון שלך נשאר ' + Math.round(r.hp) + '. השופט/ת הבא/ה מחכה.”', { name: info.name }); }
       else await this.hallOfFame();
     } else {
       S.council = 0; S.councilHP = 100; this.save();
@@ -376,7 +378,8 @@ const Game = {
     await UI.say('פרופ׳ דבורה אלמוג: “זה רשמי. את/ה אח/ות מומחה/ית קליני/ת בגריאטריה — ואלוף/ת מועצת המומחים.” 🏆', { name: 'היכל התהילה' });
     await this.reward(300, 100);
     await new Promise(res => Panel.open('🏆 היכל התהילה', `<div class="cert"><small>מועצת המומחים · משמרת ${S.shift}</small><h2>${esc(S.player.name)}</h2>
-      <p>ניצח/ה את ארבעת שופטי המועצה ואת היו״רית, אחרי שאסף/ה את שבעת התגים.</p>
+      <p>אח/ות מומחה/ית קליני/ת בגריאטריה: עבר/ה את ארבעת שופטי המועצה — קרדיולוגיה, נוירולוגיה, פרמקולוגיה וגרונטולוגיה — ואת היו״רית.</p>
+      <div class="pl-row">${PILLAR_ORDER.map(p => `<span class="pl-chip" style="--pc:${PILLARS[p].color}">${PILLARS[p].icon} ${PILLARS[p].name} ${Core.mastery(p)}%</span>`).join('')}</div>
       <div class="badge-row big">${ACTS.map(A => `<i class="on">${A.badge}</i>`).join('')}</div>
       <div class="pg-section">הצוות</div><div class="hof-team">${(S.team || []).map(m => `<span>${TEAM[m.id].icon} ${esc(TEAM[m.id].name)} · ${esc(teamRole(m))}</span>`).join('') || '<span>סולו — בלי צוות. מרשים.</span>'}</div>
       <small>${Object.keys(S.episodes).length}/${C.episodes.length} אירועים · ${Object.values(S.dex).filter(v => v === 2).length}/${C.labs.length} במעבדון · רמה ${levelOf(S.xp)}</small></div>
@@ -496,7 +499,8 @@ function titleFor(L) { let t = LEVEL_TITLES[0][1]; LEVEL_TITLES.forEach(([l, n])
 function weakAdvice() {
   const names = { noticing: 'לשים לב (אומדן)', interpreting: 'לפרש', responding: 'לפעול', reflecting: 'להעריך מחדש' };
   const rows = Object.keys(names).map(k => { const d = S.domains[k] || [0, 0]; return { k, pct: d[1] ? d[0] / d[1] : null }; }).filter(r => r.pct != null).sort((a, b) => a.pct - b.pct);
-  if (!rows.length) return '“עוד אין לי מספיק נתונים. תטפל/י בכמה מטופלים ונדבר.”';
+  const wp = Core.weakest(), wpT = ' ותחום הליבה שהכי צריך חיזוק: ' + PILLARS[wp].icon + ' ' + PILLARS[wp].full + ' (' + Core.mastery(wp) + '%) — יש תרגול ממוקד בתפריט 🎓.';
+  if (!rows.length) return '“עוד אין לי מספיק נתונים על החשיבה הקלינית שלך.' + wpT + '”';
   const w = rows[0], s = S.calib.sure;
   let t = `“החוליה הכי חלשה כרגע: ${names[w.k]} (${Math.round(w.pct * 100)}% בניסיון ראשון).`;
   if (w.k === 'noticing') t += ' לפני החלטה — בדוק/י 2-3 ממצאים. ★ קריטי חושף את הבעיה.';
@@ -504,7 +508,7 @@ function weakAdvice() {
   if (w.k === 'responding') t += ' פעולה טובה = טיפול בגורם + בטיחות + תכנית מעקב.';
   if (w.k === 'reflecting') t += ' הצלחה היא שיפור קליני ותפקודי מתועד.';
   if (s && s.wrong > s.right / 3 && s.wrong >= 2) t += ' ועוד משהו: כש“בטוח/ה” — טעית ' + s.wrong + ' פעמים. כדאי לכייל.';
-  return t + '”';
+  return t + wpT + '”';
 }
 function drawLookPreview(cv, look) {
   const c = cv.getContext('2d'); const k = 2; cv.width = 90 * k; cv.height = 110 * k; c.scale(k, k);
@@ -518,7 +522,7 @@ function paintFaces() {
 /* ---------- menus ---------- */
 function openMenu() {
   if (Game.state !== 'OVERWORLD' || Game.busy) return;
-  const cards = [['journey', '🗺️', 'מפת המסע', 'פרקים, מטרות ותגים'], ['team', '👥', 'הצוות שלי', (S.team || []).length + '/6 אנשי מקצוע'], ['status', '📋', 'כרטיס אח/ות', 'רמה, תחומים, כיול'], ['inv', '🎒', 'ציוד', Object.values(S.inv).reduce((a, b) => a + b, 0) + ' פריטים'], ['patients', '🛏️', 'תיק מטופלים', Object.keys(S.episodes).length + '/' + C.episodes.length + ' אירועים'],
+  const cards = [['expert', '🎓', 'ליבת המומחיות', PILLAR_ORDER.map(p => PILLARS[p].icon + Core.mastery(p) + '%').join(' ')], ['journey', '🗺️', 'מפת המסע', 'פרקים, מטרות ותגים'], ['team', '👥', 'הצוות שלי', (S.team || []).length + '/6 אנשי מקצוע'], ['status', '📋', 'כרטיס אח/ות', 'רמה, תחומים, כיול'], ['inv', '🎒', 'ציוד', Object.values(S.inv).reduce((a, b) => a + b, 0) + ' פריטים'], ['patients', '🛏️', 'תיק מטופלים', Object.keys(S.episodes).length + '/' + C.episodes.length + ' אירועים'],
     ['journal', '📖', 'יומן', 'פנינות ומסירות'], ['dex', '🧪', 'מעבדון', Object.values(S.dex).filter(v => v === 2).length + '/' + C.labs.length], ['daily', '🗓️', 'משימות המשמרת', 'משמרת ' + S.shift],
     ['map', '🚪', 'מעבר מהיר', 'בין חדרי המחלקה'], ['settings', '⚙️', 'הגדרות', 'סאונד, טקסט, נגישות'], ['save', '💾', 'שמירה וגיבוי', 'ייצוא / ייבוא'],
     ['evidence', '🔬', 'בסיס מחקרי', 'הנחיות ומקורות'], ['library', '📚', 'ספריית הידע', 'הגרסה המלאה'], ['help', '❓', 'עזרה', 'מקשים ומהלך'], ['title', '🏠', 'למסך הפתיחה', 'נשמר אוטומטית']];
@@ -527,7 +531,7 @@ function openMenu() {
     <div class="menu-footer"><span>${esc(S.player.name)} · ${titleFor(levelOf(S.xp))}</span><span>משמרת ${S.shift} · ${DIFF[S.difficulty].name}</span></div>`, { cls: 'game-menu-panel', bind: el => {
     el.querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
       const m = b.dataset.m;
-      ({ team: openTeam, journey: () => openJourney(), evidence: openEvidence, status: openStatus, inv: openInventory, patients: openPatients, journal: openJournal, dex: openDex, daily: openDaily, map: openMap, settings: openSettings, save: openSave, help: openHelp,
+      ({ expert: openExpertise, team: openTeam, journey: () => openJourney(), evidence: openEvidence, status: openStatus, inv: openInventory, patients: openPatients, journal: openJournal, dex: openDex, daily: openDaily, map: openMap, settings: openSettings, save: openSave, help: openHelp,
         library: () => { window.open('library/index.html', '_blank', 'noopener'); },
         title: () => { Game.save(); Panel.close(true); Game.state = 'TITLE'; UI.hide(); UI.quest(''); Game.showTitle(); } })[m]();
     });
@@ -548,6 +552,7 @@ function openStatus() {
       <div class="st-meter"><span>XP</span><div class="pg-bar"><div style="width:${clamp((S.xp - a) / (b - a), 0, 1) * 100}%;background:linear-gradient(90deg,#d5ab62,#f1d49b)"></div></div><b>${S.xp - a}/${b - a}</b></div></div></div>
     <div class="st-grid"><div class="st-stat"><small>אירועים</small><b>${Object.keys(S.episodes).length}</b><em>/${C.episodes.length}</em></div><div class="st-stat"><small>כוכבים</small><b>${stars}</b><em>/${C.episodes.length * 3}</em></div>
       <div class="st-stat"><small>סבבי מעבדה</small><b>${Object.keys(S.labRounds).length}</b><em>/${C.labRounds.length}</em></div><div class="st-stat"><small>מעבדון</small><b>${Object.values(S.dex).filter(v => v === 2).length}</b><em>/${C.labs.length}</em></div><div class="st-stat"><small>קודים</small><b>${S.stats.codes || 0}</b><em>ולמדנו</em></div></div>
+    <div class="pg-section">ליבת המומחיות</div>${PILLAR_ORDER.map(p => `<div class="st-meter"><span>${PILLARS[p].icon} ${PILLARS[p].name}</span><div class="pg-bar"><div style="width:${Core.mastery(p)}%;background:${PILLARS[p].color}"></div></div><b>${Core.mastery(p)}%</b></div>`).join('')}
     <div class="pg-section">חשיבה קלינית — ניסיון ראשון</div>${dom}
     <div class="pg-section">כיול ביטחון</div><div class="st-chips">${cal}</div>
     <div class="pg-section">תגים</div><div class="badge-row big">${ACTS.map((A, i) => `<i class="${S.badges.includes(i) ? 'on' : ''}" title="${A.badgeName}">${A.badge}</i>`).join('')}<i class="${S.labBadge ? 'on' : ''}" title="תג המעבדה">🧪</i></div>
@@ -662,6 +667,33 @@ function openHelp() {
     <div class="journal-entry"><b>📟 במסדרון</b>קריאות ביפר וצוות שעוצר אותך עם שאלה — חזרה מרווחת על מה שכבר למדת.</div>
     <div class="journal-entry warn"><b>⚠️ חשוב</b>כלי למידה בלבד. אינו מחליף טווחי מעבדה מקומיים, פרוטוקול מוסדי או שיקול דעת קליני בזמן אמת.</div>
     </div>${Game.state === 'OVERWORLD' ? backBtn : ''}`, { bind: bindBack });
+}
+
+/* ---------- expertise profile: the four pillars ---------- */
+function openExpertise() {
+  const wp = Core.weakest(), all = Core.overall();
+  const cards = PILLAR_ORDER.map(p => { const P = PILLARS[p], m = Core.mastery(p), eps = Core.episodes(p), its = Core.items(p);
+    const epDone = eps.filter(e => S.episodes[e.id]).length, kDone = its.filter(k => Core.mastered(k.id)).length;
+    return `<div class="pl-card${p === wp ? ' weak' : ''}" style="--pc:${P.color}"><div class="pl-head"><span class="pl-ico">${P.icon}</span><div><b>${P.full}</b><small>${Core.level(m)}${p === wp ? ' · הכי צריך חיזוק' : ''}</small></div><em>${m}%</em></div>
+      <div class="pg-bar"><div style="width:${m}%;background:${P.color}"></div></div>
+      <small class="pl-scope">${esc(P.scope)}</small>
+      <div class="pl-stats"><span>🩺 מקרים ${epDone}/${eps.length}</span><span>📚 בדיקות ידע ${kDone}/${its.length}</span></div>
+      <button class="system-btn" data-drill="${p}">🎯 תרגול ממוקד מול ${esc(P.who)}</button></div>`; }).join('');
+  Panel.open('🎓 ליבת המומחיות', `<div class="menu-context"><small>מטרת המשחק</small><div>להגיע לרמת אח/ות מומחה/ית קליני/ת בגריאטריה בארבעה תחומי ליבה. ציון התחום = חצי מקרים קליניים (כוכבים) + חצי בדיקות ידע שנענו נכון בפעם האחרונה. בדיקות שנכשלו חוזרות מוקדם יותר (חזרה מרווחת). מועצת המומחים בוחנת כל תחום בנפרד.</div></div>
+    <div class="pl-overall"><b>${all}%</b><span>שליטה כוללת · ${Core.level(all)}</span></div>
+    <div class="pl-grid">${cards}</div>${Game.state === 'OVERWORLD' ? backBtn : ''}`, { cls: 'wide', bind: el => { bindBack(el); el.querySelectorAll('[data-drill]').forEach(b => b.onclick = () => { Panel.close(true); drillPillar(b.dataset.drill); }); } });
+}
+function drillPillar(p) {
+  Game.run(async () => {
+    const P = PILLARS[p], look = NPC_INFO[P.examiner] ? NPC_INFO[P.examiner].look : P.examiner;
+    const before = Core.mastery(p);
+    const r = await panelBattle({ enemy: { name: P.who, person: look, type: { cardio: 'cardio', neuro: 'neuro', pharm: 'meds', geron: 'func' }[p], sub: 'תרגול · ' + P.full },
+      scene: 'conf', need: 4, loss: 20, intro: 'תרגול ממוקד ב' + P.full + '. ארבע תשובות נכונות — ואת/ה מוכן/ה יותר למועצה.', qs: Core.questions(p, 10, Game.unlockedAct()) });
+    const after = Core.mastery(p);
+    await UI.say((r.result === 'win' ? '🎯 תרגול הושלם! ' : '📖 התרגול נעצר — כל טעות היא חזרה שתחזור מוקדם יותר. ') + P.icon + ' ' + P.full + ': ' + before + '% → ' + after + '%.', { name: 'ליבת המומחיות' });
+    if (r.result === 'win') await Game.reward(40, 12);
+    Game.save();
+  });
 }
 
 /* ---------- the team (party screen) ---------- */

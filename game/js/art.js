@@ -608,8 +608,8 @@ const Art = (() => {
     ctx.save(); ctx.globalAlpha = k;
     [['#f472b6', 0], ['#2fb3a8', 9], ['#f2b544', 18]].forEach(([col, off], i) => { ctx.save(); ctx.translate(cx, ty + 22 + off); ctx.rotate(-.02); ctx.fillStyle = col; ctx.fillRect(-150 + i * 10, 0, (300 - i * 20) * easeOut(clamp((tt - 300 - i * 120) / 600, 0, 1)), 5); ctx.restore(); });
     heText('המשמרת', cx, ty + 14, { size: 54, bold: true, color: '#f2a516', align: 'center', stroke: '#ffffff', strokeW: 7, shadow: 'rgba(30,60,80,.35)', shadowBlur: 10 });
-    heText('מסע קליני בגריאטריה', cx, ty + 66, { size: 17, bold: true, color: '#0b6f68', align: 'center', stroke: '#ffffff', strokeW: 4 });
-    heText('משמרת אחת. שבעה מטופלים. החלטות מבוססות הנחיות קליניות.', cx, ty + 86, { size: 11, bold: true, color: '#24425c', align: 'center', stroke: 'rgba(255,255,255,.85)', strokeW: 3 });
+    heText('מסע ההסמכה: אח/ות מומחה/ית קליני/ת בגריאטריה', cx, ty + 66, { size: 17, bold: true, color: '#0b6f68', align: 'center', stroke: '#ffffff', strokeW: 4 });
+    heText('קרדיולוגיה · גרונטולוגיה · נוירולוגיה · פרמקולוגיה', cx, ty + 86, { size: 11, bold: true, color: '#24425c', align: 'center', stroke: 'rgba(255,255,255,.85)', strokeW: 3 });
     ctx.restore();
   }
   function cutsceneBg(t) {

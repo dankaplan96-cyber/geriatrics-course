@@ -470,7 +470,10 @@ async function labBattle(idx) {
 }
 
 /* ============ 4. Quick calls: pager (wild) and trainers ============ */
+const PILLAR_TYPE = { cardio: 'cardio', neuro: 'neuro', pharm: 'meds', geron: 'func' };
+function knowQ(K) { return { title: PILLARS[K.p].icon + ' ' + PILLARS[K.p].full, story: 'בדיקת ידע · ' + PILLARS[K.p].full, v: [], q: K.q, opts: K.a, c: K.c, explain: K.e, type: PILLAR_TYPE[K.p], src: K.s, kid: K.id }; }
 function quickQuestion() {
+  if (Math.random() < .65) return knowQ(Core.pickItem(Math.random() < .5 ? Core.weakest() : null));
   const unlocked = Game.unlockedAct();
   const pool = [];
   C.events.forEach(ev => { if (ev.act <= unlocked) pool.push({ kind: 'event', ev }); });
@@ -490,7 +493,7 @@ async function quickBattle(o) {
   const extra = chipsHTML((Q.v || []).map(t => ({ t: '📈 ' + t, cls: 'vit' })));
   await sleep(520);
   await UI.say(o.trainer ? o.trainer.name + ': “' + pick(TRAINER_LINES[o.trainer.id].intro) + '”' : o.community ? pick(COMMUNITY_INTROS) : pick(PAGER_INTROS).replace('{r}', room), { name: o.trainer ? o.trainer.name : o.community ? '📞 מהקהילה' : '📟' });
-  await UI.say(Q.story, { name: Q.title, extra });
+  if (!Q.kid) await UI.say(Q.story, { name: Q.title, extra });
   const r = await decide(Q.q, Q.opts, Q.c, { name: Q.title, conf: true, extra,
     onWrong: async (first, conf) => {
       if (first) recordConf(conf, false);
@@ -499,6 +502,7 @@ async function quickBattle(o) {
       await UI.say('✗ לא זה. נסה/י שוב — מה הכי מסוכן כאן עכשיו?', { extra });
     } });
   if (r.first) recordConf(r.conf, true);
+  if (Q.kid) Core.record(Q.kid, r.first);
   await heroStrike(r.first); B.enemy.hp = 0; B.enemy.dyingT = 0; Sound.good();
   await UI.say('✓ ' + Q.opts[Q.c] + '\n💡 ' + Q.explain + (Q.src ? '\n— ' + Q.src.map(id => SOURCES[id].t).join(' · ') : ''), { extra, tall: true });
   if (o.trainer) await UI.say(o.trainer.name + ': “' + pick(TRAINER_LINES[o.trainer.id].win) + '”', { name: o.trainer.name });
@@ -568,23 +572,29 @@ async function panelBattle(cfg) {
     if (c === 3) { result = 'leave'; break; }
     if (c === 1) { await useItemMenu('boss'); continue; }
     if (c === 2) { await teamMenu(STAGE_HINT.q); continue; }
-    const q = cfg.qs[qi++ % cfg.qs.length], e = q.e, st = q.st, pt = C.patients[e.p];
-    const extra = chipsHTML(e.v.map(t => ({ t: '📈 ' + t, cls: 'vit' })));
-    await UI.say(pt.n + ': ' + e.st, { name: cfg.enemy.name + ' מציג/ה', extra });
-    const r = await decide(st.prompt, e[st.key], e[st.ck], { name: st.name, extra: extra + '<div class="bhint">💡 ' + esc(STAGE_TIP[st.key]) + '</div>', conf: true,
+    const q = cfg.qs[qi++ % cfg.qs.length], K = q.k;
+    let e, st, extra, hintT, prompt, opts, ck, sname;
+    if (K) { extra = ''; hintT = 'חשוב/י על ההנחיה, לא על האינטואיציה.'; prompt = K.q; opts = K.a; ck = K.c; sname = 'בדיקת ידע · ' + PILLARS[K.p].icon + ' ' + PILLARS[K.p].full; }
+    else {
+      e = q.e; st = q.st; const pt = C.patients[e.p];
+      extra = chipsHTML(e.v.map(t => ({ t: '📈 ' + t, cls: 'vit' }))); hintT = STAGE_HINT[st.key]; prompt = st.prompt; opts = e[st.key]; ck = e[st.ck]; sname = st.name;
+      await UI.say(pt.n + ': ' + e.st, { name: cfg.enemy.name + ' מציג/ה', extra });
+    }
+    const r = await decide(prompt, opts, ck, { name: sname, extra: K ? '' : extra + '<div class="bhint">💡 ' + esc(STAGE_TIP[st.key]) + '</div>', conf: true,
       onWrong: async (first, conf) => {
         if (first) recordConf(conf, false);
         if (B.shield) { B.shield = false; await UI.say('🛡️ עצרת לבדוק שוב — הטעות לא עלתה בביטחון.'); return; }
         const dmg = conf === 'sure' && first ? cfg.loss + 8 : cfg.loss;
         await foeStrike(dmg); B.hp = Math.max(0, B.hp - dmg);
         if (B.hp <= 0) return 'fail';
-        await UI.say(cfg.enemy.name + ': “לא בדיוק. ' + STAGE_HINT[st.key] + '”', { extra });
+        await UI.say(cfg.enemy.name + ': “לא בדיוק. ' + hintT + '”', { extra });
       } });
-    if (r.fail) { result = 'fail'; break; }
+    if (r.fail) { if (K) Core.record(K.id, false); result = 'fail'; break; }
+    if (K) Core.record(K.id, !!r.first);
     if (r.first) { recordConf(r.conf, true); rights++; }
     await heroStrike(r.first);
     B.enemy.hp = Math.max(0, B.enemy.hp - (r.first ? per : Math.ceil(per / 2)));
-    await UI.say('✓ ' + e[st.key][e[st.ck]] + (EP_EVIDENCE[e.id] ? '\n📚 ' + EP_EVIDENCE[e.id].k : '\n💡 ' + e.pe), { extra, tall: true });
+    await UI.say('✓ ' + opts[ck] + (K ? '\n📚 ' + K.e + ' — ' + K.s.map(id => SOURCES[id].t).join(' · ') : EP_EVIDENCE[e.id] ? '\n📚 ' + EP_EVIDENCE[e.id].k : '\n💡 ' + e.pe), { extra, tall: true });
     if (B.enemy.hp <= 0) result = 'win';
   }
   const hp = B.hp;

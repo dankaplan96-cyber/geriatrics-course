@@ -5,10 +5,10 @@ const C = window.CONTENT;
 
 /* Seven acts = seven badges (the "gyms"). Each act's episodes come from the clinical content. */
 const ACTS = [
-  { name: 'יסודות ליד המיטה', badge: '🩺', badgeName: 'תג המיטה', leader: 'ד״ר נגה אורן', role: 'גריאטריה', look: 'leader0' },
+  { name: 'יסודות ליד המיטה', badge: '🩺', badgeName: 'תג המיטה', leader: 'ד״ר נגה אורן', role: 'גרונטולוגיה וגריאטריה', look: 'leader0' },
   { name: 'מוח והתנהגות', badge: '🧠', badgeName: 'תג המוח', leader: 'ד״ר עמית רז', role: 'נוירולוגיה', look: 'leader1' },
   { name: 'לב וריאות', badge: '🫀', badgeName: 'תג הלב', leader: 'ד״ר הדס לוי', role: 'קרדיולוגיה', look: 'leader2' },
-  { name: 'כליה ומטבוליזם', badge: '💧', badgeName: 'תג הכליה', leader: 'ד״ר יואב שגיא', role: 'נפרולוגיה', look: 'leader3' },
+  { name: 'כליה, תרופות ומטבוליזם', badge: '💧', badgeName: 'תג הכליה', leader: 'ד״ר יואב שגיא', role: 'פרמקולוגיה ונפרולוגיה', look: 'leader3' },
   { name: 'זיהום, דם ושוק', badge: '🦠', badgeName: 'תג החיסון', leader: 'ד״ר מאיה כהן', role: 'מחלות זיהומיות', look: 'leader4' },
   { name: 'כאב, טראומה ובטן', badge: '🦴', badgeName: 'תג התפקוד', leader: 'ד״ר אורי בן דוד', role: 'אורתוגריאטריה', look: 'leader5' },
   { name: 'מורכבות, מטרות ושחרור', badge: '🏠', badgeName: 'תג הבית', leader: 'פרופ׳ רונית אלון', role: 'מנהלת המחלקה', look: 'leader6' },
@@ -205,10 +205,10 @@ const NPC_INFO = {
   michal: { name: 'מיכל', role: 'הבת של לאה', look: 'michal' },
   rachel: { name: 'רחל', role: 'אשתו של אברהם', look: 'rachel' },
   ido: { name: 'עידו', role: 'אח חדש — היריב שלך', look: 'ido' },
-  judge0: { name: 'ד״ר אסתר גולן', role: 'מועצה · יסודות ומוח', look: 'judge0' },
-  judge1: { name: 'ד״ר יונתן בר', role: 'מועצה · לב, ריאה וכליה', look: 'judge1' },
-  judge2: { name: 'ד״ר מיכל אדר', role: 'מועצה · זיהום, דם וכאב', look: 'judge2' },
-  judge3: { name: 'פרופ׳ שמעון נחום', role: 'מועצה · מורכבות ומטרות', look: 'judge3' },
+  judge0: { name: 'ד״ר אסתר גולן', role: 'מועצה · 🫀 קרדיולוגיה', look: 'judge0' },
+  judge1: { name: 'ד״ר יונתן בר', role: 'מועצה · 🧠 נוירולוגיה', look: 'judge1' },
+  judge2: { name: 'ד״ר מיכל אדר', role: 'מועצה · 💊 פרמקולוגיה', look: 'judge2' },
+  judge3: { name: 'פרופ׳ שמעון נחום', role: 'מועצה · 🧓 גרונטולוגיה', look: 'judge3' },
   champion: { name: 'פרופ׳ דבורה אלמוג', role: 'יו״רית מועצת המומחים', look: 'champion' },
 };
 
@@ -303,9 +303,9 @@ const RIVAL_LINES = [
 ];
 
 const COUNCIL = [
-  { id: 'judge0', acts: [0, 1], intro: 'ברוך/ה הבא/ה למועצה. ארבעה שופטים, אחד אחרי השני, בלי מנוחה. אני מתחילה מהבסיס: לראות את המטופל ואת המוח.' },
-  { id: 'judge1', acts: [2, 3], intro: 'לב, ריאה וכליה. כאן מספר אחד לא מספיק — צריך לראות את כל המערכת.' },
-  { id: 'judge2', acts: [4, 5], intro: 'זיהום, דימום וכאב. הסימנים במבוגר שקטים — נראה אם את/ה שומע/ת אותם.' },
-  { id: 'judge3', acts: [6], intro: 'הסבב שלי הוא הקשה מכולם: אין תשובה של הנחיה אחת. רק שיקול דעת ומטרות.' },
-  { id: 'champion', acts: [0, 1, 2, 3, 4, 5, 6], intro: 'הגעת עד אליי. אני לא בוחנת פרק — אני בוחנת אח/ות מומחה/ית. שש שאלות מכל המחלקה.' },
+  { id: 'judge0', pillar: 'cardio', acts: [2], intro: 'ברוך/ה הבא/ה למועצה. ארבעה שופטים, ארבעה תחומי ליבה, בלי מנוחה. אני בוחנת קרדיולוגיה גריאטרית: לב שלא תמיד כואב.' },
+  { id: 'judge1', pillar: 'neuro', acts: [1], intro: 'נוירולוגיה. דליריום, שבץ, פרקינסון ודמנציה — המוח המבוגר מדבר בשקט. נראה אם את/ה מקשיב/ה.' },
+  { id: 'judge2', pillar: 'pharm', acts: [3], intro: 'פרמקולוגיה גריאטרית. מינון, אינטראקציות, Beers ו-deprescribing. כל כדור הוא החלטה.' },
+  { id: 'judge3', pillar: 'geron', acts: [0, 6], intro: 'גרונטולוגיה. שבריריות, תפקוד, הסתמנות לא טיפוסית וכבוד. הזקנה איננה מחלה — אבל היא משנה הכל.' },
+  { id: 'champion', pillar: null, acts: [0, 1, 2, 3, 4, 5, 6], intro: 'הגעת עד אליי. אני לא בוחנת תחום — אני בוחנת אח/ות מומחה/ית קליני/ת בגריאטריה. כל ארבעת התחומים, ברצף.' },
 ];
