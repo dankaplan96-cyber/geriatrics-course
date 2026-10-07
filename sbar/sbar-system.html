@@ -346,6 +346,7 @@ main{max-width:1600px;margin:22px auto 60px;padding:0 26px}.page-heading{display
 .move-gender-warning{margin-top:12px;padding:12px 14px;border-radius:12px;background:#fff3dc;border:1px solid #e4bd64;color:#684d0a;font-weight:900}
 .move-gender-warning.hidden{display:none}
 .room-type-editor select,[data-main-room-gender-select],[data-room-gender]{font-weight:900}
+.temp-cell{position:relative}.temp-route{position:absolute;top:.3mm;right:.6mm;font-size:6.5pt;font-weight:900;line-height:1;color:#333;letter-spacing:.2px}.temp-route.pr{color:#000;text-decoration:underline}
 </style>
 <style id="figma-v19-ux">
 /* SIMPLE NETWORK v24 — one-click shared-folder synchronization. */
@@ -826,6 +827,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
         <div class="form-field"><label>שליטה שתן</label><select id="pUrine"><option value=""></option><option>מלאה</option><option>חלקית</option><option>אי שליטה</option><option>קטטר</option><option>אחר</option></select></div>
         <div class="form-field"><label>שליטה פ״מ</label><select id="pBowel"><option value=""></option><option>מלאה</option><option>חלקית</option><option>אי שליטה</option><option>סטומה</option><option>אחר</option></select></div>
         <div class="form-field full"><label>כמה פעמים ביום למדוד סימנים חיוניים?</label><select id="pVitalsChecks"><option value="1">פעם ביום · 08:00</option><option value="2">פעמיים ביום · 08:00 + 18:00</option><option value="3">3 פעמים ביום · 08:00 + 12:00 + 18:00</option></select><div class="hint">השעות קבועות לפי סבבי המחלקה. בדף הסימנים תאים שאינם נדרשים יופיעו כהים.</div></div>
+        <div class="form-field full"><label>אופן מדידת חום</label><select id="pTempRoute"><option value="">לא הוגדר (PO / PR)</option><option value="PO">PO · פומי</option><option value="PR">PR · רקטלי</option></select><div class="hint">יודפס בתא החום בדף הסימנים החיוניים של המטופל.</div></div>
         <div class="form-field"><label>בידוד – בחירה ידנית בלבד</label><select id="pIsolation"><option value="no">לא</option><option value="yes">כן</option></select><div class="hint">המערכת אינה מסיקה בידוד מאבחנה, מחולל, חדר או מידע אחר.</div></div>
         <div class="form-field full isolation-types-field" id="isolationTypesField">
           <label>סוג בידוד</label>
@@ -959,7 +961,7 @@ function roomDef(room){return (state?.roomLayout||[]).find(x=>Number(x.room)===N
 function totalBeds(){return (state?.roomLayout||[]).reduce((sum,x)=>sum+(Number(x.beds)||0),0)}
 function defaultRoomMeta(layout=[]){const o={};for(const r of roomNumbersFrom(layout))o[r]={gender:''};return o}
 function defaultRoomSides(layout=[]){const out={morning:{},evening:{},night:{}};for(const sh of SHIFTS)for(const r of roomNumbersFrom(layout))out[sh][r]=0;return out}
-function emptyPatient(id,room,bed){return {id,room:Number(room),bed:String(bed),name:'',age:'',sex:'',situation:'',background:'',backgroundConditions:[],backgroundOther:'',assessment:'',education:'',allergy:false,allergyText:'',urine:'',bowel:'',vitalsChecks:3,notes:'',isolation:false,isolationTypes:[],isolationOther:'',isolationOrganisms:[],isolationOrganismOther:'',glucoseRequired:false,glucoseChecks:0,glucosePattern:'',glucoseScheduleMode:'daily',glucoseWeekdays:[],glucoseEveryDays:2,glucoseStartDate:'',onLeave:false,leaveSince:'',showerAssist:'',lastShowerDate:'',showerNextOverrideDate:'',outOfBedRequired:false,outOfBedAssist:'',nurseGroups:emptyGroups()}}
+function emptyPatient(id,room,bed){return {id,room:Number(room),bed:String(bed),name:'',age:'',sex:'',situation:'',background:'',backgroundConditions:[],backgroundOther:'',assessment:'',education:'',allergy:false,allergyText:'',urine:'',bowel:'',vitalsChecks:3,tempRoute:'',notes:'',isolation:false,isolationTypes:[],isolationOther:'',isolationOrganisms:[],isolationOrganismOther:'',glucoseRequired:false,glucoseChecks:0,glucosePattern:'',glucoseScheduleMode:'daily',glucoseWeekdays:[],glucoseEveryDays:2,glucoseStartDate:'',onLeave:false,leaveSince:'',showerAssist:'',lastShowerDate:'',showerNextOverrideDate:'',outOfBedRequired:false,outOfBedAssist:'',nurseGroups:emptyGroups()}}
 function slotId(room,index){return `r${Number(room)}_b${Number(index)}`}
 function buildPatientsForLayout(layout,sourcePatients=[]){
   const byRoomBed=new Map((sourcePatients||[]).map(p=>[`${Number(p.room)}|${String(p.bed)}`,p]));
@@ -970,7 +972,7 @@ function buildPatientsForLayout(layout,sourcePatients=[]){
       const bed=bedLabel(i),old=byRoomBed.get(`${Number(rd.room)}|${bed}`)||{};
       const p=emptyPatient(slotId(rd.room,i),rd.room,bed);
       const migrated=Object.assign(emptyGroups(),old.nurseGroups||{});if(!old.nurseGroups&&old.nurseGroup)migrated.morning=Number(old.nurseGroup)||0;
-      Object.assign(p,old,{id:p.id,room:Number(rd.room),bed,sex:['male','female'].includes(old.sex)?old.sex:'',backgroundConditions:Array.isArray(old.backgroundConditions)?old.backgroundConditions.filter(Boolean):[],backgroundOther:typeof old.backgroundOther==='string'?old.backgroundOther:(old.background||''),allergy:!!old.allergy,allergyText:typeof old.allergyText==='string'?old.allergyText:'',vitalsChecks:Math.max(1,Math.min(3,Number(old.vitalsChecks)||3)),isolation:!!old.isolation,isolationTypes:Array.isArray(old.isolationTypes)?old.isolationTypes.filter(x=>['contact','droplet','airborne','protective','other'].includes(x)):[],isolationOther:typeof old.isolationOther==='string'?old.isolationOther:'',isolationOrganisms:Array.isArray(old.isolationOrganisms)?old.isolationOrganisms.filter(x=>['CRE','VRE','MRSA','ESBL','CDI','CRAB','CRPA','MDRO','OTHER'].includes(x)):[],isolationOrganismOther:typeof old.isolationOrganismOther==='string'?old.isolationOrganismOther:'',glucoseRequired:!!old.glucoseRequired,glucoseChecks:old.glucoseRequired?Math.max(1,Math.min(3,Number(old.glucoseChecks)||1)):0,glucosePattern:old.glucoseRequired?((old.glucosePattern?String(old.glucosePattern).split(',').map(x=>x==='15'?'12':x==='23'?'18':x).join(','):'')||((Number(old.glucoseChecks)||1)===1?'08':(Number(old.glucoseChecks)||1)===2?'08,18':'08,12,18')):'',glucoseScheduleMode:['daily','weekdays','interval'].includes(old.glucoseScheduleMode)?old.glucoseScheduleMode:'daily',glucoseWeekdays:Array.isArray(old.glucoseWeekdays)?old.glucoseWeekdays.map(Number).filter(x=>x>=0&&x<=6):[],glucoseEveryDays:Math.max(2,Math.min(90,Number(old.glucoseEveryDays)||2)),glucoseStartDate:typeof old.glucoseStartDate==='string'?old.glucoseStartDate:'',onLeave:!!old.onLeave,leaveSince:old.leaveSince||'',showerAssist:old.showerAssist||'',lastShowerDate:old.lastShowerDate||'',showerNextOverrideDate:old.showerNextOverrideDate||'',outOfBedRequired:!!old.outOfBedRequired,outOfBedAssist:old.outOfBedAssist||'',nurseGroups:migrated});
+      Object.assign(p,old,{id:p.id,room:Number(rd.room),bed,sex:['male','female'].includes(old.sex)?old.sex:'',backgroundConditions:Array.isArray(old.backgroundConditions)?old.backgroundConditions.filter(Boolean):[],backgroundOther:typeof old.backgroundOther==='string'?old.backgroundOther:(old.background||''),allergy:!!old.allergy,allergyText:typeof old.allergyText==='string'?old.allergyText:'',vitalsChecks:Math.max(1,Math.min(3,Number(old.vitalsChecks)||3)),tempRoute:['PO','PR'].includes(old.tempRoute)?old.tempRoute:'',isolation:!!old.isolation,isolationTypes:Array.isArray(old.isolationTypes)?old.isolationTypes.filter(x=>['contact','droplet','airborne','protective','other'].includes(x)):[],isolationOther:typeof old.isolationOther==='string'?old.isolationOther:'',isolationOrganisms:Array.isArray(old.isolationOrganisms)?old.isolationOrganisms.filter(x=>['CRE','VRE','MRSA','ESBL','CDI','CRAB','CRPA','MDRO','OTHER'].includes(x)):[],isolationOrganismOther:typeof old.isolationOrganismOther==='string'?old.isolationOrganismOther:'',glucoseRequired:!!old.glucoseRequired,glucoseChecks:old.glucoseRequired?Math.max(1,Math.min(3,Number(old.glucoseChecks)||1)):0,glucosePattern:old.glucoseRequired?((old.glucosePattern?String(old.glucosePattern).split(',').map(x=>x==='15'?'12':x==='23'?'18':x).join(','):'')||((Number(old.glucoseChecks)||1)===1?'08':(Number(old.glucoseChecks)||1)===2?'08,18':'08,12,18')):'',glucoseScheduleMode:['daily','weekdays','interval'].includes(old.glucoseScheduleMode)?old.glucoseScheduleMode:'daily',glucoseWeekdays:Array.isArray(old.glucoseWeekdays)?old.glucoseWeekdays.map(Number).filter(x=>x>=0&&x<=6):[],glucoseEveryDays:Math.max(2,Math.min(90,Number(old.glucoseEveryDays)||2)),glucoseStartDate:typeof old.glucoseStartDate==='string'?old.glucoseStartDate:'',onLeave:!!old.onLeave,leaveSince:old.leaveSince||'',showerAssist:old.showerAssist||'',lastShowerDate:old.lastShowerDate||'',showerNextOverrideDate:old.showerNextOverrideDate||'',outOfBedRequired:!!old.outOfBedRequired,outOfBedAssist:old.outOfBedAssist||'',nurseGroups:migrated});
       out.push(p);
     }
   }
@@ -1007,7 +1009,7 @@ function normalize(s){
   base.archive=Array.isArray(s.archive)?s.archive.filter(x=>x&&typeof x==='object').map(x=>({...x,sex:['male','female'].includes(x.sex)?x.sex:'',isolation:!!x.isolation,isolationTypes:Array.isArray(x.isolationTypes)?x.isolationTypes.filter(v=>['contact','droplet','airborne','protective','other'].includes(v)):[],isolationOther:typeof x.isolationOther==='string'?x.isolationOther:'',isolationOrganisms:Array.isArray(x.isolationOrganisms)?x.isolationOrganisms.filter(v=>['CRE','VRE','MRSA','ESBL','CDI','CRAB','CRPA','MDRO','OTHER'].includes(v)):[],isolationOrganismOther:typeof x.isolationOrganismOther==='string'?x.isolationOrganismOther:'',glucoseScheduleMode:['daily','weekdays','interval'].includes(x.glucoseScheduleMode)?x.glucoseScheduleMode:'daily',glucoseWeekdays:Array.isArray(x.glucoseWeekdays)?x.glucoseWeekdays.map(Number).filter(v=>v>=0&&v<=6):[],glucoseEveryDays:Math.max(2,Math.min(90,Number(x.glucoseEveryDays)||2)),glucoseStartDate:typeof x.glucoseStartDate==='string'?x.glucoseStartDate:'',archivedAt:x.archivedAt||new Date().toISOString(),archiveReason:x.archiveReason||'אחר',archiveNote:x.archiveNote||''})):[];
   base.shiftNurseCounts=Object.assign(emptyGroups(),s.shiftNurseCounts||{});if(!s.shiftNurseCounts&&s.nurseCount)base.shiftNurseCounts.morning=Math.max(0,Math.min(10,Number(s.nurseCount)||0));SHIFTS.forEach(k=>base.shiftNurseCounts[k]=Math.max(0,Math.min(10,Number(base.shiftNurseCounts[k])||0)));
   const oldMeta=s.roomMeta||{};base.roomMeta=defaultRoomMeta(layout);for(const r of roomNumbersFrom(layout)){const m=oldMeta[r]||oldMeta[String(r)]||{};base.roomMeta[r]={gender:['male','female'].includes(m.gender)?m.gender:''}}
-  const oldSides=s.shiftRoomSides||{};base.shiftRoomSides=defaultRoomSides(layout);for(const sh of SHIFTS){for(const r of roomNumbersFrom(layout)){let val=Number(oldSides?.[sh]?.[r]||oldSides?.[sh]?.[String(r)]||0);if(!val){const pp=base.patients.find(p=>p.room===r&&Number((p.nurseGroups||{})[sh]));val=pp?Number(pp.nurseGroups[sh]):0}base.shiftRoomSides[sh][r]=val}}
+  const oldSides=s.shiftRoomSides||{};base.shiftRoomSides=defaultRoomSides(layout);for(const sh of SHIFTS){for(const r of roomNumbersFrom(layout)){let val=Number(oldSides?.[sh]?.[r]||oldSides?.[sh]?.[String(r)]||0);const roomSidesSet=[...new Set(base.patients.filter(p=>p.room===r&&Number((p.nurseGroups||{})[sh])>0).map(p=>Number(p.nurseGroups[sh])))];if(roomSidesSet.length>1)val=0;else if(!val&&roomSidesSet.length===1)val=roomSidesSet[0];base.shiftRoomSides[sh][r]=val}}
   /* v45: patient-level side assignment is authoritative. Legacy room-level sides are used only
      to fill missing assignments from older data; they must never overwrite a split room. */
   for(const pp of base.patients){for(const sh of SHIFTS){
@@ -1170,6 +1172,7 @@ function applyRoomSidesToPatients(){
   for(const p of state.patients){
     p.nurseGroups=p.nurseGroups||emptyGroups();
     for(const sh of SHIFTS){
+      if(shiftCount(sh))continue; // shifts with an active division are balanced by fillMissingAssignments
       if(Number(p.nurseGroups[sh]))continue;
       const configured=Number(state.shiftRoomSides?.[sh]?.[p.room])||0;
       if(configured)p.nurseGroups[sh]=configured;
@@ -1224,8 +1227,33 @@ function dividePatients(shift,count,notify=true){
     toast(`${SHIFT_LABEL[shift]}: ${detail}${splitText}`);
   }
 }
-function redivideConfigured(){applyRoomSidesToPatients();for(const sh of SHIFTS)syncRoomSideSummary(sh);save()}
-function ensureAssignments(){applyRoomSidesToPatients()}
+/* v60.2 — a patient without a valid side (new admission, move, return from archive, split room)
+   joins the side with the fewest patients, so the division stays equal (difference of at most 1).
+   Tie-break: the roommate's side, then the side that already covers the nearest room. */
+function sideLoads(shift,count){const loads=Array(count+1).fill(0);for(const p of reportingPatients()){const g=groupOf(p,shift);if(g>=1&&g<=count)loads[g]++}return loads}
+function bestSideFor(p,shift,count,loads){
+  const sides=Array.from({length:count},(_,i)=>i+1),min=Math.min(...sides.map(g=>loads[g]));
+  const mates=state.patients.filter(x=>x.room===p.room&&x.id!==p.id&&hasPatient(x)).map(x=>groupOf(x,shift)).filter(g=>g>=1&&g<=count);
+  const dist=g=>{const rooms=reportingPatients().filter(x=>x.id!==p.id&&groupOf(x,shift)===g).map(x=>Math.abs(x.room-p.room));return rooms.length?Math.min(...rooms):9999};
+  if(p.onLeave&&mates.length)return mates[0];
+  return sides.filter(g=>loads[g]===min).sort((a,b)=>(mates.includes(b)?1:0)-(mates.includes(a)?1:0)||dist(a)-dist(b)||a-b)[0];
+}
+function fillMissingAssignments(){
+  if(!state||!state.patients)return 0;let changed=0;
+  for(const sh of SHIFTS){
+    const c=shiftCount(sh);if(!c)continue;const loads=sideLoads(sh,c);
+    for(const p of activePatients()){
+      p.nurseGroups=p.nurseGroups||emptyGroups();const g=Number(p.nurseGroups[sh])||0;
+      if(g>=1&&g<=c)continue;
+      const side=bestSideFor(p,sh,c,loads);p.nurseGroups[sh]=side;if(!p.onLeave)loads[side]++;changed++;
+    }
+    syncRoomSideSummary(sh);
+  }
+  return changed;
+}
+function divisionImbalance(shift=state.activeShift){const c=shiftCount(shift);if(!c)return null;const l=sideLoads(shift,c).slice(1);const max=Math.max(...l),min=Math.min(...l);return max-min>1?{max,min}:null}
+function redivideConfigured(){applyRoomSidesToPatients();fillMissingAssignments();for(const sh of SHIFTS)syncRoomSideSummary(sh);save()}
+function ensureAssignments(){applyRoomSidesToPatients();fillMissingAssignments()}
 function groupPatients(g,shift=state.activeShift){return reportingPatients().filter(p=>groupOf(p,shift)===g)}
 function formatRoomList(rooms){rooms=[...new Set(rooms)].sort((a,b)=>a-b);if(!rooms.length)return 'לא הוגדרו חדרים';const parts=[];let start=rooms[0],prev=rooms[0];for(let i=1;i<=rooms.length;i++){const cur=rooms[i];if(cur===prev+1){prev=cur;continue}parts.push(start===prev?String(start):`${start}–${prev}`);start=prev=cur}return parts.join(', ')}
 function groupLabel(g,shift=state.activeShift){
@@ -1233,7 +1261,7 @@ function groupLabel(g,shift=state.activeShift){
   const split=rooms.filter(r=>patientSidesInRoom(r,shift,false).length>1);
   return `${sideName(g)} · ${pts.length} מטופלים · חדרים ${formatRoomList(rooms)}${split.length?` · פיצול: ${[...new Set(split)].sort((a,b)=>a-b).join(', ')}`:''}`;
 }
-function allocationHTML(shift=state.activeShift){const c=shiftCount(shift);if(!c)return '<span class="assignment-chip empty">טרם הוגדר מספר אחים למשמרת</span>';let out='';for(let g=1;g<=c;g++)out+=`<span class="assignment-chip ${groupPatients(g,shift).length?'':'empty'}">${esc(groupLabel(g,shift))}</span>`;return out}
+function allocationHTML(shift=state.activeShift){const c=shiftCount(shift);if(!c)return '<span class="assignment-chip empty">טרם הוגדר מספר אחים למשמרת</span>';let out='';for(let g=1;g<=c;g++)out+=`<span class="assignment-chip ${groupPatients(g,shift).length?'':'empty'}">${esc(groupLabel(g,shift))}</span>`;const imb=divisionImbalance(shift);if(imb)out+=`<span class="assignment-chip empty" style="border-color:#d97706;color:#92400e;background:#fff7ed">⚠ החלוקה אינה שווה (${imb.max} מול ${imb.min}) · לחץ “חלק מחדש”</span>`;return out}
 function allocationText(shift=state.activeShift){const c=shiftCount(shift);if(!c)return 'לא הוגדרה חלוקה';return Array.from({length:c},(_,i)=>groupLabel(i+1,shift)).join(' | ')}
 
 
@@ -1242,7 +1270,7 @@ function renderWorkflow(){
   const c=shiftCount(),pts=activePatients();
   const occupiedRooms=[...new Set(pts.map(p=>p.room))];
   const typedRooms=occupiedRooms.filter(r=>!!roomMeta(r).gender).length;
-  const assignedRooms=occupiedRooms.filter(r=>roomSide(r)>0).length;
+  const assignedRooms=occupiedRooms.filter(r=>roomSide(r)!==0).length;
   const steps=[
     {label:`משמרת ${SHIFT_LABEL[state.activeShift]}`,done:true,current:false,action:'shift'},
     {label:c?`${c} צדדים`:'בחר מספר צדדים',done:!!c,current:!c,action:'shift'},
@@ -1474,7 +1502,7 @@ function transferPatient(){
   autoSetRoomGenderForPatient(target,targetRoom,{allowOverrideEmpty:true});
   const srcIndex=state.patients.findIndex(x=>x.id===sourceId);
   state.patients[srcIndex]=emptyPatient(sourceId,sourceRoom,sourceBed);
-  for(const sh of SHIFTS){const side=roomSide(targetRoom,sh);target.nurseGroups[sh]=side||0}
+  for(const sh of SHIFTS){const side=roomSide(targetRoom,sh);target.nurseGroups[sh]=side>0?side:0}
   save();redivideConfigured();closeMovePatient();renderAll();toast(`${source.name||'המטופל/ת'} הועבר/ה ל${dstLocation}`);
 }
 function refreshAllergyFields(){
@@ -1494,7 +1522,7 @@ function openPatient(id){if(!requireNetworkReady('עריכת מטופל'))return
   const stored=Array.isArray(p.backgroundConditions)?p.backgroundConditions.filter(id=>BACKGROUND_CONDITIONS.some(c=>c.id===id)):[];
   currentBackgroundConditions=new Set(stored.length?stored:[...inferBackgroundConditions(p.background)]);
   $('#pBackground').value=(typeof p.backgroundOther==='string'?p.backgroundOther:(p.background||''));$('#backgroundSearch').value='';renderBackgroundConditions();
-  $('#pAssessment').value=p.assessment;$('#pEducation').value=p.education;$('#pUrine').value=p.urine;$('#pBowel').value=p.bowel;$('#pVitalsChecks').value=String(Math.max(1,Math.min(3,Number(p.vitalsChecks)||3)));$('#pIsolation').value=p.isolation?'yes':'no';document.querySelectorAll('#isolationTypeList input').forEach(x=>x.checked=(p.isolationTypes||[]).includes(x.value));$('#pIsolationOther').value=p.isolationOther||'';document.querySelectorAll('#isolationOrganismList input').forEach(x=>x.checked=(p.isolationOrganisms||[]).includes(x.value));$('#pIsolationOrganismOther').value=p.isolationOrganismOther||'';refreshIsolationFields();
+  $('#pAssessment').value=p.assessment;$('#pEducation').value=p.education;$('#pUrine').value=p.urine;$('#pBowel').value=p.bowel;$('#pVitalsChecks').value=String(Math.max(1,Math.min(3,Number(p.vitalsChecks)||3)));$('#pTempRoute').value=['PO','PR'].includes(p.tempRoute)?p.tempRoute:'';$('#pIsolation').value=p.isolation?'yes':'no';document.querySelectorAll('#isolationTypeList input').forEach(x=>x.checked=(p.isolationTypes||[]).includes(x.value));$('#pIsolationOther').value=p.isolationOther||'';document.querySelectorAll('#isolationOrganismList input').forEach(x=>x.checked=(p.isolationOrganisms||[]).includes(x.value));$('#pIsolationOrganismOther').value=p.isolationOrganismOther||'';refreshIsolationFields();
   $('#pGlucoseRequired').value=p.glucoseRequired?'yes':'no';$('#pGlucoseChecks').value=String(p.glucoseChecks||1);$('#pGlucoseScheduleMode').value=p.glucoseScheduleMode||'daily';setGlucoseWeekdays(p.glucoseWeekdays||[]);$('#pGlucoseEveryDays').value=String(p.glucoseEveryDays||2);$('#pGlucoseStartDate').value=p.glucoseStartDate||'';refreshGlucoseFields(p.glucosePattern||'');refreshGlucoseScheduleFields();
   $('#pOutOfBedRequired').value=p.outOfBedRequired?'yes':'no';$('#pOutOfBedAssist').value=p.outOfBedAssist||'';$('#pShowerAssist').value=p.showerAssist||'';$('#pLastShowerDate').value=p.lastShowerDate||'';$('#pNotes').value=p.notes;
   $('#savePatient').textContent=active?'שמור וסגור':'הוסף מטופל';
@@ -1513,11 +1541,11 @@ function savePatient(){if(!requireNetworkReady('שמירת מטופל'))return;
     const others=occupiedPatientsInRoom(p.room,p.id),opposite=others.find(x=>x.sex&&x.sex!==newSex);
     if(opposite){alert(`לא ניתן לשמור ${newName||'מטופל/ת'} בחדר ${p.room}: ${opposite.name||'מטופל/ת אחר/ת'} בחדר מוגדר/ת ${patientSexLabel(opposite.sex)}.`);return}
   }
-  const vitalsChecks=Math.max(1,Math.min(3,Number($('#pVitalsChecks').value)||3)),allergy=$('#pAllergy').value==='yes',allergyText=allergy?$('#pAllergyText').value.trim():'';
+  const vitalsChecks=Math.max(1,Math.min(3,Number($('#pVitalsChecks').value)||3)),tempRoute=['PO','PR'].includes($('#pTempRoute').value)?$('#pTempRoute').value:'',allergy=$('#pAllergy').value==='yes',allergyText=allergy?$('#pAllergyText').value.trim():'';
   if(allergy&&!allergyText){alert('סומן שקיימת רגישות. יש לפרט למה קיימת הרגישות.');$('#pAllergyText').focus();return}
   const glucoseRequired=$('#pGlucoseRequired').value==='yes',glucoseChecks=glucoseRequired?Math.max(1,Math.min(3,Number($('#pGlucoseChecks').value)||1)):0,glucosePattern=glucoseRequired?$('#pGlucosePattern').value:'',glucoseScheduleMode=glucoseRequired?($('#pGlucoseScheduleMode').value||'daily'):'daily',glucoseWeekdays=glucoseRequired&&glucoseScheduleMode==='weekdays'?selectedGlucoseWeekdays():[],glucoseEveryDays=glucoseRequired&&glucoseScheduleMode==='interval'?Math.max(2,Math.min(90,Number($('#pGlucoseEveryDays').value)||2)):2,glucoseStartDate=glucoseRequired&&glucoseScheduleMode==='interval'?($('#pGlucoseStartDate').value||state.reportDate||todayISO()):'',isolation=$('#pIsolation').value==='yes',isolationTypes=isolation?[...document.querySelectorAll('#isolationTypeList input:checked')].map(x=>x.value):[],isolationOther=isolation?$('#pIsolationOther').value.trim():'',isolationOrganisms=isolation?[...document.querySelectorAll('#isolationOrganismList input:checked')].map(x=>x.value):[],isolationOrganismOther=isolation?$('#pIsolationOrganismOther').value.trim():'';
   const backgroundOther=$('#pBackground').value.trim(),backgroundConditions=[...currentBackgroundConditions],background=composeBackground(currentBackgroundConditions,backgroundOther);
-  Object.assign(p,{name:newName,age:$('#pAge').value.trim(),sex:newSex,situation:$('#pSituation').value.trim(),background,backgroundConditions,backgroundOther,assessment:$('#pAssessment').value.trim(),education:$('#pEducation').value.trim(),allergy,allergyText,urine:$('#pUrine').value,bowel:$('#pBowel').value,vitalsChecks,isolation,isolationTypes,isolationOther,isolationOrganisms,isolationOrganismOther,glucoseRequired,glucoseChecks,glucosePattern,glucoseScheduleMode,glucoseWeekdays,glucoseEveryDays,glucoseStartDate,outOfBedRequired:$('#pOutOfBedRequired').value==='yes',outOfBedAssist:$('#pOutOfBedAssist').value,showerAssist:$('#pShowerAssist').value,lastShowerDate:$('#pLastShowerDate').value,notes:$('#pNotes').value.trim()});
+  Object.assign(p,{name:newName,age:$('#pAge').value.trim(),sex:newSex,situation:$('#pSituation').value.trim(),background,backgroundConditions,backgroundOther,assessment:$('#pAssessment').value.trim(),education:$('#pEducation').value.trim(),allergy,allergyText,urine:$('#pUrine').value,bowel:$('#pBowel').value,vitalsChecks,tempRoute,isolation,isolationTypes,isolationOther,isolationOrganisms,isolationOrganismOther,glucoseRequired,glucoseChecks,glucosePattern,glucoseScheduleMode,glucoseWeekdays,glucoseEveryDays,glucoseStartDate,outOfBedRequired:$('#pOutOfBedRequired').value==='yes',outOfBedAssist:$('#pOutOfBedAssist').value,showerAssist:$('#pShowerAssist').value,lastShowerDate:$('#pLastShowerDate').value,notes:$('#pNotes').value.trim()});
   if(hasPatient(p)&&newSex&&!autoSetRoomGenderForPatient(p,p.room,{allowOverrideEmpty:true})){alert('לא ניתן לשמור: בחדר יש מטופל מהמין השני.');return}
   reconcileAllRoomGenders();save();redivideConfigured();closeModal();renderAll();toast(`${newName||'המטופל/ת'} נשמר/ה`)
 }
@@ -1562,7 +1590,7 @@ function renderArchive(){const host=$('#archiveList');if(!host)return;const arr=
 function deleteArchivedPatient(id){if(!requireNetworkReady('מחיקה מהארכיון'))return;const a=(state.archive||[]).find(x=>x.archiveId===id);if(!a)return;const ok=confirm(`למחוק לצמיתות את ${a.name||'המטופל/ת'} מהארכיון?\n\nלא ניתן לשחזר פעולה זו מתוך המערכת.`);if(!ok)return;state.archive=(state.archive||[]).filter(x=>x.archiveId!==id);if(!save())return;renderAll();toast(`${a.name||'המטופל/ת'} נמחק/ה מהארכיון`)}
 function openRestorePatient(id){const a=(state.archive||[]).find(x=>x.archiveId===id);if(!a)return;restoringArchiveId=id;$('#restorePatientTitle').textContent=`החזרת ${a.name||'מטופל/ת'} מהארכיון`;$('#restoreCurrentInfo').innerHTML=`<div class="move-name">${esc(a.name||'ללא שם')}</div><div class="move-meta">${esc(archiveReasonText(a))}</div>`;const fake={...a,id:'__archive__'};const beds=state.patients.filter(x=>!hasPatient(x)).sort((x,y)=>x.room-y.room||String(x.bed).localeCompare(String(y.bed),'he'));let html='<option value="">בחר יעד...</option>';for(const slot of beds){const ok=patientCompatibleWithRoom(fake,slot.room),g=effectiveRoomGender(slot.room),lab=g?genderLabel(g):'חדר ריק — יוגדר אוטומטית';html+=`<option value="${slot.id}" ${ok?'':'disabled'}>חדר ${slot.room} · מיטה ${esc(slot.bed)} · ${esc(lab)}${ok?'':' — לא מתאים'}</option>`}$('#restoreDestination').innerHTML=html;$('#confirmRestorePatient').disabled=true;$('#restorePatientModal').classList.add('open');$('#restorePatientModal').setAttribute('aria-hidden','false')}
 function closeRestorePatient(){restoringArchiveId=null;$('#restorePatientModal')?.classList.remove('open');$('#restorePatientModal')?.setAttribute('aria-hidden','true')}
-function restorePatient(){if(!requireNetworkReady('החזרת מטופל מהארכיון'))return;const a=(state.archive||[]).find(x=>x.archiveId===restoringArchiveId),target=state.patients.find(x=>x.id===$('#restoreDestination').value);if(!a||!target)return;const activeDup=activePatientsWithName(a.name);if(activeDup.length){alert(`לא ניתן להחזיר את ${a.name||'המטופל/ת'}: כבר קיים מטופל פעיל בשם זה (${duplicateNameLocationText(activeDup)}).`);return}if(hasPatient(target)){alert('המיטה כבר אינה פנויה.');return}const fake={...a,id:'__archive__'};if(!patientCompatibleWithRoom(fake,target.room)){alert('לא ניתן להחזיר לחדר שבו נמצא מטופל מהמין השני.');return}const id=target.id,room=target.room,bed=target.bed,clinical={...a};['archiveId','archiveReason','archiveNote','archivedAt','sourceRoom','sourceBed','id','room','bed'].forEach(k=>delete clinical[k]);Object.assign(target,clinical,{id,room,bed,onLeave:false,leaveSince:'',nurseGroups:emptyGroups()});autoSetRoomGenderForPatient(target,room,{allowOverrideEmpty:true});for(const sh of SHIFTS)target.nurseGroups[sh]=roomSide(room,sh)||0;state.archive=state.archive.filter(x=>x.archiveId!==restoringArchiveId);if(!save())return;redivideConfigured();closeRestorePatient();renderAll();toast(`${target.name||'המטופל/ת'} חזר/ה לחדר ${room} מיטה ${bed}`)}
+function restorePatient(){if(!requireNetworkReady('החזרת מטופל מהארכיון'))return;const a=(state.archive||[]).find(x=>x.archiveId===restoringArchiveId),target=state.patients.find(x=>x.id===$('#restoreDestination').value);if(!a||!target)return;const activeDup=activePatientsWithName(a.name);if(activeDup.length){alert(`לא ניתן להחזיר את ${a.name||'המטופל/ת'}: כבר קיים מטופל פעיל בשם זה (${duplicateNameLocationText(activeDup)}).`);return}if(hasPatient(target)){alert('המיטה כבר אינה פנויה.');return}const fake={...a,id:'__archive__'};if(!patientCompatibleWithRoom(fake,target.room)){alert('לא ניתן להחזיר לחדר שבו נמצא מטופל מהמין השני.');return}const id=target.id,room=target.room,bed=target.bed,clinical={...a};['archiveId','archiveReason','archiveNote','archivedAt','sourceRoom','sourceBed','id','room','bed'].forEach(k=>delete clinical[k]);Object.assign(target,clinical,{id,room,bed,onLeave:false,leaveSince:'',nurseGroups:emptyGroups()});autoSetRoomGenderForPatient(target,room,{allowOverrideEmpty:true});for(const sh of SHIFTS){const side=roomSide(room,sh);target.nurseGroups[sh]=side>0?side:0}state.archive=state.archive.filter(x=>x.archiveId!==restoringArchiveId);if(!save())return;redivideConfigured();closeRestorePatient();renderAll();toast(`${target.name||'המטופל/ת'} חזר/ה לחדר ${room} מיטה ${bed}`)}
 
 function vitalsTimesForChecks(count){
   count=Math.max(1,Math.min(3,Number(count)||3));
@@ -1577,8 +1605,9 @@ function vitalsScheduleLabel(p){
   const c=Math.max(1,Math.min(3,Number(p?.vitalsChecks)||3));
   return c===1?'פעם ביום · 08:00':c===2?'פעמיים ביום · 08:00 + 18:00':'3 פעמים ביום · 08:00 + 12:00 + 18:00';
 }
-function vitalFields(){return '<th>לחץ דם</th><th>דופק</th><th>חום<br><span style="font-size:.82em">P.O / PR</span></th><th>SAT</th><th>כאב</th><th>פ״מ</th><th>DEX</th>'}
-function blankVitalsCells(p,time){const vitalOpen=vitalsNeeded(p,time),dexOpen=dexNeeded(p,time),vitalCls=p&&!vitalOpen?'dark-cell':'';return `<td class="${vitalCls}"></td><td class="${vitalCls}"></td><td class="${vitalCls}"></td><td class="${vitalCls}"></td><td class="${vitalCls}"></td><td class="${vitalCls}"></td><td class="${p&&!dexOpen?'dark-cell':''}"></td>`}
+function tempRouteLabel(p){return p&&['PO','PR'].includes(p.tempRoute)?p.tempRoute:'PO / PR'}
+function vitalFields(){return '<th>לחץ דם</th><th>דופק</th><th>חום</th><th>SAT</th><th>כאב</th><th>פ״מ</th><th>DEX</th>'}
+function blankVitalsCells(p,time){const vitalOpen=vitalsNeeded(p,time),dexOpen=dexNeeded(p,time),vitalCls=p&&!vitalOpen?'dark-cell':'';const tempCell=p&&vitalOpen?`<td class="temp-cell"><span class="temp-route ${p.tempRoute==='PR'?'pr':''}">${esc(tempRouteLabel(p))}</span></td>`:`<td class="${vitalCls}"></td>`;return `<td class="${vitalCls}"></td><td class="${vitalCls}"></td>${tempCell}<td class="${vitalCls}"></td><td class="${vitalCls}"></td><td class="${vitalCls}"></td><td class="${p&&!dexOpen?'dark-cell':''}"></td>`}
 function autoAssignShowers(){
   const assistants=showerStaffList(),nurses=showerNurseList();if(!assistants.length){alert('הזן לפחות כוח עזר אחד. רחצה בעזרה בינונית או בעזרת 2 אינה יכולה להיבנות ללא כוח עזר.');return}
   const aLoad=Object.fromEntries(assistants.map(n=>[n,0])),nLoad=Object.fromEntries(nurses.map(n=>[n,0]));
@@ -1804,7 +1833,7 @@ function setNetworkStatus(text,kind=''){
 }
 function folderSupported(){return typeof window.showDirectoryPicker==='function'}
 const DIRECTORY_PICKER_ID='sbarWardFolder'; // <= 32 chars, stable across versions
-const DIRECT_DB='ShiftManagerDirectFolderUniversal',DIRECT_STORE='handles',DIRECT_KEY=`sharedWardFolder_${APP_INSTANCE_SCOPE}`;
+const DIRECT_DB='ShiftManagerDirectFolderUniversal',DIRECT_STORE='handles',DIRECT_KEY=`sharedWardFolder_${APP_INSTANCE_SCOPE}`,DIRECT_LAST_KEY='sharedWardFolder__lastUsed';
 const NETWORK_DATA_FILE='shift-manager-data.json',NETWORK_LOCK_FILE='sync-lock.json';
 const NETWORK_MIGRATION_FILE='sbar-vitals-data-v27.json';
 const LEGACY_EXACT_HANDLE_STORES=[
@@ -1827,6 +1856,7 @@ async function idbGetAllEntriesExisting(dbName,storeName){
 async function idbPutTo(dbName,storeName,key,handle){try{const db=await idbOpenNamed(dbName,storeName);await new Promise((resolve,reject)=>{const tx=db.transaction(storeName,'readwrite');tx.objectStore(storeName).put(handle,key);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}catch(e){}}
 async function idbSetHandle(handle){
   await idbPutTo(DIRECT_DB,DIRECT_STORE,DIRECT_KEY,handle);
+  await idbPutTo(DIRECT_DB,DIRECT_STORE,DIRECT_LAST_KEY,handle);
   try{safeLocalSet(`${STORAGE_KEY}__folder_binding`,JSON.stringify({folderName:handle?.name||'',scope:APP_INSTANCE_SCOPE,savedAt:new Date().toISOString()}))}catch(e){}
   try{if(navigator.storage?.persist)await navigator.storage.persist()}catch(e){}
 }
@@ -1836,7 +1866,7 @@ async function discoverLegacyHandles(){
   try{
     if(indexedDB.databases){
       const dbs=await indexedDB.databases();
-      for(const info of dbs||[]){const name=info?.name||'';if(!/^ShiftManagerDirectFolder/i.test(name)||name===DIRECT_DB)continue;const entries=await idbGetAllEntriesExisting(name,'handles');for(const e of entries){const h=e.value;if(!h||typeof h.queryPermission!=='function')continue;const sig=`${name}|${String(e.key)}|${h.name||''}`;if(seen.has(sig))continue;seen.add(sig);let score=0;const key=String(e.key||'');if(key.includes(APP_INSTANCE_SCOPE))score+=120;if(name.includes(APP_INSTANCE_SCOPE))score+=80;found.push({handle:h,key,db:name,score})}
+      for(const info of dbs||[]){const name=info?.name||'';if(!/^ShiftManagerDirectFolder/i.test(name))continue;const entries=await idbGetAllEntriesExisting(name,'handles');for(const e of entries){const h=e.value;if(!h||typeof h.queryPermission!=='function')continue;const sig=`${name}|${String(e.key)}|${h.name||''}`;if(seen.has(sig))continue;seen.add(sig);let score=0;const key=String(e.key||'');if(key.includes(APP_INSTANCE_SCOPE))score+=120;if(name.includes(APP_INSTANCE_SCOPE))score+=80;found.push({handle:h,key,db:name,score})}
       }
     }
   }catch(e){}
@@ -1844,13 +1874,80 @@ async function discoverLegacyHandles(){
   for(const c of found){if(hint&&normFolderLabel(c.handle?.name)===hint)c.score+=70}
   return found.sort((a,b)=>b.score-a.score);
 }
+async function sameFolder(a,b){try{return !!(a&&b&&(a===b||await a.isSameEntry(b)))}catch(e){return false}}
 async function idbGetHandle(){
   const direct=await idbGetFrom(DIRECT_DB,DIRECT_STORE,DIRECT_KEY);if(direct)return direct;
+  /* v60.2: the page was opened from a different path (mapped drive vs UNC path, a new version file,
+     a desktop shortcut…). The saved folder is still the same ward folder — find it instead of
+     asking for a "first connection" again. */
   const candidates=await discoverLegacyHandles();if(!candidates.length)return null;
-  const best=candidates[0],second=candidates[1];
-  if(best.score<60)return null;
-  if(second&&second.score===best.score)return null;
-  await idbSetHandle(best.handle);return best.handle;
+  const distinct=[];for(const c of candidates){let dup=false;for(const d of distinct){if(await sameFolder(d.handle,c.handle)){d.score=Math.max(d.score,c.score);dup=true;break}}if(!dup)distinct.push({...c})}
+  distinct.sort((a,b)=>b.score-a.score);
+  let pick=null;
+  if(distinct.length===1)pick=distinct[0];
+  else{const best=distinct[0],second=distinct[1];if(best.score>=60&&best.score>second.score)pick=best}
+  if(!pick)return null;
+  await idbSetHandle(pick.handle);return pick.handle;
+}
+async function lastUsedFolderHandle(){return workingDirHandle||await idbGetFrom(DIRECT_DB,DIRECT_STORE,DIRECT_LAST_KEY)}
+async function dirHasWardData(dir){try{const d=await dir.getDirectoryHandle('data');for(const n of [NETWORK_DATA_FILE,NETWORK_MIGRATION_FILE]){try{await d.getFileHandle(n);return true}catch(e){}}}catch(e){}return false}
+async function dirHasFile(dir,name){try{await dir.getFileHandle(name);return true}catch(e){return false}}
+/* The user may pick the folder one level too high (e.g. the shared drive) or the "data" folder itself.
+   Find the real ward folder (the one that contains data/shift-manager-data.json). */
+async function resolveWardFolder(h){
+  if(await dirHasWardData(h))return h;
+  if(/^data$/i.test(h.name||'')&&(await dirHasFile(h,NETWORK_DATA_FILE)||await dirHasFile(h,NETWORK_MIGRATION_FILE))){
+    alert('נבחרה תיקיית data עצמה.\n\nיש לבחור את התיקייה שמעליה — תיקיית המחלקה (התיקייה שבה נמצא קובץ המערכת ובתוכה תיקיית data).');
+    return null;
+  }
+  const found=[];
+  try{
+    let scanned=0;
+    for await(const [name,entry] of h.entries()){
+      if(entry.kind!=='directory')continue;if(++scanned>80)break;
+      if(await dirHasWardData(entry)){found.push(entry);continue}
+      let inner=0;
+      for await(const [n2,e2] of entry.entries()){if(e2.kind!=='directory')continue;if(++inner>40)break;if(await dirHasWardData(e2))found.push(e2)}
+    }
+  }catch(e){}
+  if(found.length===1){toast(`זוהתה תיקיית המחלקה: ${found[0].name}`);return found[0]}
+  if(found.length>1){
+    const list=found.map((d,i)=>`${i+1}. ${d.name}`).join('\n');
+    const ans=prompt(`נמצאו כמה תיקיות מחלקה בתוך “${h.name}”:\n\n${list}\n\nהקלד את מספר התיקייה הנכונה:`,'1');
+    const i=Number(ans)-1;return found[i]||null;
+  }
+  return h;
+}
+let networkListenersBound=false;
+function bindNetworkLifecycleListeners(){
+  if(networkListenersBound)return;networkListenersBound=true;
+  window.addEventListener('focus',async()=>{await automaticNetworkCycle();await ensureAutomaticWorkDate(false,true)});
+  document.addEventListener('visibilitychange',async()=>{
+    if(!document.hidden){await automaticNetworkCycle();await ensureAutomaticWorkDate(false,true)}
+    else if(networkDirty&&networkReady&&!networkSaveBusy&&!networkConflict){networkSaveNow(false)}
+  });
+}
+/* Browsers (Chrome/Edge) forget folder access when the browser is closed and only allow asking for it
+   again after a click/keypress. Instead of forcing the user to choose the folder again, the first click
+   anywhere on the page re-requests access to the saved folder. In the browser prompt choose
+   "Allow on every visit" so the question is not asked again. */
+let permissionGestureArmed=false,permissionGestureBusy=false;
+function armPermissionOnFirstGesture(){
+  if(permissionGestureArmed)return;permissionGestureArmed=true;
+  const skip='#networkSafetyChoose,#networkSafetyRetry,#networkRefreshTop,#networkRefreshPrint,#networkRefreshSettings,#connectNetworkFolder';
+  const handler=async ev=>{
+    if(ev.target&&ev.target.closest&&ev.target.closest(skip))return;
+    if(permissionGestureBusy||!networkPermissionPending||!workingDirHandle)return;
+    permissionGestureBusy=true;
+    try{
+      const ok=await folderPermission(workingDirHandle,true);
+      if(ok){
+        document.removeEventListener('pointerdown',handler,true);document.removeEventListener('keydown',handler,true);permissionGestureArmed=false;
+        await directFolderAction();
+      }
+    }finally{permissionGestureBusy=false}
+  };
+  document.addEventListener('pointerdown',handler,true);document.addEventListener('keydown',handler,true);
 }
 async function folderPermission(handle,ask=false){if(!handle)return false;try{let p=await handle.queryPermission({mode:'readwrite'});if(p==='granted')return true;if(ask)p=await handle.requestPermission({mode:'readwrite'});return p==='granted'}catch(e){return false}}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
@@ -2016,14 +2113,20 @@ function startNetworkHealthWatch(){
 async function connectWorkingFolder(){
   if(!folderSupported()){alert('החיבור הישיר לתיקייה דורש Chrome או Edge עדכניים.');lockForNetwork('הדפדפן אינו תומך בחיבור לתיקיית הרשת.');return false}
   try{
-    const h=await window.showDirectoryPicker({mode:'readwrite',id:DIRECTORY_PICKER_ID});
+    const pickerOpts={mode:'readwrite',id:DIRECTORY_PICKER_ID};
+    try{const last=await lastUsedFolderHandle();if(last)pickerOpts.startIn=last}catch(e){}
+    let picked;
+    try{picked=await window.showDirectoryPicker(pickerOpts)}catch(e){if(e&&e.name==='TypeError'&&pickerOpts.startIn){delete pickerOpts.startIn;picked=await window.showDirectoryPicker(pickerOpts)}else throw e}
+    if(!await folderPermission(picked,true)){setNetworkStatus('לא ניתנה הרשאת כתיבה לתיקייה','warn');lockForNetwork('לא ניתנה הרשאה לתיקיית הרשת.');return false}
+    const h=await resolveWardFolder(picked);
+    if(!h){setNetworkStatus('לא נבחרה תיקיית מחלקה','warn');lockForNetwork('בחר את תיקיית המחלקה (התיקייה שבתוכה נמצאת תיקיית data).');return false}
     const permitted=await folderPermission(h,true);
     if(!permitted){setNetworkStatus('לא ניתנה הרשאת כתיבה לתיקייה','warn');lockForNetwork('לא ניתנה הרשאה לתיקיית הרשת.');return false}
     workingDirHandle=h;networkPermissionPending=false;setNetworkReady(false,`בודק את תיקיית ${h.name}…`);setNetworkStatus(`בודק · ${h.name}…`,'warn');
     await idbSetHandle(h);await prepareSharedFolders();
     const remote=await readCentralPayload();
     if(remote&&remote.state){
-      applyRemotePayload(remote);await idbSetHandle(h);await ensureAutomaticWorkDate(true,true);startDirectPolling();toast(`חובר אוטומטית: ${state.wardName||h.name}`);return true;
+      applyRemotePayload(remote);await idbSetHandle(h);await ensureAutomaticWorkDate(true,true);startDirectPolling();bindNetworkLifecycleListeners();toast(`חובר אוטומטית: ${state.wardName||h.name}`);return true;
     }
     networkMissingDatabase=true;
     const create=confirm(`לא נמצא מאגר מרכזי בתיקייה “${h.name}”.\n\nאם זו מחלקה שכבר עובדת עם המערכת — עצור ובחר את התיקייה שבה קיימת תיקיית data.\n\nצור מאגר ריק רק עבור מחלקה חדשה לחלוטין?`);
@@ -2052,10 +2155,10 @@ async function directFolderAction(){
       networkPendingRecord=networkPendingRecord||loadNetworkPendingRecord();
       if(networkDirty||networkPendingRecord){
         setNetworkReady(false,`מסנכרן שינוי שממתין לתיקיית ${workingDirHandle.name}…`);
-        const recovered=await networkSaveNow(false,false,true);if(recovered){await ensureAutomaticWorkDate(true,true);startDirectPolling()}return recovered;
+        const recovered=await networkSaveNow(false,false,true);if(recovered){await ensureAutomaticWorkDate(true,true);startDirectPolling();bindNetworkLifecycleListeners()}return recovered;
       }
       setNetworkReady(false,`קורא את המאגר המרכזי מתיקיית ${workingDirHandle.name}…`);
-      const pulled=await networkPull({force:true,silent:false});if(pulled){await ensureAutomaticWorkDate(true,true);startDirectPolling()}return pulled
+      const pulled=await networkPull({force:true,silent:false});if(pulled){await ensureAutomaticWorkDate(true,true);startDirectPolling();bindNetworkLifecycleListeners()}return pulled
     }
   }
   return await connectWorkingFolder();
@@ -2198,7 +2301,7 @@ async function networkInit(){
   workingDirHandle=await idbGetHandle();
   if(!workingDirHandle){networkPermissionPending=false;setNetworkStatus('חיבור ראשון · בחר תיקיית מחלקה','warn');lockForNetwork('חיבור ראשון במחשב זה: בחר פעם אחת את תיקיית הרשת של המחלקה.');return}
   const ok=await folderPermission(workingDirHandle,false);
-  if(!ok){networkPermissionPending=true;setNetworkStatus(`התיקייה ${workingDirHandle.name||''} כבר שמורה · לחץ פעם אחת לאישור גישה`,'warn');lockForNetwork(`החיבור לתיקייה ${workingDirHandle.name||''} נשמר. אין צורך לבחור אותה שוב — לחץ “התחבר לתיקייה השמורה” כדי לאשר לדפדפן גישה.`);return}
+  if(!ok){networkPermissionPending=true;setNetworkStatus(`התיקייה ${workingDirHandle.name||''} כבר שמורה · לחץ פעם אחת לאישור גישה`,'warn');lockForNetwork(`החיבור לתיקייה ${workingDirHandle.name||''} נשמר — אין צורך לבחור אותה שוב. לחץ בכל מקום במסך ואשר את הגישה בחלון הדפדפן (מומלץ לבחור “אפשר בכל ביקור” כדי שהשאלה לא תחזור).`);armPermissionOnFirstGesture();return}
   networkPermissionPending=false;
   try{
     await prepareSharedFolders();
@@ -2206,11 +2309,7 @@ async function networkInit(){
     if(!pulled)return;
     await ensureAutomaticWorkDate(true,true);
     startDirectPolling();
-    window.addEventListener('focus',async()=>{await automaticNetworkCycle();await ensureAutomaticWorkDate(false,true)});
-    document.addEventListener('visibilitychange',async()=>{
-      if(!document.hidden){await automaticNetworkCycle();await ensureAutomaticWorkDate(false,true)}
-      else if(networkDirty&&networkReady&&!networkSaveBusy&&!networkConflict){networkSaveNow(false)}
-    });
+    bindNetworkLifecycleListeners();
   }catch(e){setNetworkStatus('התיקייה שמורה אך אינה זמינה כרגע','warn');lockForNetwork('תיקיית הרשת אינה זמינה כרגע.');}
 }
 
