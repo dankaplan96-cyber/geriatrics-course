@@ -5,10 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>SBAR וסימנים חיוניים</title>
 <style id="print-css">
+:root{--doc-font:"David","David Libre","Times New Roman",serif}
+.fit-inner tr.blank-row td.name::after{content:"\00a0"}
+.print-page.fitted{overflow:hidden}
+.weekend-leave-table th.return-sun{color:#000!important}.weekend-leave-table th.return-sun .weekend-leave-sub{color:#333!important}
 *{box-sizing:border-box}
 body{margin:0}
 @font-face{font-family:"WardDavid";src:local("David"),local("David Libre");font-display:swap}
-.print-page{font-family:"WardDavid","David","David Libre","Times New Roman",serif;color:#000;background:#fff;direction:rtl;box-sizing:border-box}
+.print-page{font-family:var(--doc-font);color:#000;background:#fff;direction:rtl;box-sizing:border-box}
 .print-page *{box-sizing:border-box}
 .sbar-top{display:grid;grid-template-columns:1fr 2fr 1fr;direction:ltr;align-items:end;height:10mm;margin-bottom:1.5mm}
 .sbar-top>div{direction:rtl;font-weight:900}
@@ -70,7 +74,7 @@ body{margin:0}
 .print-patient-iso{display:block;font-size:5.3pt;font-weight:900;color:#8a2626;margin-top:.3mm}
 .sbar-page .print-table{direction:rtl!important}
 .sbar-page .print-table th,.sbar-page .print-table td{direction:rtl!important}
-.weekend-leave-page{direction:rtl;font-family:"WardDavid","David","David Libre","Times New Roman",serif;color:#000}
+.weekend-leave-page{direction:rtl;font-family:var(--doc-font);color:#000}
 .weekend-leave-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:6mm;margin-bottom:1mm}
 .weekend-leave-head .date{text-align:right;font-size:9.5pt;font-weight:900}
 .weekend-leave-head .title{text-align:center;font-size:16pt;font-weight:1000;line-height:1}
@@ -91,7 +95,7 @@ body{margin:0}
 .weekend-leave-page{width:210mm!important;height:296mm!important;padding:7mm!important;overflow:hidden!important}
 .weekend-leave-page~*{display:none!important}
 }
-.patient-room-page{direction:rtl;font-family:"WardDavid","David","David Libre","Times New Roman",serif;color:#000;background:#fff!important}
+.patient-room-page{direction:rtl;font-family:var(--doc-font);color:#000;background:#fff!important}
 .patient-room-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:8mm;margin-bottom:5mm}
 .patient-room-head .date{text-align:right;font-size:10pt;font-weight:900}
 .patient-room-head .title{text-align:center;font-size:19pt;font-weight:1000}
@@ -152,10 +156,10 @@ body{background:#fff!important}
   --male:#3f7fb5;--male-soft:#e3effa;--female:#b8578a;--female-soft:#fbe7f1;--undef:#b98f1d;--undef-soft:#fff6d9;
   --good:#23744a;--good-soft:#e7f6ed;--warn:#8a5f00;--warn-soft:#fff4d6;--danger:#a83434;--danger-soft:#fdeceb;
   --radius:14px;--shadow:0 2px 10px rgba(20,45,60,.07);--shadow-lg:0 18px 60px rgba(10,25,35,.28);
-  --font:"Segoe UI","Arial Hebrew",Arial,"Noto Sans Hebrew",sans-serif;
+  --font:var(--doc-font);
 }
 html{scroll-behavior:smooth}
-body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);font-size:16px;line-height:1.35}
+body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);font-size:17px;line-height:1.35}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:3px solid rgba(22,112,122,.45);outline-offset:2px}
@@ -416,6 +420,31 @@ main{max-width:1500px;margin:18px auto 60px;padding:0 20px}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 #printArea{display:none}
 
+
+
+/* v62 visual polish */
+.bed-who{display:flex;align-items:center;gap:10px;margin-top:2px}
+.avatar{flex:0 0 42px;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-size:20px;font-weight:800;background:#e8eef1;color:#40525c}
+.avatar.male{background:var(--male-soft);color:var(--male)}
+.avatar.female{background:var(--female-soft);color:var(--female)}
+.bed{min-height:132px;gap:6px}
+.bed:hover{background:#f4f9fa;box-shadow:inset 0 0 0 2px var(--brand-soft)}
+.bed-actions{justify-content:flex-start}
+.beds.many .avatar{display:none}
+.leave-toggle{border:0;background:transparent;color:var(--muted);font-size:14px;font-weight:700;padding:4px 2px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.leave-toggle:hover{color:#5f4300}
+.leave-toggle.on{color:var(--good);text-decoration:none;background:var(--good-soft);border-radius:8px;padding:4px 10px}
+.room{border-top-width:0;border-inline-start:6px solid var(--undef)}
+.room.gender-male{border-inline-start-color:var(--male)}
+.room.gender-female{border-inline-start-color:var(--female)}
+.room-head{background:#fff!important;border-bottom:1px solid var(--line)}
+.room-gender-select{border-color:transparent;background:var(--surface-2);color:var(--muted)}
+.room-gender-select:hover{border-color:var(--line-strong)}
+.stat-card{flex-direction:row;gap:8px;min-width:0;padding:8px 14px}
+.stat-card b{font-size:22px}
+.rooms-grid{gap:16px}
+.tab{font-size:18px}
+
 @media(max-width:900px){
   .beds{grid-template-columns:1fr!important}
   .beds .bed{border-inline-start:0;border-top:1px solid var(--line)}
@@ -586,6 +615,7 @@ main{max-width:1500px;margin:18px auto 60px;padding:0 20px}
         <h3>1. שם המחלקה</h3>
         <div class="form-field"><label for="wardNameSetting">שם המחלקה (יופיע בכל הדפים)</label><input id="wardNameSetting" placeholder="לדוגמה: שיקום א׳" /></div>
         <div class="structure-summary" id="structureSummary"></div>
+        <div class="form-field"><label for="fontChoice">גופן (מסך והדפסה)</label><select id="fontChoice"><option value="david">David – דוד (מומלץ)</option><option value="calibri">Calibri – קליברי</option><option value="arial">Arial – אריאל</option></select><div class="hint">אותו גופן בכל המערכת ובכל הדפים המודפסים. ההגדרה נשמרת במחשב הזה.</div></div>
       </div>
 
       <div class="settings-section">
@@ -1084,7 +1114,7 @@ function renderRooms(){
     if(!match)continue;
     const gender=roomMeta(r).gender||'',side=roomSide(r),isoCount=pts.filter(p=>hasPatient(p)&&p.isolation).length,occ=pts.filter(hasPatient).length;
     const sideFlag=side>0?`<span class="room-flag">${esc(sideName(side))}</span>`:side===-1?'<span class="room-flag">מפוצל בין אחיות</span>':'';
-    html+=`<section class="room gender-${gender||'undefined'}"><div class="room-head"><span class="room-title">חדר ${r}</span><div class="room-flags">${sideFlag}${isoCount?`<span class="room-flag isolation">בידוד ${isoCount}</span>`:''}<span class="room-occ">${occ}/${pts.length} מיטות</span></div><select class="room-gender-select" data-main-room-gender-select="${r}" aria-label="אופי חדר ${r}"><option value="" ${!gender?'selected':''}>אופי חדר: לא הוגדר</option><option value="male" ${gender==='male'?'selected':''}>חדר גברים</option><option value="female" ${gender==='female'?'selected':''}>חדר נשים</option></select></div><div class="beds" style="grid-template-columns:repeat(${Math.max(1,pts.length)},minmax(0,1fr))">${pts.map(bedHTML).join('')}</div></section>`;
+    html+=`<section class="room gender-${gender||'undefined'}"><div class="room-head"><span class="room-title">חדר ${r}</span><div class="room-flags">${sideFlag}${isoCount?`<span class="room-flag isolation">בידוד ${isoCount}</span>`:''}<span class="room-occ">${occ}/${pts.length} מיטות</span></div><select class="room-gender-select" data-main-room-gender-select="${r}" aria-label="אופי חדר ${r}"><option value="" ${!gender?'selected':''}>אופי חדר: לא הוגדר</option><option value="male" ${gender==='male'?'selected':''}>חדר גברים</option><option value="female" ${gender==='female'?'selected':''}>חדר נשים</option></select></div><div class="beds ${pts.length>=3?'many':''}" style="grid-template-columns:repeat(${Math.max(1,pts.length)},minmax(0,1fr))">${pts.map(bedHTML).join('')}</div></section>`;
   }
   grid.innerHTML=html||'<div class="empty-ward"><h3>לא נמצאו תוצאות</h3><p class="hint">נסו שם אחר או מספר חדר.</p></div>';
   grid.querySelectorAll('[data-open]').forEach(el=>{el.onclick=e=>{if(e.target.closest('[data-leave]'))return;openPatient(el.dataset.open)};el.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&e.target===el){e.preventDefault();openPatient(el.dataset.open)}}});
@@ -1096,7 +1126,7 @@ function bedHTML(p){
   const g=groupOf(p),rg=roomMeta(p.room).gender||'',mismatch=(rg==='male'&&p.sex==='female')||(rg==='female'&&p.sex==='male'),dup=patientNameDuplicateInfo(p),dexToday=p.glucoseRequired&&glucoseScheduledOnDate(p,state.reportDate);
   const badges=[p.onLeave?'<span class="badge leave">בחופשה</span>':'',p.isolation?`<span class="badge iso">${esc(isolationSummary(p))}</span>`:'',p.allergy?`<span class="badge allergy" title="${esc(p.allergyText||'')}">⚠ רגישות</span>`:'',dexToday?`<span class="badge dex">DEX היום ×${p.glucoseChecks||1}</span>`:'',p.tempRoute==='PR'?'<span class="badge temp">חום PR</span>':'',dup.duplicate?`<span class="badge alert" title="${esc(duplicateNameLocationText(dup.matches))}">${dup.sameRoom?'⚠ שם כפול באותו חדר':'⚠ שם כפול'}</span>`:'',mismatch?'<span class="badge alert">⚠ לא מתאים לאופי החדר</span>':''].filter(Boolean).join('');
   const sub=[p.age?`גיל ${esc(p.age)}`:'',p.sex?esc(patientSexLabel(p.sex)):''].filter(Boolean).join(' · ');
-  return `<div class="bed ${p.isolation?'isolation-patient':''} ${p.onLeave?'on-leave':''} ${dup.duplicate?'duplicate-name':''} ${dup.sameRoom?'duplicate-same-room':''}" data-open="${p.id}" role="button" tabindex="0" aria-label="${esc(p.name||'מטופל')} – פתיחת כרטיס"><div class="bed-top"><span class="bed-label">מיטה ${esc(p.bed)}</span>${g>0?`<span class="side-tag">${esc(sideName(g))}</span>`:''}</div><div class="bed-name">${esc(p.name||'ללא שם')}</div>${sub?`<div class="bed-sub">${sub}</div>`:''}${badges?`<div class="bed-badges">${badges}</div>`:''}<div class="bed-actions"><button class="btn small" type="button">פתח</button><button class="btn small ${p.onLeave?'return-btn':'leave-btn'}" type="button" data-leave="${p.id}" title="${p.onLeave?'המטופל חזר מחופשה':'המטופל יוצא לחופשה'}">${p.onLeave?'חזר':'חופשה'}</button></div></div>`;
+  return `<div class="bed ${p.isolation?'isolation-patient':''} ${p.onLeave?'on-leave':''} ${dup.duplicate?'duplicate-name':''} ${dup.sameRoom?'duplicate-same-room':''}" data-open="${p.id}" role="button" tabindex="0" aria-label="${esc(p.name||'מטופל')} – פתיחת כרטיס"><div class="bed-top"><span class="bed-label">מיטה ${esc(p.bed)}</span>${g>0?`<span class="side-tag">${esc(sideName(g))}</span>`:''}</div><div class="bed-who"><span class="avatar ${p.sex||''}" aria-hidden="true">${esc((p.name||'?').trim().charAt(0))}</span><div><div class="bed-name">${esc(p.name||'ללא שם')}</div>${sub?`<div class="bed-sub">${sub}</div>`:''}</div></div>${badges?`<div class="bed-badges">${badges}</div>`:''}<div class="bed-actions"><button class="leave-toggle ${p.onLeave?'on':''}" type="button" data-leave="${p.id}">${p.onLeave?'↩ חזר מחופשה':'יציאה לחופשה'}</button></div></div>`;
 }
 function togglePatientLeave(id){
   if(!requireNetworkReady('יציאה או חזרה מחופשה'))return;
@@ -1941,7 +1971,7 @@ async function networkInit(){
   }catch(e){setNetworkStatus('התיקייה שמורה אך אינה זמינה כרגע','warn');lockForNetwork('תיקיית הרשת אינה זמינה כרגע.');}
 }
 
-function standaloneReport(title,content){const css=document.querySelector('style')?.textContent||'';return `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>${css}\nhtml,body{background:#fff!important;margin:0}#printArea{display:block!important}.report-toolbar{font-family:"Segoe UI",Arial,sans-serif;padding:10px 14px;background:#eef5f6;border-bottom:1px solid #ccdadd;display:flex;gap:10px;align-items:center}.report-toolbar button{font:inherit;font-weight:900;padding:8px 14px}.print-page{margin:0 auto}@media print{.report-toolbar{display:none!important}}</style>
+function standaloneReport(title,content){const css=(document.querySelector('style')?.textContent||'')+`\n:root{--doc-font:${getComputedStyle(document.documentElement).getPropertyValue('--doc-font')}}`;return `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>${css}\nhtml,body{background:#fff!important;margin:0}#printArea{display:block!important}.report-toolbar{font-family:var(--doc-font);padding:10px 14px;background:#eef5f6;border-bottom:1px solid #ccdadd;display:flex;gap:10px;align-items:center}.report-toolbar button{font:inherit;font-weight:900;padding:8px 14px}.print-page{margin:0 auto}@media print{.report-toolbar{display:none!important}}</style>
 </head><body><div class="report-toolbar"><button onclick="window.print()">הדפס / שמור PDF</button><strong>${esc(title)}</strong></div><div id="printArea">${content}</div><!-- v42 additive upgrade: weekend leave print list; storage/network identifiers intentionally unchanged -->
 </body></html>`}
 
@@ -1968,12 +1998,48 @@ function makeWeekendLeavePrint(){
   return `<style>@page{size:A4 portrait;margin:0}@media print{html,body{width:210mm!important;height:auto!important}}</style><section class="print-page weekend-leave-page" style="--leave-row-h:${rowH}mm;--leave-font:${font}pt"><div class="weekend-leave-head"><div class="date">הופק: ${esc(fmtDate(state.reportDate))}</div><div class="title">רשימת יציאות לחופש – סוף שבוע</div><div class="ward">${esc(state.wardName)}</div></div><table class="weekend-leave-table"><colgroup><col style="width:7%"><col style="width:7%"><col style="width:24%"><col style="width:13%"><col style="width:13%"><col style="width:13%"><col style="width:14%"><col style="width:9%"></colgroup><thead><tr><th>חדר</th><th>מיטה</th><th>מטופל</th><th>יציאה חמישי<span class="weekend-leave-sub">${esc(fmtDate(thu))}</span></th><th>יציאה שישי<span class="weekend-leave-sub">${esc(fmtDate(fri))}</span></th><th>חזרה שבת<span class="weekend-leave-sub">${esc(fmtDate(sat))}</span></th><th class="return-sun">חזרה ראשון בבוקר<span class="weekend-leave-sub">${esc(fmtDate(sun))}</span></th><th>הערות</th></tr></thead><tbody>${rows}</tbody></table><div class="weekend-leave-note"><span>יש לסמן אפשרות אחת ליציאה ואפשרות אחת לחזרה בהתאם לתכנון המטופל.</span><span><strong>סה״כ מטופלים: ${patients.length}</strong></span></div><div class="weekend-leave-sign"><span>אח/ות אחראי/ת: ____________________</span><span>עודכן בתאריך: ____________________ שעה: __________</span></div></section>`
 }
 
+/* v62 — every printed sheet is fitted to exactly one A4 page at the largest readable size:
+   find the largest scale at which the page content still fits, then stretch the tables
+   so the rows fill the whole page (more room for handwriting). */
+const PX_PER_MM=96/25.4;
+function fitPrintPages(root){
+  const prevStyle=root.getAttribute('style');let overflow=0;
+  root.style.cssText='display:block;position:fixed;inset:0 auto auto 0;visibility:hidden;pointer-events:none;z-index:-1';
+  for(const page of root.querySelectorAll('.print-page')){
+    const portrait=page.matches('.weekend-leave-page,.patient-room-page');
+    const W=portrait?210:297,H=portrait?296:209,pad=page.matches('.patient-room-page')?8:portrait?7:4;
+    const maxZ=portrait?1.4:page.matches('.vitals-page')?1.5:1.9,minZ=0.45;
+    let inner=page.querySelector(':scope>.fit-inner');
+    if(!inner){inner=document.createElement('div');inner.className='fit-inner';while(page.firstChild)inner.appendChild(page.firstChild);page.appendChild(inner)}
+    Object.assign(page.style,{width:W+'mm',height:H+'mm',padding:pad+'mm',overflow:'hidden'});
+    for(const v of ['--row-h','--sbar-row-h','--leave-row-h','--patient-list-row-h'])inner.style.setProperty(v,'auto');
+    if(page.matches('.vitals-page'))inner.style.setProperty('--notes-h','22mm');
+    const cw=(W-2*pad)*PX_PER_MM,ch=(H-2*pad)*PX_PER_MM-2,tables=[...inner.querySelectorAll('table')];
+    const measure=z=>{inner.style.width=(cw/z)+'px';tables.forEach(t=>t.style.height='');return inner.offsetHeight};
+    if(measure(minZ)*minZ>ch){ // too much content even when small: fall back to normal multi-page flow
+      overflow++;page.removeAttribute('style');inner.removeAttribute('style');continue;
+    }
+    let lo=minZ,hi=maxZ;if(measure(hi)*hi<=ch)lo=hi;else for(let i=0;i<18;i++){const mid=(lo+hi)/2;if(measure(mid)*mid<=ch)lo=mid;else hi=mid}
+    const z=lo,h=measure(z),extra=ch/z-h-1;
+    if(extra>1&&tables.length){const tallest=Math.max(...tables.map(t=>t.offsetHeight));tables.forEach(t=>t.style.height=(tallest+extra)+'px')}
+    Object.assign(inner.style,{transform:`scale(${z})`,transformOrigin:'top right'});
+    page.classList.add('fitted');page.dataset.scale=z.toFixed(2);
+  }
+  if(prevStyle===null)root.removeAttribute('style');else root.setAttribute('style',prevStyle);
+  return overflow;
+}
 function doPrint(type){
   let html='',title='';if(type==='sbar'){html=makeSbarPrint(false);title='SBAR'}else if(type==='sbar-nurses'){if(!shiftCount()){alert('בחר תחילה מספר אחים למשמרת.');return}html=makeSbarPrint(true);title='SBAR לפי צדדים'}else if(type==='vitals-nurses'){if(!shiftCount()){alert('בחר תחילה מספר אחים למשמרת.');return}html=makeVitalsPrint(true);title=`סימנים ${SHIFT_LABEL[state.activeShift]}`}else if(type==='weekend-leave'){html=makeWeekendLeavePrint();title='רשימת יציאות לחופש'}else if(type==='patients-by-room'){html=makePatientsByRoomPrint();title='רשימת מטופלים'}else{html=makeVitalsPrint(false);title=`סימנים ${SHIFT_LABEL[state.activeShift]} מחלקתי`}
-  $('#printArea').innerHTML=html;const old=document.title;document.title=`${state.wardName}_${title}_${state.reportDate}`;savePrintedReportToNetwork(type,title,html);setTimeout(()=>{window.print();setTimeout(()=>document.title=old,500)},80);
+  const area=$('#printArea');area.innerHTML=html;const overflow=fitPrintPages(area);if(overflow)toast('יש יותר מדי מידע לדף אחד – הדף יודפס על יותר מעמוד אחד');const old=document.title;document.title=`${state.wardName}_${title}_${state.reportDate}`;savePrintedReportToNetwork(type,title,area.innerHTML);setTimeout(()=>{window.print();setTimeout(()=>document.title=old,500)},80);
 }
 function exportBackup(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`גיבוי_${state.wardName}_${state.reportDate}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),800)}
 function importBackup(file){const r=new FileReader();r.onload=()=>{try{state=normalize(JSON.parse(r.result));save();redivideConfigured();renderAll();toast('הגיבוי נטען')}catch(e){alert('לא ניתן לקרוא את קובץ הגיבוי.')}};r.readAsText(file)}
+
+/* Font: one family for screen and print, chosen per workstation */
+const FONT_STACKS={david:'"David","David Libre","Times New Roman",serif',calibri:'Calibri,Carlito,"Segoe UI",Arial,sans-serif',arial:'Arial,"Segoe UI",sans-serif'};
+function applyFont(key){if(!FONT_STACKS[key])key='david';document.documentElement.style.setProperty('--doc-font',FONT_STACKS[key]);const sel=$('#fontChoice');if(sel)sel.value=key;return key}
+applyFont(safeLocalGet('sbarFontChoice')||'david');
+$('#fontChoice').onchange=e=>{safeLocalSet('sbarFontChoice',applyFont(e.target.value));toast('הגופן עודכן')};
 
 /* UI events */
 $('#countButtons').innerHTML=Array.from({length:10},(_,i)=>`<button class="count-btn" data-count="${i+1}">${i+1}</button>`).join('');
