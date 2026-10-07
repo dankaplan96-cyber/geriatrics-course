@@ -1,0 +1,1389 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>מערכת ניהול חופשות</title>
+<!-- מערכת ניהול חופשות · גרסה 2 · עובדת מול תיקיית רשת משותפת (Edge / Chrome) -->
+<style>
+:root{
+  --navy:#17365d;--blue:#275b8f;--bg:#f3f6f9;--card:#fff;--line:#dbe3eb;--line2:#e9eef3;--txt:#243447;--muted:#6b7b8d;
+  --green:#18794e;--greenbg:#e7f6ee;--amber:#8a5d00;--amberbg:#fff3d1;--red:#b42318;--redbg:#fdecea;--focus:#0f5ea8;
+  --shadow:0 4px 18px rgba(20,45,75,.07);--radius:14px
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);font-family:"Segoe UI",Arial,sans-serif;color:var(--txt);font-size:14px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.hidden{display:none!important}
+.muted{color:var(--muted)}.small{font-size:12px}.nowrap{white-space:nowrap}
+
+/* top bar */
+.top{background:linear-gradient(115deg,#17365d,#275b8f);color:#fff;padding:10px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:30;box-shadow:var(--shadow)}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.logo{width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.16);display:grid;place-items:center;font-weight:800;font-size:19px;flex:none}
+.brand-name{font-weight:800;font-size:17px}.brand-sub{font-size:12px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.pill{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;border-radius:999px;padding:5px 11px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:#f5b041;display:inline-block}.dot.ok{background:#3ddc84}.dot.err{background:#ff6b6b}
+.user-chip{font-size:12px;opacity:.95;padding:0 4px}
+
+/* buttons */
+.btn{border:0;border-radius:9px;padding:9px 14px;cursor:pointer;background:var(--navy);color:#fff;font-weight:650;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;white-space:nowrap}
+.btn:hover{filter:brightness(1.1)}.btn:disabled{opacity:.45;cursor:not-allowed;filter:none}
+.btn.light{background:#fff;color:var(--navy)}.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.5);color:#fff}
+.btn.outline{background:#fff;color:var(--navy);border:1px solid var(--line)}.btn.outline:hover{background:#f3f7fb;filter:none}
+.btn.green{background:var(--green)}.btn.red{background:var(--red)}.btn.amber{background:#b7791f}.btn.gray{background:#6b7b8d}
+.btn.sm{padding:5px 9px;font-size:12px;border-radius:8px}.btn.lg{padding:12px 18px;font-size:15px}.btn.block{width:100%}
+.linkbtn{background:none;border:0;color:var(--blue);cursor:pointer;padding:0;text-decoration:underline;font-size:12px}
+
+/* layout */
+.shell{display:grid;grid-template-columns:230px 1fr;min-height:calc(100vh - 58px)}
+.side{background:#fff;border-left:1px solid var(--line);padding:14px 10px;position:sticky;top:58px;height:calc(100vh - 58px);overflow:auto}
+.nav-sec{font-size:11px;font-weight:700;color:var(--muted);margin:14px 10px 6px}
+.nav-item{display:flex;align-items:center;gap:9px;width:100%;border:0;background:transparent;text-align:right;padding:10px 11px;border-radius:9px;color:#3f5267;cursor:pointer;font-weight:650;margin-bottom:2px}
+.nav-item:hover{background:#f1f5fa}.nav-item.active{background:#e6eff9;color:var(--navy)}
+.nav-item .ico{width:20px;text-align:center}.nav-item .count{margin-inline-start:auto;background:var(--red);color:#fff;border-radius:999px;font-size:11px;padding:1px 7px}
+.nav-item .lock{margin-inline-start:auto;font-size:11px;opacity:.6}
+.main{padding:18px 20px;min-width:0}.page{max-width:1480px;margin:0 auto}
+.page-head{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+.page-head h2{margin:0;color:var(--navy);font-size:22px}.page-head p{margin:3px 0 0;color:var(--muted);font-size:12px}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.banner{padding:9px 18px;font-size:13px;font-weight:600;text-align:center}.banner.err{background:var(--redbg);color:var(--red)}.banner.warn{background:var(--amberbg);color:var(--amber)}
+
+/* cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
+.card h3{margin:0 0 12px;color:var(--navy);font-size:15px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:13px 15px;box-shadow:var(--shadow)}
+.stat .k{font-size:12px;color:var(--muted);font-weight:700}.stat .v{font-size:27px;font-weight:850;color:var(--navy);margin-top:3px}.stat .sub{font-size:11px;color:var(--muted)}
+.stat.warn .v{color:var(--amber)}.stat.bad .v{color:var(--red)}.stat.good .v{color:var(--green)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+.list{display:flex;flex-direction:column;gap:7px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--line2);border-radius:10px;background:#fff}
+.row-title{font-weight:700}.row-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.empty{color:var(--muted);text-align:center;padding:18px;font-size:13px}
+.notice{background:#eef4fa;border:1px solid #d8e6f3;color:#36536f;border-radius:10px;padding:10px 12px;font-size:13px}
+.notice.warn{background:var(--amberbg);border-color:#f1dc9f;color:var(--amber)}.notice.err{background:var(--redbg);border-color:#f5c2bd;color:var(--red)}.notice.ok{background:var(--greenbg);border-color:#bfe5cf;color:var(--green)}
+
+/* badges & chips */
+.badge{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:750;white-space:nowrap}
+.st-approved{background:var(--greenbg);color:var(--green)}.st-pending{background:var(--amberbg);color:var(--amber)}.st-rejected{background:var(--redbg);color:var(--red)}.st-cancelled{background:#eef1f4;color:#657586}.st-cancelreq{background:#f3e8ff;color:#6b21a8}
+.chip{display:block;border-radius:6px;padding:2px 6px;font-size:11px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:hsl(var(--h) 70% 93%);color:hsl(var(--h) 55% 26%);border-inline-start:3px solid hsl(var(--h) 55% 45%)}
+.chip.pending{background:repeating-linear-gradient(-45deg,#fff7df,#fff7df 5px,#fff 5px,#fff 10px);color:var(--amber);border-inline-start-color:#d59b16}
+.avatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:12px;flex:none;background:hsl(var(--h) 70% 90%);color:hsl(var(--h) 55% 28%)}
+
+/* forms */
+.field{margin:0 0 12px}.field label{display:block;font-size:12px;font-weight:700;color:#4d6074;margin-bottom:5px}
+.field input,.field select,.field textarea,.input{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:#fff}
+.field textarea{min-height:76px;resize:vertical}.field .hint{font-size:11px;color:var(--muted);margin-top:4px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}.form-grid .wide{grid-column:1/-1}
+.check{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px;cursor:pointer}.check input{width:17px;height:17px}
+.days-pick{display:flex;gap:6px;flex-wrap:wrap}.days-pick label{display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:8px;padding:5px 9px;cursor:pointer;font-size:13px}
+.pw-wrap{position:relative}.pw-wrap input{padding-left:42px}.pw-eye{position:absolute;left:6px;top:50%;transform:translateY(-50%);border:0;background:none;cursor:pointer;font-size:15px;padding:4px}
+.summary{background:#f7fafc;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px}
+.summary .big{font-size:22px;font-weight:850;color:var(--navy)}
+.sum-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}.sum-grid>div{background:#fff;border:1px solid var(--line2);border-radius:9px;padding:8px;text-align:center}
+.sum-grid .k{font-size:11px;color:var(--muted)}
+
+/* tables */
+.table-wrap{overflow:auto;border:1px solid var(--line2);border-radius:10px}
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{padding:9px 10px;border-bottom:1px solid var(--line2);text-align:right;font-size:13px;vertical-align:middle}
+.table th{color:#52667a;font-size:12px;background:#f8fafc;position:sticky;top:0;z-index:1;white-space:nowrap}
+.table tr:last-child td{border-bottom:0}.table tbody tr:hover td{background:#fbfdff}
+.table .actions{display:flex;gap:5px;flex-wrap:wrap}
+.filters{display:grid;grid-template-columns:2fr repeat(5,1fr);gap:8px;margin-bottom:12px}
+
+/* month calendar */
+.cal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.cal-title{font-size:20px;font-weight:850;color:var(--navy);min-width:150px;text-align:center}
+.calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--line);gap:1px}
+.weekday{background:var(--navy);color:#fff;text-align:center;padding:7px;font-size:12px;font-weight:700}
+.day{min-height:112px;background:#fff;padding:5px 6px;display:flex;flex-direction:column;gap:3px;cursor:pointer;min-width:0;border:0;text-align:right}
+.day:hover{background:#f7fbff}.day.off{background:#fafbfc}.day.blank{background:#f5f7f9;cursor:default}
+.day.today{box-shadow:inset 0 0 0 2px var(--blue)}
+.day-top{display:flex;justify-content:space-between;align-items:center;gap:4px}
+.day-num{font-weight:800;font-size:13px;color:#33475b}.day.today .day-num{background:var(--blue);color:#fff;border-radius:999px;padding:0 7px}
+.hol{font-size:10px;color:#7a4b00;background:#fff4d6;border-radius:5px;padding:1px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hol.major{background:#fde2e1;color:#9b1c1c}
+.load{font-size:10px;font-weight:800;border-radius:999px;padding:0 6px}.load.warn{background:var(--amberbg);color:var(--amber)}.load.high{background:var(--redbg);color:var(--red)}
+.more{font-size:11px;color:var(--muted);font-weight:700}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);align-items:center}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:3px;vertical-align:middle;margin-left:4px}
+
+/* timeline */
+.tl-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fff;max-height:calc(100vh - 240px)}
+.tl{border-collapse:separate;border-spacing:0;font-size:12px;min-width:100%}
+.tl th,.tl td{border-bottom:1px solid var(--line2);border-left:1px solid var(--line2);padding:0;height:30px;text-align:center}
+.tl thead th{position:sticky;top:0;background:#f8fafc;z-index:2;font-weight:700;color:#52667a;min-width:30px;padding:3px 0;height:auto}
+.tl thead th .wd{display:block;font-size:10px;font-weight:600;color:var(--muted)}
+.tl .name{position:sticky;right:0;background:#fff;z-index:1;text-align:right;padding:0 10px;min-width:160px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:650;border-left:1px solid var(--line)}
+.tl thead .name{z-index:3;background:#f8fafc}
+.tl .grp td{background:#eef3f8;font-weight:800;color:var(--navy);text-align:right;padding:4px 10px;height:auto}
+.tl .grp td.name{background:#eef3f8}
+.tl td.off,.tl th.off{background:#f6f7f9}.tl td.holm,.tl th.holm{background:#fdf0ef}.tl th.today{background:var(--blue);color:#fff}.tl th.today .wd{color:#e6eef8}.tl td.today{box-shadow:inset 1px 0 0 var(--blue),inset -1px 0 0 var(--blue)}
+.bar{margin:3px 2px;height:22px;border-radius:6px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;overflow:hidden;white-space:nowrap;cursor:pointer;background:hsl(var(--h) 60% 52%);color:#fff;padding:0 4px}
+.bar.pending{background:repeating-linear-gradient(-45deg,#f6c453,#f6c453 6px,#f9d98a 6px,#f9d98a 12px);color:#5c3d00}
+.tl tfoot td{position:sticky;bottom:0;background:#f8fafc;font-weight:800;z-index:1}
+.tl tfoot td.name{z-index:2}
+.tl tfoot td.warn{background:var(--amberbg);color:var(--amber)}.tl tfoot td.high{background:var(--redbg);color:var(--red)}
+
+/* load chart */
+.bars{display:flex;align-items:flex-end;gap:6px;height:150px;padding-top:10px}
+.bars .b{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%;min-width:0}
+.bars .col{width:100%;max-width:34px;border-radius:6px 6px 2px 2px;background:#9ec1e6;min-height:3px}
+.bars .col.warn{background:#f2c14e}.bars .col.high{background:#e5635a}
+.bars .n{font-size:11px;font-weight:800;color:#33475b}.bars .lbl{font-size:10px;color:var(--muted);white-space:nowrap}
+
+/* modal & toasts */
+.modal-bg{position:fixed;inset:0;background:rgba(15,30,50,.45);display:grid;place-items:center;padding:16px;z-index:100}
+.modal{background:#fff;border-radius:16px;width:min(520px,100%);max-height:calc(100vh - 32px);overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.25);padding:20px}
+.modal.wide{width:min(820px,100%)}
+.modal h3{margin:0 0 14px;color:var(--navy);font-size:18px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-start;margin-top:14px;flex-wrap:wrap}
+.merr{color:var(--red);background:var(--redbg);padding:8px 10px;border-radius:8px;font-size:13px;margin-top:8px}
+#toasts{position:fixed;bottom:16px;left:16px;display:flex;flex-direction:column;gap:8px;z-index:200;max-width:min(380px,calc(100vw - 32px))}
+.toast{background:#1f2f43;color:#fff;border-radius:10px;padding:11px 14px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.2);animation:tin .2s ease}
+.toast.ok{background:#14643f}.toast.err{background:#a0251b}
+@keyframes tin{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+
+/* full screens */
+.screen{min-height:calc(100vh - 58px);display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 15% 20%,#e3ecf7,transparent 35%),var(--bg)}
+.screen-card{width:min(500px,100%);background:#fff;border-radius:18px;padding:28px;box-shadow:0 16px 40px rgba(23,54,93,.14);border:1px solid #e1e7ee}
+.screen-card h1{margin:0 0 6px;color:var(--navy);font-size:23px}.screen-card p{color:var(--muted);line-height:1.6;margin:0 0 14px}
+.steps{margin:0 0 16px;padding-inline-start:20px;color:#3f5267;line-height:1.7;font-size:13px}
+.code-box{font-family:Consolas,monospace;font-size:20px;letter-spacing:2px;text-align:center;background:#f3f6f9;border:2px dashed var(--line);border-radius:10px;padding:14px;direction:ltr;user-select:all}
+.pw-meter{height:5px;border-radius:5px;background:var(--line2);margin-top:6px;overflow:hidden}.pw-meter i{display:block;height:100%;width:0;background:var(--red);transition:.2s}
+
+@media(max-width:1000px){.stats{grid-template-columns:repeat(2,1fr)}.grid2,.grid3{grid-template-columns:1fr}.filters{grid-template-columns:1fr 1fr}}
+@media(max-width:820px){
+  .shell{grid-template-columns:1fr}.side{position:static;height:auto;border:0;border-bottom:1px solid var(--line);display:flex;overflow:auto;padding:8px;gap:4px}
+  .nav-sec{display:none}.nav-item{width:auto;white-space:nowrap;margin:0}.main{padding:12px}.day{min-height:80px}.user-chip{display:none}
+}
+@media(max-width:560px){.form-grid{grid-template-columns:1fr}.form-grid .wide{grid-column:auto}.chip{font-size:9px;padding:1px 3px}.day{min-height:64px;padding:3px}.hol{display:none}.sum-grid{grid-template-columns:1fr 1fr}.brand-sub{display:none}}
+@media print{
+  .top,.side,.btn,.toolbar,#toasts,.banner,.no-print{display:none!important}
+  .shell{display:block}.main{padding:0}.card,.stat{box-shadow:none}.page{max-width:none}.tl-wrap{max-height:none;overflow:visible}
+  body{background:#fff}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><div class="logo" aria-hidden="true">ח</div><div style="min-width:0"><div class="brand-name">מערכת חופשות</div><div class="brand-sub" id="deptTitle">&nbsp;</div></div></div>
+  <div class="top-actions"><button class="pill" id="netPill" data-act="netInfo" type="button"><span class="dot"></span><span>טוען…</span></button><div id="userArea" class="top-actions"></div></div>
+</header>
+<div id="banner" class="banner hidden" role="status"></div>
+<div id="screen" class="screen hidden"></div>
+<div id="shell" class="shell hidden">
+  <nav class="side" id="nav" aria-label="ניווט ראשי"></nav>
+  <main class="main"><div class="page" id="page"></div></main>
+</div>
+<div id="modalRoot"></div>
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   מערכת ניהול חופשות – גרסה 2
+   ---------------------------------------------------------------------
+   • כל הנתונים נשמרים בקובץ JSON אחד בתיקיית רשת משותפת:
+       <תיקייה>\data\vacation-manager-data-v1.json
+     (שם הקובץ זהה לגרסה הקודמת – נתונים קיימים נטענים אוטומטית).
+   • כתיבה: נעילה (lock) → קריאה עדכנית → שינוי → שמירת עותק קודם (.prev)
+     → כתיבה → אימות קריאה חוזרת. כך שני מחשבים לא דורסים זה את זה.
+   • גיבוי יומי אוטומטי לתיקיית backups (נשמרים 120 אחרונים).
+   • צפייה בלוח אפשרית ללא כניסה (ניתן לכבות בהגדרות);
+     הגשת בקשה / ניהול דורשים שם משתמש וסיסמה אישית.
+   • סיסמאות נשמרות כ-PBKDF2-SHA256 עם salt – לעולם לא כטקסט גלוי.
+   ===================================================================== */
+
+const APP_VERSION='2.0.0';
+const DATA_FILE='vacation-manager-data-v1.json';
+const PREV_FILE='vacation-manager-data-v1.prev.json';
+const LOCK_FILE='vacation-manager-lock-v1.json';
+const IDB_NAME='VacationManagerDirectFolderStable',IDB_STORE='handles',IDB_KEY='sharedVacationFolderStable';
+const CACHE_KEY='vacationManagerCacheV2',CLIENT_KEY='vacationManagerClientIdV1',THROTTLE_KEY='vacationManagerLoginThrottle';
+const PBKDF2_ITER=310000;
+const BACKUP_KEEP=120;
+const SYNC_MS=3000,HEARTBEAT_MS=10000,LOCK_TTL=10000;
+
+const DEFAULT_SETTINGS={department:'מחלקה חדשה',warningThreshold:3,defaultAllowance:22,workDays:[0,1,2,3,4],excludeHolidays:true,publicView:true,publicShowNames:true,sessionMinutes:10,recovery:null};
+const LEAVE_TYPES=[
+  {id:'vacation',name:'חופשה',icon:'🌴',balance:true},
+  {id:'sick',name:'מחלה',icon:'🤒'},
+  {id:'training',name:'השתלמות / קורס',icon:'🎓'},
+  {id:'reserve',name:'מילואים',icon:'🎖️'},
+  {id:'personal',name:'אחר / אישי',icon:'📌'}
+];
+const STATUS={approved:'מאושר',pending:'ממתין לאישור',rejected:'נדחה',cancelled:'בוטל'};
+const HEB_MONTHS=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+const HEB_DAYS=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
+const HEB_DAYS_LONG=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+
+/* ---------------- utilities ---------------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const isoOf=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parseD=s=>new Date(s+'T12:00:00');
+const addDays=(s,n)=>{const d=parseD(s);d.setDate(d.getDate()+n);return isoOf(d)};
+const todayISO=()=>isoOf(new Date());
+const nowISO=()=>new Date().toISOString();
+const fmt=s=>s?s.split('-').reverse().join('/'):'';
+const fmtShort=s=>s?`${s.slice(8,10)}/${s.slice(5,7)}`:'';
+const fmtDT=s=>{if(!s)return '';const d=new Date(s);return d.toLocaleDateString('he-IL')+' '+d.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})};
+const calDays=(a,b)=>Math.round((parseD(b)-parseD(a))/864e5)+1;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const clone=o=>JSON.parse(JSON.stringify(o));
+const typeOf=id=>LEAVE_TYPES.find(t=>t.id===id)||LEAVE_TYPES[0];
+const range=(a,b)=>{const out=[];for(let d=a;d<=b;d=addDays(d,1))out.push(d);return out};
+const longDate=s=>parseD(s).toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+function safeGet(k){try{return localStorage.getItem(k)}catch{return null}}
+function safeSet(k,v){try{localStorage.setItem(k,v);return true}catch{return false}}
+const clientId=(()=>{let x=safeGet(CLIENT_KEY);if(!x){x=crypto.randomUUID?crypto.randomUUID():'c-'+Date.now()+'-'+Math.random().toString(36).slice(2);safeSet(CLIENT_KEY,x)}return x})();
+
+/* ---------------- Hebrew calendar & holidays ---------------- */
+const hebFmt=new Intl.DateTimeFormat('he-IL-u-ca-hebrew',{day:'numeric',month:'long'});
+const hebCache=new Map(),holCache=new Map();
+function canonMonth(s){
+  if(s.startsWith('תשר'))return 'tishrei';if(s.startsWith('חשו')||s.startsWith('חשון')||s.startsWith('מרחש'))return 'cheshvan';
+  if(s.startsWith('כסל'))return 'kislev';if(s.startsWith('טבת'))return 'tevet';if(s.startsWith('שבט'))return 'shvat';
+  if(s.startsWith('אדר')){const r=s.slice(3).trim();if(r.startsWith('ב'))return 'adar2';if(r.startsWith('א'))return 'adar1';return 'adar'}
+  if(s.startsWith('ניס'))return 'nisan';if(s.startsWith('איי'))return 'iyar';if(s.startsWith('סיו')||s.startsWith('סיון'))return 'sivan';
+  if(s.startsWith('תמו'))return 'tamuz';if(s==='אב')return 'av';if(s.startsWith('אלו'))return 'elul';return s;
+}
+function hebParts(x){
+  if(hebCache.has(x))return hebCache.get(x);let r={m:'',d:0};
+  try{const p=hebFmt.formatToParts(parseD(x));r={d:Number(p.find(q=>q.type==='day')?.value),m:canonMonth((p.find(q=>q.type==='month')?.value||'').replace(/[׳'"״]/g,'').trim())}}catch{}
+  hebCache.set(x,r);return r;
+}
+/** מחזיר {name, major} – major = יום חג שאינו יום עבודה */
+function holiday(x){
+  if(holCache.has(x))return holCache.get(x);
+  const {m,d}=hebParts(x),w=parseD(x).getDay();let h=null;const H=(name,major=false)=>{h={name,major}};
+  if(m==='elul'&&d===29)H('ערב ראש השנה');
+  else if(m==='tishrei'){if(d===1||d===2)H('ראש השנה',true);else if(d===9)H('ערב יום כיפור');else if(d===10)H('יום כיפור',true);else if(d===14)H('ערב סוכות');else if(d===15)H('סוכות',true);else if(d>=16&&d<=20)H('חול המועד סוכות');else if(d===21)H('הושענא רבה');else if(d===22)H('שמחת תורה',true)}
+  else if(m==='nisan'){if(d===14)H('ערב פסח');else if(d===15)H('פסח',true);else if(d>=16&&d<=19)H('חול המועד פסח');else if(d===20)H('ערב שביעי של פסח');else if(d===21)H('שביעי של פסח',true);else if((d===27&&w!==5&&w!==0)||(d===26&&w===4)||(d===28&&w===1))H('יום השואה')}
+  else if(m==='iyar'){
+    const atz=(d===5&&w===3)||(d===4&&w===4)||(d===3&&w===4)||(d===6&&w===2);
+    const zik=(d===4&&w===2)||(d===3&&w===3)||(d===2&&w===3)||(d===5&&w===1);
+    if(atz)H('יום העצמאות',true);else if(zik)H('יום הזיכרון');else if(d===18)H('ל״ג בעומר');else if(d===28)H('יום ירושלים');
+  }
+  else if(m==='sivan'){if(d===5)H('ערב שבועות');else if(d===6)H('שבועות',true)}
+  else if(m==='av'){if((d===9&&w!==6)||(d===10&&w===0))H('תשעה באב')}
+  else if(m==='adar'||m==='adar2'){if(d===14)H('פורים');else if(d===15)H('שושן פורים')}
+  else if(m==='shvat'&&d===15)H('ט״ו בשבט');
+  if(!h&&(m==='kislev'||m==='tevet')){for(let k=0;k<8;k++){const p=hebParts(addDays(x,-k));if(p.m==='kislev'&&p.d===25){H('חנוכה');break}}}
+  holCache.set(x,h);return h;
+}
+
+/* ---------------- state ---------------- */
+const S={
+  data:null,me:null,page:'overview',conn:'init',connName:'',connError:'',online:true,
+  lastRev:-1,lastStamp:'',stations:0,lastActivity:Date.now(),afterLogin:null,
+  calY:0,calM:0,tlY:0,tlM:0,group:'',reportYear:new Date().getFullYear(),
+  filters:{q:'',group:'',status:'',type:'',from:'',to:''},auditQ:'',corrupt:false
+};
+const FS={root:null,data:null,backups:null,clients:null,pending:null};
+
+function normalizeState(st){
+  st=st&&typeof st==='object'?st:{};
+  st.schemaVersion=2;st.revision=Number(st.revision)||0;st.updatedAt=st.updatedAt||nowISO();
+  const s=st.settings||{};
+  st.settings={...DEFAULT_SETTINGS,...s};
+  st.settings.warningThreshold=Math.max(1,Number(st.settings.warningThreshold)||3);
+  st.settings.defaultAllowance=Math.max(0,Number(st.settings.defaultAllowance)||0);
+  st.settings.sessionMinutes=Math.max(1,Number(st.settings.sessionMinutes)||10);
+  if(!Array.isArray(st.settings.workDays)||!st.settings.workDays.length)st.settings.workDays=[0,1,2,3,4];
+  st.nextEmployeeId=Number(st.nextEmployeeId)||1;st.nextRequestId=Number(st.nextRequestId)||1;
+  st.employees=(Array.isArray(st.employees)?st.employees:[]).map(e=>({...e,active:e.active!==false,group:e.group||'צוות',carry:e.carry&&typeof e.carry==='object'?e.carry:{}}));
+  st.users=(Array.isArray(st.users)?st.users:[]).map(u=>({...u,active:u.active!==false}));
+  st.requests=(Array.isArray(st.requests)?st.requests:[]).map(r=>({...r,type:r.type||'vacation'}));
+  st.audit=Array.isArray(st.audit)?st.audit:[];
+  for(const e of st.employees)if(e.id>=st.nextEmployeeId)st.nextEmployeeId=e.id+1;
+  for(const r of st.requests)if(r.id>=st.nextRequestId)st.nextRequestId=r.id+1;
+  return st;
+}
+function audit(st,actor,action,detail=''){st.audit.push({at:nowISO(),userId:actor?.id||'system',displayName:actor?.displayName||'מערכת',action,detail});if(st.audit.length>3000)st.audit=st.audit.slice(-3000)}
+
+/* ---------------- shared network folder (File System Access API) ---------------- */
+const fsSupported=()=>typeof window.showDirectoryPicker==='function';
+function idbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open(IDB_NAME,1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(IDB_STORE))r.result.createObjectStore(IDB_STORE)};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function idbGet(){try{const db=await idbOpen();return await new Promise((res,rej)=>{const q=db.transaction(IDB_STORE,'readonly').objectStore(IDB_STORE).get(IDB_KEY);q.onsuccess=()=>res(q.result||null);q.onerror=()=>rej(q.error)})}catch{return null}}
+async function idbSet(h){const db=await idbOpen();await new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,'readwrite');tx.objectStore(IDB_STORE).put(h,IDB_KEY);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
+async function hasPerm(h,ask){
+  if(!h)return false;if(typeof h.queryPermission!=='function')return true;
+  try{let p=await h.queryPermission({mode:'readwrite'});if(p==='granted')return true;if(ask)p=await h.requestPermission({mode:'readwrite'});return p==='granted'}catch{return false}
+}
+async function openDirs(h){
+  FS.root=h;FS.data=await h.getDirectoryHandle('data',{create:true});
+  FS.backups=await h.getDirectoryHandle('backups',{create:true});FS.clients=await h.getDirectoryHandle('clients',{create:true});
+}
+async function readText(dir,name){try{const f=await(await dir.getFileHandle(name)).getFile();return await f.text()}catch(e){if(e?.name==='NotFoundError')return null;throw e}}
+async function fileStamp(dir,name){try{const f=await(await dir.getFileHandle(name)).getFile();return f.lastModified+':'+f.size}catch(e){if(e?.name==='NotFoundError')return '';throw e}}
+async function writeText(dir,name,text){const fh=await dir.getFileHandle(name,{create:true});const w=await fh.createWritable();await w.write(text);await w.close()}
+
+async function acquireLock(){
+  for(let i=0;i<25;i++){
+    let lock=null;try{const t=await readText(FS.data,LOCK_FILE);if(t)lock=JSON.parse(t)}catch{}
+    const now=Date.now();
+    if(!lock||!lock.owner||Number(lock.expiresAt)<now||lock.owner===clientId){
+      await writeText(FS.data,LOCK_FILE,JSON.stringify({owner:clientId,user:S.me?.id||'',createdAt:now,expiresAt:now+LOCK_TTL}));
+      await sleep(90);
+      try{const c=JSON.parse(await readText(FS.data,LOCK_FILE)||'{}');if(c.owner===clientId)return}catch{}
+    }
+    await sleep(120+Math.random()*200);
+  }
+  throw new Error('המערכת עסוקה כרגע בשמירה ממחשב אחר. נסה/י שוב בעוד רגע.');
+}
+async function releaseLock(){try{const t=await readText(FS.data,LOCK_FILE);const x=t?JSON.parse(t):{};if(x.owner===clientId)await writeText(FS.data,LOCK_FILE,JSON.stringify({owner:'',releasedAt:Date.now(),expiresAt:0}))}catch{}}
+
+async function readState(){
+  const txt=await readText(FS.data,DATA_FILE);
+  if(txt==null)throw Object.assign(new Error('קובץ הנתונים לא נמצא'),{code:'missing'});
+  try{return normalizeState(JSON.parse(txt))}catch{
+    const prev=await readText(FS.data,PREV_FILE);
+    if(prev){try{const st=normalizeState(JSON.parse(prev));S.corrupt=true;return st}catch{}}
+    throw Object.assign(new Error('קובץ הנתונים פגום ולא ניתן לקרוא אותו. יש לשחזר מגיבוי.'),{code:'corrupt'});
+  }
+}
+
+let busy=false,mutateQueue=Promise.resolve();
+/** שינוי נתונים בטוח: נעילה → קריאה עדכנית → fn(state, actor) → שמירה + אימות. שמירות מאותה תחנה נכנסות לתור. */
+function mutate(fn,opts){const p=mutateQueue.then(()=>runMutate(fn,opts));mutateQueue=p.catch(()=>{});return p}
+async function runMutate(fn,{requireUser=true}={}){
+  if(S.conn!=='connected')throw new Error('אין חיבור לתיקיית הרשת – לא ניתן לשמור כעת.');
+  busy=true;let locked=false;
+  try{
+    await acquireLock();locked=true;
+    const prevText=await readText(FS.data,DATA_FILE);
+    let st;try{st=normalizeState(JSON.parse(prevText))}catch{st=await readState()}
+    const actor=S.me?st.users.find(u=>u.id===S.me.id):null;
+    if(requireUser&&(!actor||!actor.active))throw new Error('המשתמש אינו מחובר או אינו פעיל.');
+    const result=await fn(st,actor);
+    st.revision=(Number(st.revision)||0)+1;st.updatedAt=nowISO();st.appVersion=APP_VERSION;
+    const text=JSON.stringify(st);
+    if(prevText)await writeText(FS.data,PREV_FILE,prevText);
+    await writeText(FS.data,DATA_FILE,text);
+    const check=await readText(FS.data,DATA_FILE);
+    let ok=false;try{ok=JSON.parse(check).revision===st.revision}catch{}
+    if(!ok)throw new Error('אימות השמירה נכשל. רענן/י את הדף ובדוק/י שהשינוי נשמר.');
+    S.corrupt=false;S.lastStamp=await fileStamp(FS.data,DATA_FILE);
+    applyState(st);dailyBackup(text);
+    return result;
+  }finally{if(locked)await releaseLock();busy=false}
+}
+function applyState(st,{fromSync=false}={}){
+  S.data=st;S.lastRev=st.revision;
+  // מטמון מקומי לקריאה בלבד – ללא נתוני סיסמה
+  try{const c=clone(st);c.users=c.users.map(({salt,hash,iterations,...u})=>u);c.settings.recovery=null;safeSet(CACHE_KEY,JSON.stringify(c))}catch{}
+  if(S.me){const u=st.users.find(x=>x.id===S.me.id);if(!u||!u.active){logout('המשתמש הושבת או נמחק.');return}}
+  const wantScreen=!!screenHTML(),haveScreen=!$('#screen').classList.contains('hidden');
+  if(wantScreen!==haveScreen||wantScreen){renderAll();return}
+  renderTop();renderNav();
+  if(!LIVE_PAGES.has(S.page))return; // דפי טופס (בקשה / הגדרות) לא מתרעננים כדי לא למחוק הקלדה
+  const typing=document.activeElement&&$('#page').contains(document.activeElement)&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+  if(fromSync&&typing)return;
+  renderPage();
+}
+async function syncNow(force=false){
+  if(busy||S.conn!=='connected')return;
+  try{
+    const stamp=await fileStamp(FS.data,DATA_FILE);
+    if(!force&&stamp===S.lastStamp){setOnline(true);return}
+    const st=await readState();S.lastStamp=stamp;setOnline(true);
+    if(force||st.revision!==S.lastRev||!S.data)applyState(st,{fromSync:!force});
+  }catch(e){console.warn('sync',e);setOnline(false,e)}
+}
+function setOnline(v,err){if(S.online===v)return;S.online=v;S.connError=err?.message||'';renderTop();renderBanner()}
+
+async function dailyBackup(text){
+  try{
+    const day=todayISO(),key='vmBackup:'+day;if(safeGet(key))return;
+    const names=await listBackups();
+    if(!names.some(n=>n.startsWith('vacation-manager_'+day))){
+      await writeText(FS.backups,`vacation-manager_${day}_${new Date().toTimeString().slice(0,5).replace(':','')}_auto.json`,text);
+      await pruneBackups();
+    }
+    safeSet(key,'1');
+  }catch(e){console.warn('backup',e)}
+}
+async function listBackups(){const out=[];for await(const [n,h] of FS.backups.entries())if(h.kind==='file'&&n.endsWith('.json'))out.push(n);return out.sort().reverse()}
+async function pruneBackups(){const names=await listBackups();for(const n of names.slice(BACKUP_KEEP)){try{await FS.backups.removeEntry(n)}catch{}}}
+async function backupNow(tag='manual'){const text=await readText(FS.data,DATA_FILE);if(!text)throw new Error('אין נתונים לגיבוי');const n=`vacation-manager_${todayISO()}_${new Date().toTimeString().slice(0,8).replace(/:/g,'')}_${tag}.json`;await writeText(FS.backups,n,text);await pruneBackups();return n}
+
+async function heartbeat(){
+  if(S.conn!=='connected'||!FS.clients)return;
+  try{
+    await writeText(FS.clients,clientId+'.json',JSON.stringify({clientId,at:Date.now(),user:S.me?displayName():''}));
+    let n=0;const old=[];
+    for await(const [name,h] of FS.clients.entries()){
+      if(h.kind!=='file'||!name.endsWith('.json'))continue;
+      try{const f=await h.getFile();const age=Date.now()-f.lastModified;if(age<HEARTBEAT_MS*3)n++;else if(age>7*864e5)old.push(name)}catch{}
+    }
+    for(const o of old){try{await FS.clients.removeEntry(o)}catch{}}
+    if(n!==S.stations){S.stations=n;renderTop()}
+  }catch{}
+}
+let timers=[];
+function startTimers(){timers.forEach(clearInterval);timers=[setInterval(()=>syncNow(false),SYNC_MS),setInterval(heartbeat,HEARTBEAT_MS),setInterval(checkIdle,15000)];heartbeat()}
+
+async function activate(h){
+  try{
+    await openDirs(h);S.connName=h.name;
+    const exists=await readText(FS.data,DATA_FILE);
+    if(exists==null){S.conn='setup';S.data=null;renderAll();return}
+    S.conn='connected';await syncNow(true);startTimers();renderAll();
+  }catch(e){
+    console.error(e);S.conn='error';S.connError=e.message||String(e);renderAll();
+  }
+}
+async function boot(){
+  const d=new Date();S.calY=S.tlY=d.getFullYear();S.calM=S.tlM=d.getMonth();
+  if(!fsSupported()){S.conn='unsupported';try{const c=safeGet(CACHE_KEY);if(c)S.data=normalizeState(JSON.parse(c))}catch{}renderAll();return}
+  const h=await idbGet();
+  if(!h){S.conn='none';renderAll();return}
+  S.connName=h.name;
+  if(!await hasPerm(h,false)){S.conn='permission';FS.pending=h;renderAll();return}
+  await activate(h);
+}
+
+/* ---------------- passwords ---------------- */
+const b64=buf=>btoa(String.fromCharCode(...new Uint8Array(buf)));
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+function randomSalt(){const a=new Uint8Array(16);crypto.getRandomValues(a);return b64(a)}
+async function deriveHash(pw,salt,iter){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveBits']);return b64(await crypto.subtle.deriveBits({name:'PBKDF2',salt:unb64(salt),iterations:iter,hash:'SHA-256'},k,256))}
+async function passwordRecord(pw){const salt=randomSalt();return{salt,hash:await deriveHash(pw,salt,PBKDF2_ITER),iterations:PBKDF2_ITER}}
+function safeEqual(a,b){if(a.length!==b.length)return false;let r=0;for(let i=0;i<a.length;i++)r|=a.charCodeAt(i)^b.charCodeAt(i);return r===0}
+async function verifyRecord(rec,pw){if(!rec?.salt||!rec?.hash)return false;return safeEqual(await deriveHash(pw,rec.salt,rec.iterations||120000),rec.hash)}
+function pwProblem(pw){if(!pw||pw.length<8)return 'הסיסמה חייבת להכיל לפחות 8 תווים';if(!/[0-9]/.test(pw)||!/[^0-9]/.test(pw))return 'הסיסמה חייבת לכלול גם ספרות וגם אותיות';return ''}
+function pwScore(pw){let s=0;if(pw.length>=8)s++;if(pw.length>=12)s++;if(/[0-9]/.test(pw)&&/[a-zA-Zא-ת]/.test(pw))s++;if(/[A-Z]/.test(pw)&&/[a-z]/.test(pw))s++;if(/[^a-zA-Z0-9א-ת]/.test(pw))s++;return Math.min(4,s)}
+function randomChars(n,alphabet){const a=new Uint32Array(n);crypto.getRandomValues(a);return [...a].map(x=>alphabet[x%alphabet.length]).join('')}
+const tempPassword=()=>'Hofesh-'+randomChars(6,'23456789abcdefghjkmnpqrstuvwxyz');
+const recoveryCode=()=>randomChars(16,'ABCDEFGHJKLMNPQRSTUVWXYZ23456789').match(/.{4}/g).join('-');
+const normCode=c=>String(c||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+
+/* login throttling (per workstation) */
+function throttleInfo(uid){try{return JSON.parse(safeGet(THROTTLE_KEY)||'{}')[uid]||{n:0,until:0}}catch{return{n:0,until:0}}}
+function throttleSet(uid,v){let all={};try{all=JSON.parse(safeGet(THROTTLE_KEY)||'{}')}catch{}if(v)all[uid]=v;else delete all[uid];safeSet(THROTTLE_KEY,JSON.stringify(all))}
+
+/* ---------------- domain helpers ---------------- */
+const st0=()=>S.data;
+const me=()=>S.me&&S.data?S.data.users.find(u=>u.id===S.me.id)||null:null;
+const displayName=()=>me()?.displayName||'';
+const isAdmin=()=>{const u=me();return !!u&&(u.role==='admin'||!!u.manager)};
+const isSysAdmin=()=>me()?.role==='admin';
+const myEmpId=()=>me()?.employeeId||null;
+const empById=id=>S.data?.employees.find(e=>e.id===id);
+const activeEmps=()=>S.data.employees.filter(e=>e.active).sort((a,b)=>a.group.localeCompare(b.group,'he')||a.name.localeCompare(b.name,'he'));
+const groups=()=>[...new Set(S.data.employees.filter(e=>e.active).map(e=>e.group))].sort((a,b)=>a.localeCompare(b,'he'));
+const hue=id=>(Number(id)*47+200)%360;
+const initials=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(p=>p[0]).join('');
+function empName(id){const e=empById(id);if(!e)return 'עובד/ת';if(!S.me&&!S.data.settings.publicShowNames)return 'עובד/ת';return e.name}
+const covers=(r,d)=>r.start<=d&&r.end>=d;
+const overlaps=(r,a,b)=>r.start<=b&&r.end>=a;
+function isWorkDay(d){const s=S.data.settings;if(!s.workDays.includes(parseD(d).getDay()))return false;if(s.excludeHolidays&&holiday(d)?.major)return false;return true}
+function workDays(a,b,year){let n=0;for(const d of range(a,b)){if(year&&Number(d.slice(0,4))!==year)continue;if(isWorkDay(d))n++}return n}
+function returnDay(r){let d=addDays(r.end,1);for(let i=0;i<20&&!isWorkDay(d);i++)d=addDays(d,1);return d}
+/** בקשות שמוצגות בלוחות למשתמש הנוכחי (מאושרות + ממתינות שמותר לראות) */
+function boardRequests(){
+  const rs=S.data.requests.filter(r=>r.status==='approved'||r.status==='pending');
+  if(isAdmin())return rs;
+  const mine=myEmpId();
+  return rs.filter(r=>r.status==='approved'||(mine&&r.employeeId===mine));
+}
+function approvedOn(d,excludeId){const ids=new Set();for(const r of S.data.requests)if(r.status==='approved'&&covers(r,d)&&r.id!==excludeId)ids.add(r.employeeId);return ids}
+function loadClass(n){const t=S.data.settings.warningThreshold;return n>=t+1?'high':n>=t?'warn':''}
+function balance(empId,year){
+  const e=empById(empId);const s=S.data.settings;
+  const allowance=e?.allowance!=null&&e.allowance!==''?Number(e.allowance):s.defaultAllowance;
+  const carry=Number(e?.carry?.[year])||0;
+  let used=0,pending=0;const byType={};
+  for(const r of S.data.requests){
+    if(r.employeeId!==empId)continue;if(r.start.slice(0,4)>String(year)||r.end.slice(0,4)<String(year))continue;
+    const wd=workDays(r.start,r.end,year);
+    if(r.status==='approved'){byType[r.type]=(byType[r.type]||0)+wd;if(typeOf(r.type).balance)used+=wd}
+    else if(r.status==='pending'&&typeOf(r.type).balance)pending+=wd;
+  }
+  return{allowance,carry,total:allowance+carry,used,pending,remaining:allowance+carry-used,byType};
+}
+function statusBadge(r){if(r.status==='approved'&&r.cancelRequested)return '<span class="badge st-cancelreq">מבוקש ביטול</span>';return `<span class="badge st-${r.status}">${STATUS[r.status]||r.status}</span>`}
+function typeLabel(t){const x=typeOf(t);return `${x.icon} ${x.name}`}
+function chipHTML(r){const p=r.status==='pending';return `<span class="chip ${p?'pending':''}" style="--h:${hue(r.employeeId)}" title="${esc(empName(r.employeeId))} · ${esc(typeOf(r.type).name)} · ${fmt(r.start)}–${fmt(r.end)}${p?' · ממתין':''}">${typeOf(r.type).icon} ${esc(empName(r.employeeId))}</span>`}
+function avatar(id){return `<span class="avatar" style="--h:${hue(id)}">${esc(initials(empName(id)))}</span>`}
+
+/* ---------------- UI infrastructure ---------------- */
+function toast(msg,kind='info',ms=3800){const el=document.createElement('div');el.className='toast '+kind;el.textContent=msg;$('#toasts').appendChild(el);setTimeout(()=>el.remove(),ms)}
+let modalState=null;
+function openModal(html,{wide=false,locked=false,onClose=null}={}){
+  closeModal(true);
+  $('#modalRoot').innerHTML=`<div class="modal-bg" ${locked?'':'data-bg'}><div class="modal ${wide?'wide':''}" role="dialog" aria-modal="true">${html}</div></div>`;
+  modalState={onClose,locked};
+  setTimeout(()=>{const f=$('#modalRoot').querySelector('[autofocus],input:not([type=hidden]):not([readonly]),select,textarea,button');f?.focus()},30);
+}
+function closeModal(silent=false){const ms=modalState;modalState=null;$('#modalRoot').innerHTML='';if(!silent&&ms?.onClose)ms.onClose()}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modalState&&!modalState.locked)closeModal()});
+document.addEventListener('mousedown',e=>{if(e.target.matches('[data-bg]'))closeModal()});
+function formValues(form){const v={};for(const el of form.elements){if(!el.name)continue;if(el.type==='checkbox'){if(el.dataset.multi){(v[el.name]=v[el.name]||[]);if(el.checked)v[el.name].push(el.value)}else v[el.name]=el.checked}else v[el.name]=el.type==='password'?el.value:el.value.trim()}return v}
+/** טופס במודל. onSubmit(values) יכול לזרוק שגיאה – תוצג בתוך החלון */
+function formModal({title,body,ok='שמירה',kind='',wide=false,locked=false,cancel=true,onSubmit}){
+  return new Promise(resolve=>{
+    let done=false;
+    openModal(`<form id="mform" novalidate><h3>${title}</h3>${body}<div class="merr hidden" id="merr"></div><div class="modal-actions"><button class="btn ${kind}" type="submit" id="mok">${ok}</button>${cancel?'<button class="btn outline" type="button" data-act="closeModal">ביטול</button>':''}</div></form>`,{wide,locked,onClose:()=>{if(!done){done=true;resolve(null)}}});
+    const f=$('#mform');
+    f.addEventListener('submit',async ev=>{
+      ev.preventDefault();const btn=$('#mok'),err=$('#merr');err.classList.add('hidden');btn.disabled=true;
+      try{const v=formValues(f);const r=onSubmit?await onSubmit(v):v;done=true;closeModal(true);resolve(r===undefined?v:r)}
+      catch(e){err.textContent=e.message||String(e);err.classList.remove('hidden');btn.disabled=false}
+    });
+  });
+}
+function confirmBox(msg,{title='אישור',ok='אישור',kind=''}={}){return formModal({title,body:`<p style="margin:0;line-height:1.6">${msg}</p>`,ok,kind}).then(v=>!!v)}
+function downloadFile(name,text,type='text/csv;charset=utf-8'){const url=URL.createObjectURL(new Blob([text],{type}));const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}
+const csvCell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+const toCSV=rows=>'\uFEFF'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n');
+function pwInput(name,{auto='current-password',placeholder='',meter=false,id=''}={}){return `<div class="pw-wrap"><input type="password" name="${name}" ${id?`id="${id}"`:''} autocomplete="${auto}" placeholder="${placeholder}" ${meter?'data-on="pwMeter"':''}><button type="button" class="pw-eye" data-act="togglePw" aria-label="הצג סיסמה">👁</button></div>${meter?'<div class="pw-meter"><i></i></div>':''}`}
+
+const ACT={},ON={};
+document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el||el.disabled)return;const f=ACT[el.dataset.act];if(f){e.preventDefault();Promise.resolve(f(el.dataset,el,e)).catch(err=>{console.error(err);toast(err.message||String(err),'err')})}});
+document.addEventListener('input',e=>{const el=e.target.closest('[data-on]');if(el)ON[el.dataset.on]?.(el,e)});
+document.addEventListener('change',e=>{const el=e.target.closest('[data-on]');if(el&&(el.tagName==='SELECT'||el.type==='checkbox'||el.type==='date'||el.type==='file'))ON[el.dataset.on]?.(el,e)});
+['click','keydown','mousemove','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{S.lastActivity=Date.now()},{passive:true}));
+ACT.closeModal=()=>closeModal();
+ACT.togglePw=(d,el)=>{const i=el.parentElement.querySelector('input');i.type=i.type==='password'?'text':'password'};
+ON.pwMeter=el=>{const s=pwScore(el.value);const bar=el.closest('.field,.modal,form').querySelector('.pw-meter i');if(bar){bar.style.width=(s*25)+'%';bar.style.background=['#b42318','#d9822b','#d4b106','#3a9d5d','#18794e'][s]}};
+
+/* ---------------- top bar / nav / screens ---------------- */
+function renderTop(){
+  $('#deptTitle').textContent=S.data?.settings.department||'\u00a0';
+  const pill=$('#netPill');let cls='',txt='';
+  if(S.conn==='connected'){if(S.online){cls='ok';txt=`מסונכרן${S.connName?` · ${S.connName}`:''}${S.stations>1?` · ${S.stations} תחנות`:''}`}else{cls='err';txt='אין חיבור לתיקייה'}}
+  else if(S.conn==='unsupported'){cls='err';txt='דפדפן לא נתמך'}
+  else if(S.conn==='init'){txt='טוען…'}
+  else{txt=S.conn==='setup'?'הקמת מערכת':'לא מחובר'}
+  pill.innerHTML=`<span class="dot ${cls}"></span><span>${esc(txt)}</span>`;
+  const ua=$('#userArea');
+  if(S.me&&me())ua.innerHTML=`<span class="user-chip">👤 ${esc(displayName())}${isAdmin()?' · מנהל/ת':''}</span><button class="btn ghost sm" data-act="changePw">שינוי סיסמה</button><button class="btn light sm" data-act="logout">יציאה</button>`;
+  else if(S.conn==='connected'&&S.data)ua.innerHTML=`<button class="btn light sm" data-act="login">🔑 כניסה אישית</button>`;
+  else ua.innerHTML='';
+  renderBanner();
+}
+function renderBanner(){
+  const b=$('#banner');let html='',cls='';
+  if(S.conn==='connected'&&!S.online){html='⚠ אין גישה לתיקיית הרשת כרגע. מוצגים הנתונים האחרונים שנטענו; לא ניתן לשמור שינויים עד לחידוש החיבור.';cls='err'}
+  else if(S.corrupt&&isAdmin()){html='⚠ קובץ הנתונים הראשי היה פגום והמערכת טענה את העותק הקודם. השמירה הבאה תתקן את הקובץ. מומלץ לבדוק את הגיבויים.';cls='warn'}
+  else if(S.conn==='unsupported'&&S.data){html='תצוגה לקריאה בלבד מהמטמון המקומי – הדפדפן אינו תומך בחיבור לתיקיית רשת.';cls='warn'}
+  b.className='banner '+cls+(html?'':' hidden');b.textContent=html.replace(/<[^>]+>/g,'');
+}
+const NAV=[
+  {sec:'מעקב'},
+  {id:'overview',label:'סקירה',ico:'📊'},
+  {id:'calendar',label:'לוח חודשי',ico:'📅'},
+  {id:'timeline',label:'ציר זמן צוות',ico:'📈'},
+  {sec:'אישי'},
+  {id:'request',label:'בקשת חופשה',ico:'✍️',need:'login'},
+  {id:'my',label:'הבקשות והיתרה שלי',ico:'🗂️',need:'employee'},
+  {sec:'ניהול',need:'admin'},
+  {id:'approvals',label:'אישור בקשות',ico:'✅',need:'admin',count:()=>S.data.requests.filter(r=>r.status==='pending'||(r.status==='approved'&&r.cancelRequested)).length},
+  {id:'leaves',label:'כל החופשות',ico:'📋',need:'admin'},
+  {id:'reports',label:'דוח יתרות',ico:'🧮',need:'admin'},
+  {id:'employees',label:'עובדים והרשאות',ico:'👥',need:'admin'},
+  {id:'settings',label:'הגדרות וגיבויים',ico:'⚙️',need:'admin'},
+  {id:'audit',label:'יומן פעולות',ico:'🕓',need:'admin'}
+];
+const LIVE_PAGES=new Set(['overview','calendar','timeline','my','approvals','leaves','reports','employees','audit']);
+function canSee(item){if(!item.need)return true;if(item.need==='login')return true;if(item.need==='employee')return !!myEmpId();if(item.need==='admin')return isAdmin();return false}
+function renderNav(){
+  if(!S.data)return;
+  $('#nav').innerHTML=NAV.filter(canSee).map(i=>{
+    if(i.sec)return `<div class="nav-sec">${i.sec}</div>`;
+    const c=i.count?i.count():0;const lock=i.need==='login'&&!S.me;
+    return `<button class="nav-item ${S.page===i.id?'active':''}" data-act="go" data-page="${i.id}"><span class="ico">${i.ico}</span>${i.label}${c?`<span class="count">${c}</span>`:''}${lock?'<span class="lock" title="נדרשת כניסה אישית">🔒</span>':''}</button>`;
+  }).join('');
+}
+function renderAll(){
+  renderTop();
+  const scr=screenHTML();
+  if(scr){$('#screen').innerHTML=scr;$('#screen').classList.remove('hidden');$('#shell').classList.add('hidden');afterScreen();return}
+  $('#screen').classList.add('hidden');$('#shell').classList.remove('hidden');
+  const item=NAV.find(i=>i.id===S.page);if(!item||!canSee(item)||(item.need==='login'&&!S.me))S.page='overview';
+  renderNav();renderPage();
+}
+function screenHTML(){
+  const browserNote='<div class="notice small" style="margin-top:14px">המערכת עובדת ב-<b>Microsoft Edge</b> או <b>Google Chrome</b> במחשב. כל התחנות צריכות להתחבר לאותה תיקיית רשת.</div>';
+  switch(S.conn){
+    case 'init':return `<div class="screen-card"><h1>טוען…</h1><p>מתחבר לתיקיית הרשת השמורה.</p></div>`;
+    case 'unsupported':
+      if(S.data)return '';
+      return `<div class="screen-card"><h1>הדפדפן אינו נתמך</h1><p>החיבור לתיקיית הרשת המשותפת דורש דפדפן Microsoft Edge או Google Chrome (גרסה עדכנית). פתח/י את הקובץ באחד מהם.</p><p class="small">אם הקובץ כבר פתוח ב-Edge/Chrome, ייתכן שמדיניות הארגון חוסמת גישה לתיקיות (File System Access). פנה/י לתמיכת המחשוב.</p></div>`;
+    case 'none':
+      return `<div class="screen-card"><h1>חיבור לתיקיית הרשת</h1><p>כדי שכל המחשבים יראו את אותם הנתונים, יש לבחור פעם אחת בכל מחשב את <b>תיקיית הרשת המשותפת</b> של המערכת.</p>
+      <ol class="steps"><li>לחץ/י על הכפתור למטה.</li><li>בחר/י את התיקייה המשותפת (למשל <span dir="ltr">S:\\מחלקה\\חופשות</span>).</li><li>אשר/י לדפדפן <b>הרשאת עריכה</b> לתיקייה (מומלץ: "אפשר בכל ביקור").</li></ol>
+      <button class="btn lg block" data-act="pickFolder">📁 בחירת תיקיית רשת</button>
+      <p class="small" style="margin-top:12px">התיקייה ריקה? המערכת תציע להקים מערכת חדשה ולהגדיר מנהל/ת מערכת.</p>${browserNote}</div>`;
+    case 'permission':
+      return `<div class="screen-card"><h1>אישור גישה לתיקייה</h1><p>המערכת זוכרת את התיקייה <b>${esc(S.connName)}</b>, אך הדפדפן מבקש אישור גישה מחדש (מטעמי אבטחה זה קורה לאחר הפעלה מחדש של הדפדפן).</p>
+      <button class="btn lg block" data-act="renewPermission">🔓 אישור גישה לתיקייה</button>
+      <button class="btn outline block" style="margin-top:8px" data-act="pickFolder">בחירת תיקייה אחרת</button>
+      <div class="notice small" style="margin-top:14px">טיפ: בחלון ההרשאה בחר/י <b>"אפשר בכל ביקור"</b> כדי שהשאלה לא תחזור.</div></div>`;
+    case 'error':
+      return `<div class="screen-card"><h1>בעיה בטעינת הנתונים</h1><div class="notice err">${esc(S.connError)}</div>
+      <div class="toolbar" style="margin:14px 0"><button class="btn" data-act="retry">נסה/י שוב</button><button class="btn outline" data-act="pickFolder">בחירת תיקייה אחרת</button></div>
+      <h3 style="color:var(--navy);font-size:15px">שחזור מגיבוי</h3><p class="small">אם קובץ הנתונים נפגם, ניתן לשחזר את הגיבוי האחרון התקין. הנתונים הנוכחיים יישמרו בצד לפני השחזור.</p><div id="screenBackups" class="list"><div class="empty">טוען גיבויים…</div></div></div>`;
+    case 'setup':return setupHTML();
+  }
+  if(!S.data)return `<div class="screen-card"><h1>טוען…</h1></div>`;
+  if(!S.me&&!S.data.settings.publicView)return `<div class="screen-card"><h1>כניסה למערכת</h1><p>${esc(S.data.settings.department)} · הצפייה בלוח מחייבת כניסה אישית.</p>${loginFormHTML()}</div>`;
+  return '';
+}
+async function afterScreen(){
+  if(S.conn==='error'&&FS.backups){
+    try{const names=(await listBackups()).slice(0,8);$('#screenBackups').innerHTML=names.length?names.map(n=>`<div class="row"><span class="small" dir="ltr">${esc(n)}</span><button class="btn sm amber" data-act="restoreBackup" data-name="${esc(n)}" data-anon="1">שחזור</button></div>`).join(''):'<div class="empty">לא נמצאו גיבויים</div>'}catch{$('#screenBackups').innerHTML='<div class="empty">לא ניתן לקרוא את תיקיית הגיבויים</div>'}
+  }
+  if(!S.me&&S.data&&!S.data.settings.publicView&&S.conn==='connected')bindLoginForm();
+}
+ACT.pickFolder=async()=>{
+  if(!fsSupported()){toast('הדפדפן אינו תומך בבחירת תיקייה – יש להשתמש ב-Edge או Chrome','err');return}
+  let h;try{h=await window.showDirectoryPicker({mode:'readwrite',id:'vacationManagerSharedFolder'})}catch(e){if(e?.name!=='AbortError')toast('בחירת התיקייה נכשלה: '+e.message,'err');return}
+  if(!await hasPerm(h,true)){toast('לא ניתנה הרשאת קריאה וכתיבה לתיקייה','err');return}
+  try{await idbSet(h)}catch(e){console.warn('idb',e)}
+  S.me=null;await activate(h);if(S.conn==='connected')toast('התיקייה חוברה בהצלחה','ok');
+};
+ACT.renewPermission=async()=>{const h=FS.pending||await idbGet();if(h&&await hasPerm(h,true)){FS.pending=null;await activate(h);return}toast('ההרשאה לא אושרה. ניתן לבחור את התיקייה מחדש.','err')};
+ACT.retry=()=>FS.root?activate(FS.root):boot();
+ACT.netInfo=()=>{
+  const st=S.data;
+  openModal(`<h3>חיבור וסנכרון</h3><div class="list">
+  <div class="row"><span>תיקיית רשת</span><b>${esc(S.connName||'—')}</b></div>
+  <div class="row"><span>מצב</span><b>${S.conn==='connected'?(S.online?'✅ מחובר ומסונכרן':'⚠ אין גישה כרגע'):esc(S.conn)}</b></div>
+  <div class="row"><span>תחנות פעילות כעת</span><b>${S.stations||'—'}</b></div>
+  <div class="row"><span>גרסת נתונים</span><b>${st?st.revision:'—'}</b></div>
+  <div class="row"><span>עודכן לאחרונה</span><b>${st?fmtDT(st.updatedAt):'—'}</b></div>
+  <div class="row"><span>גרסת תוכנה</span><b>${APP_VERSION}</b></div></div>
+  <div class="modal-actions"><button class="btn" data-act="syncNow">סנכרון עכשיו</button><button class="btn outline" data-act="pickFolder">החלפת תיקייה</button><button class="btn outline" data-act="closeModal">סגירה</button></div>`);
+};
+ACT.syncNow=async()=>{await syncNow(true);closeModal();toast(S.online?'הנתונים עודכנו':'אין גישה לתיקייה',S.online?'ok':'err')};
+
+/* ---------------- first-run setup ---------------- */
+function setupHTML(){
+  return `<div class="screen-card"><h1>הקמת מערכת חדשה</h1><p>לא נמצאו נתונים בתיקייה <b>${esc(S.connName)}</b>. הגדר/י את המחלקה ואת חשבון <b>מנהל/ת המערכת</b> הראשון.</p>
+  <form id="setupForm" novalidate>
+   <div class="field"><label>שם המחלקה / היחידה</label><input name="dept" required placeholder="לדוגמה: מחלקה גריאטרית א׳"></div>
+   <div class="field"><label>שם מנהל/ת המערכת</label><input name="name" required value="מנהל מערכת"></div>
+   <div class="field"><label>סיסמת מנהל/ת</label>${pwInput('pw',{auto:'new-password',meter:true,placeholder:'לפחות 8 תווים, אותיות וספרות'})}</div>
+   <div class="field"><label>אימות סיסמה</label>${pwInput('pw2',{auto:'new-password'})}</div>
+   <div class="form-grid"><div class="field"><label>מכסת ימי חופשה שנתית (ברירת מחדל)</label><input name="allowance" type="number" min="0" max="60" value="22"></div>
+   <div class="field"><label>התראת עומס מ-X עובדים בחופשה</label><input name="threshold" type="number" min="1" max="50" value="3"></div></div>
+   <div class="merr hidden" id="setupErr"></div>
+   <button class="btn lg block" type="submit">הקמת המערכת</button>
+  </form></div>`;
+}
+document.addEventListener('submit',async e=>{
+  if(e.target.id==='setupForm'){
+    e.preventDefault();const v=formValues(e.target),err=$('#setupErr');err.classList.add('hidden');
+    const show=m=>{err.textContent=m;err.classList.remove('hidden')};
+    if(!v.dept)return show('יש להזין שם מחלקה');if(!v.name)return show('יש להזין שם מנהל/ת');
+    const p=pwProblem(v.pw);if(p)return show(p);if(v.pw!==v.pw2)return show('הסיסמאות אינן תואמות');
+    const btn=e.target.querySelector('button[type=submit]');btn.disabled=true;btn.textContent='יוצר…';
+    try{await createSystem(v)}catch(x){show(x.message);btn.disabled=false;btn.textContent='הקמת המערכת'}
+  }
+});
+async function createSystem(v){
+  await acquireLock();let code;
+  try{
+    if(await readText(FS.data,DATA_FILE))throw new Error('כבר קיימת מערכת בתיקייה זו (ייתכן שהוקמה ממחשב אחר). רענן/י את הדף.');
+    code=recoveryCode();
+    const admin={id:'admin',displayName:v.name,role:'admin',employeeId:null,active:true,mustChange:false,createdAt:nowISO(),...await passwordRecord(v.pw)};
+    const st=normalizeState({revision:1,settings:{...DEFAULT_SETTINGS,department:v.dept,defaultAllowance:Number(v.allowance)||22,warningThreshold:Number(v.threshold)||3,recovery:await passwordRecord(normCode(code))},users:[admin],employees:[],requests:[],audit:[]});
+    audit(st,admin,'system_created',v.dept);
+    await writeText(FS.data,DATA_FILE,JSON.stringify(st));
+  }finally{await releaseLock()}
+  S.conn='connected';S.me={id:'admin'};S.page='employees';await syncNow(true);startTimers();renderAll();
+  showRecoveryCode(code,true);
+}
+function showRecoveryCode(code,first){
+  openModal(`<h3>🔐 קוד שחזור למנהל/ת המערכת</h3><p>${first?'המערכת הוקמה בהצלחה. ':''}שמור/י את הקוד הבא במקום בטוח (מודפס / בכספת). הוא מאפשר לאפס את סיסמת המנהל/ת אם תישכח. <b>הקוד מוצג פעם אחת בלבד.</b></p><div class="code-box">${esc(code)}</div>
+  <div class="modal-actions"><button class="btn" data-act="dlRecovery" data-code="${esc(code)}">הורדה כקובץ</button><button class="btn outline" data-act="closeModal">שמרתי, המשך</button></div>`,{locked:true});
+}
+ACT.dlRecovery=d=>downloadFile('קוד_שחזור_מערכת_חופשות.txt',`מערכת חופשות – ${S.data?.settings.department||''}\r\nקוד שחזור מנהל/ת: ${d.code}\r\nנוצר: ${new Date().toLocaleString('he-IL')}\r\n`,'text/plain;charset=utf-8');
+
+/* ---------------- login / logout / passwords ---------------- */
+function loginFormHTML(){
+  const us=S.data.users.filter(u=>u.active).slice().sort((a,b)=>(a.role==='admin'?0:1)-(b.role==='admin'?0:1)||a.displayName.localeCompare(b.displayName,'he'));
+  const opts=us.map(u=>`<option value="${esc(u.id)}">${esc(u.displayName)}${u.role==='admin'?' (מנהל/ת מערכת)':''}</option>`).join('');
+  return `<form id="loginForm" novalidate>
+   <div class="field"><label>משתמש/ת</label><input class="input" id="loginSearch" placeholder="🔎 הקלד/י שם לחיפוש…" data-on="loginFilter" style="margin-bottom:6px"><select name="uid" id="loginUid" size="1">${opts||'<option value="">אין משתמשים</option>'}</select></div>
+   <div class="field"><label>סיסמה</label>${pwInput('pw',{placeholder:'הסיסמה האישית שלך'})}</div>
+   <div class="merr hidden" id="loginErr"></div>
+   <button class="btn lg block" type="submit">כניסה</button>
+   <div style="display:flex;justify-content:space-between;margin-top:10px"><button type="button" class="linkbtn" data-act="forgotPw">שכחתי סיסמה</button><span class="small muted">ננעל אוטומטית לאחר ${S.data.settings.sessionMinutes} דק׳ ללא פעילות</span></div>
+  </form>`;
+}
+ON.loginFilter=el=>{const q=el.value.trim();const sel=$('#loginUid');let first=null;for(const o of sel.options){const show=!q||o.textContent.includes(q);o.hidden=!show;if(show&&!first)first=o}if(first)sel.value=first.value};
+function bindLoginForm(){
+  const f=$('#loginForm');if(!f||f.dataset.bound)return;f.dataset.bound='1';
+  const last=safeGet('vmLastUser');if(last&&[...f.uid.options].some(o=>o.value===last))f.uid.value=last;
+  setTimeout(()=>(last?f.pw:$('#loginSearch'))?.focus(),40);
+  f.addEventListener('submit',async ev=>{
+    ev.preventDefault();const err=$('#loginErr');err.classList.add('hidden');const btn=f.querySelector('button[type=submit]');
+    try{btn.disabled=true;await doLogin(f.uid.value,f.pw.value)}catch(e){err.textContent=e.message;err.classList.remove('hidden');f.pw.select()}finally{btn.disabled=false}
+  });
+}
+ACT.login=()=>openLogin();
+function openLogin(after=null,reason=''){
+  if(S.conn!=='connected'){toast('יש להתחבר תחילה לתיקיית הרשת','err');return}
+  S.afterLogin=after;
+  openModal(`<h3>כניסה אישית</h3>${reason?`<div class="notice" style="margin-bottom:12px">${reason}</div>`:''}${loginFormHTML()}`,{onClose:()=>{S.afterLogin=null}});
+  bindLoginForm();
+}
+async function doLogin(uid,pw){
+  if(!uid)throw new Error('יש לבחור משתמש/ת');
+  const th=throttleInfo(uid);if(th.until>Date.now())throw new Error(`נרשמו יותר מדי ניסיונות שגויים. נסה/י שוב בעוד ${Math.ceil((th.until-Date.now())/1000)} שניות.`);
+  await syncNow(true);
+  const u=S.data.users.find(x=>x.id===uid&&x.active);
+  if(!u||!await verifyRecord(u,pw)){
+    const n=th.n+1;throttleSet(uid,{n,until:n>=5?Date.now()+Math.min(15*60e3,30e3*2**(n-5)):0});
+    throw new Error('שם המשתמש או הסיסמה אינם נכונים'+(n>=3&&n<5?` (נותרו ${5-n} ניסיונות לפני נעילה זמנית)`:''));
+  }
+  throttleSet(uid,null);safeSet('vmLastUser',uid);
+  S.me={id:u.id};S.lastActivity=Date.now();
+  const after=S.afterLogin;S.afterLogin=null;closeModal(true);
+  // רישום כניסה + שדרוג hash ישן – ברקע
+  const upgrade=(u.iterations||0)<PBKDF2_ITER?await passwordRecord(pw):null;
+  mutate((st,a)=>{a.lastLogin=nowISO();if(upgrade)Object.assign(a,upgrade);audit(st,a,'login')}).catch(e=>console.warn('login record',e));
+  renderAll();toast(`שלום ${u.displayName}`,'ok');
+  if(u.mustChange){await forcePasswordChange();}
+  if(after)after();
+}
+ACT.logout=()=>logout();
+function logout(msg){S.me=null;closeModal(true);if(S.page!=='calendar'&&S.page!=='timeline')S.page='overview';renderAll();if(msg)toast(msg,'info',6000)}
+function checkIdle(){if(!S.me||!S.data)return;if(Date.now()-S.lastActivity>S.data.settings.sessionMinutes*60e3)logout('נותקת אוטומטית לאחר חוסר פעילות (הגנה על עמדה משותפת).')}
+async function forcePasswordChange(){
+  await formModal({title:'הגדרת סיסמה אישית',locked:true,cancel:false,ok:'שמירת סיסמה',
+    body:`<div class="notice warn" style="margin-bottom:12px">זו כניסה ראשונה או שהסיסמה אופסה. יש לבחור סיסמה אישית חדשה לפני ההמשך.</div>
+    <div class="field"><label>סיסמה חדשה</label>${pwInput('pw',{auto:'new-password',meter:true,placeholder:'לפחות 8 תווים, אותיות וספרות'})}</div>
+    <div class="field"><label>אימות סיסמה</label>${pwInput('pw2',{auto:'new-password'})}</div>`,
+    onSubmit:async v=>{const p=pwProblem(v.pw);if(p)throw new Error(p);if(v.pw!==v.pw2)throw new Error('הסיסמאות אינן תואמות');const rec=await passwordRecord(v.pw);await mutate((st,a)=>{Object.assign(a,rec);a.mustChange=false;a.passwordChangedAt=nowISO();audit(st,a,'password_set')})}});
+  toast('הסיסמה נשמרה','ok');
+}
+ACT.changePw=async()=>{
+  const r=await formModal({title:'שינוי סיסמה',ok:'שינוי סיסמה',
+    body:`<div class="field"><label>סיסמה נוכחית</label>${pwInput('old')}</div><div class="field"><label>סיסמה חדשה</label>${pwInput('pw',{auto:'new-password',meter:true})}</div><div class="field"><label>אימות סיסמה חדשה</label>${pwInput('pw2',{auto:'new-password'})}</div>`,
+    onSubmit:async v=>{if(!await verifyRecord(me(),v.old))throw new Error('הסיסמה הנוכחית שגויה');const p=pwProblem(v.pw);if(p)throw new Error(p);if(v.pw!==v.pw2)throw new Error('הסיסמאות אינן תואמות');if(v.pw===v.old)throw new Error('הסיסמה החדשה זהה לישנה');const rec=await passwordRecord(v.pw);await mutate((st,a)=>{Object.assign(a,rec);a.mustChange=false;a.passwordChangedAt=nowISO();audit(st,a,'password_changed')})}});
+  if(r)toast('הסיסמה עודכנה','ok');
+};
+ACT.forgotPw=async()=>{
+  const admins=S.data.users.filter(u=>u.role==='admin'&&u.active);
+  const hasCode=!!S.data.settings.recovery;
+  const r=await formModal({title:'שכחתי סיסמה',ok:'איפוס סיסמת מנהל/ת',
+    body:`<div class="notice" style="margin-bottom:12px"><b>עובד/ת?</b> פנה/י למנהל/ת המערכת – הוא/היא יאפס/תאפס לך סיסמה זמנית.</div>
+    ${hasCode?`<p class="small">איפוס סיסמת <b>מנהל/ת מערכת</b> באמצעות קוד השחזור שנוצר בעת הקמת המערכת:</p>
+    <div class="field"><label>חשבון מנהל/ת</label><select name="uid">${admins.map(a=>`<option value="${esc(a.id)}">${esc(a.displayName)}</option>`).join('')}</select></div>
+    <div class="field"><label>קוד שחזור</label><input name="code" dir="ltr" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off"></div>
+    <div class="field"><label>סיסמה חדשה</label>${pwInput('pw',{auto:'new-password',meter:true})}</div>`:'<p class="small">לא הוגדר קוד שחזור במערכת זו. מנהל/ת אחר/ת יכול/ה לאפס את הסיסמה.</p>'}`,
+    onSubmit:async v=>{
+      if(!hasCode)throw new Error('לא ניתן לאפס ללא קוד שחזור');
+      if(!await verifyRecord(S.data.settings.recovery,normCode(v.code)))throw new Error('קוד השחזור שגוי');
+      const p=pwProblem(v.pw);if(p)throw new Error(p);const rec=await passwordRecord(v.pw);
+      await mutate((st)=>{const a=st.users.find(u=>u.id===v.uid&&u.role==='admin');if(!a)throw new Error('החשבון לא נמצא');Object.assign(a,rec);a.mustChange=false;a.active=true;audit(st,a,'admin_password_recovered')},{requireUser:false});
+      throttleSet(v.uid,null);
+    }});
+  if(r)toast('סיסמת המנהל/ת אופסה. ניתן להיכנס עם הסיסמה החדשה.','ok');
+};
+/** מבצע פעולה רק אם מחובר; אחרת פותח כניסה וממשיך אחריה */
+function requireLogin(fn,reason='כדי להגיש בקשת חופשה יש להיכנס עם שם המשתמש והסיסמה האישיים.'){if(S.me)return fn();openLogin(fn,reason)}
+ACT.go=d=>{
+  const item=NAV.find(i=>i.id===d.page);
+  if(item?.need==='login'&&!S.me){requireLogin(()=>{S.page=d.page;renderAll()});return}
+  S.page=d.page;renderNav();renderPage();window.scrollTo({top:0});
+};
+
+/* ---------------- pages ---------------- */
+function head(title,sub='',actions=''){return `<div class="page-head"><div><h2>${title}</h2>${sub?`<p>${sub}</p>`:''}</div>${actions?`<div class="toolbar">${actions}</div>`:''}</div>`}
+const PAGES={};
+function renderPage(){if(!S.data)return;const f=PAGES[S.page]||PAGES.overview;$('#page').innerHTML=f();}
+
+/* ---- overview ---- */
+PAGES.overview=()=>{
+  const t=todayISO(),week=addDays(t,6),d=S.data,emps=activeEmps();
+  const appr=d.requests.filter(r=>r.status==='approved');
+  const outToday=appr.filter(r=>covers(r,t)).sort((a,b)=>a.end.localeCompare(b.end));
+  const outWeek=new Set(appr.filter(r=>overlaps(r,t,week)).map(r=>r.employeeId));
+  const soon=appr.filter(r=>r.start>t&&r.start<=addDays(t,21)).sort((a,b)=>a.start.localeCompare(b.start));
+  const pending=d.requests.filter(r=>r.status==='pending');
+  const next=range(t,addDays(t,13)).map(x=>({d:x,n:approvedOn(x).size}));
+  const max=Math.max(d.settings.warningThreshold+1,...next.map(x=>x.n));
+  const peak=next.filter(x=>loadClass(x.n)).length;
+  let personal='';
+  if(myEmpId()){
+    const y=new Date().getFullYear(),b=balance(myEmpId(),y);
+    const mineNext=d.requests.filter(r=>r.employeeId===myEmpId()&&r.end>=t&&(r.status==='approved'||r.status==='pending')).sort((a,b)=>a.start.localeCompare(b.start))[0];
+    personal=`<div class="card"><h3>שלום ${esc(displayName())} <button class="btn sm" data-act="go" data-page="request">✍️ בקשה חדשה</button></h3><div class="stats" style="margin:0">
+     <div class="stat ${b.remaining<0?'bad':'good'}"><div class="k">יתרת חופשה ${y}</div><div class="v">${b.remaining}</div><div class="sub">מתוך ${b.total} ימי עבודה</div></div>
+     <div class="stat"><div class="k">נוצלו</div><div class="v">${b.used}</div><div class="sub">ימי חופשה מאושרים</div></div>
+     <div class="stat warn"><div class="k">ממתינים לאישור</div><div class="v">${b.pending}</div><div class="sub">ימים</div></div>
+     <div class="stat"><div class="k">החופשה הבאה שלי</div><div class="v" style="font-size:17px;margin-top:8px">${mineNext?`${fmtShort(mineNext.start)}–${fmtShort(mineNext.end)}`:'—'}</div><div class="sub">${mineNext?STATUS[mineNext.status]:'אין חופשה מתוכננת'}</div></div></div></div>`;
+  }
+  const outRow=r=>`<div class="row"><div style="display:flex;gap:9px;align-items:center;min-width:0">${avatar(r.employeeId)}<div style="min-width:0"><div class="row-title">${esc(empName(r.employeeId))}</div><div class="row-sub">${esc(empById(r.employeeId)?.group||'')} · ${typeLabel(r.type)}</div></div></div><div class="small" style="text-align:left">עד ${fmtShort(r.end)}<br><span class="muted">חוזר/ת ${HEB_DAYS[parseD(returnDay(r)).getDay()]} ${fmtShort(returnDay(r))}</span></div></div>`;
+  const soonRow=r=>`<div class="row"><div style="display:flex;gap:9px;align-items:center;min-width:0">${avatar(r.employeeId)}<div><div class="row-title">${esc(empName(r.employeeId))}</div><div class="row-sub">${typeLabel(r.type)} · ${workDays(r.start,r.end)} ימי עבודה</div></div></div><div class="small nowrap">${fmtShort(r.start)} – ${fmtShort(r.end)}</div></div>`;
+  return head('סקירה',longDate(t),`<button class="btn outline sm" data-act="go" data-page="calendar">📅 לוח חודשי</button><button class="btn outline sm" data-act="go" data-page="timeline">📈 ציר זמן</button>`)+
+  personal+
+  `<div class="stats">
+    <div class="stat"><div class="k">בחופשה היום</div><div class="v">${outToday.length}</div><div class="sub">מתוך ${emps.length} עובדים פעילים</div></div>
+    <div class="stat"><div class="k">בחופשה ב-7 הימים הקרובים</div><div class="v">${outWeek.size}</div><div class="sub">עובדים שונים</div></div>
+    ${isAdmin()?`<div class="stat ${pending.length?'warn':''}"><div class="k">בקשות ממתינות</div><div class="v">${pending.length}</div><div class="sub"><button class="linkbtn" data-act="go" data-page="approvals">לטיפול ←</button></div></div>`:`<div class="stat"><div class="k">יוצאים ב-3 השבועות הקרובים</div><div class="v">${soon.length}</div><div class="sub">חופשות מאושרות</div></div>`}
+    <div class="stat ${peak?'bad':'good'}"><div class="k">ימי עומס בשבועיים הקרובים</div><div class="v">${peak}</div><div class="sub">${d.settings.warningThreshold}+ עובדים בחופשה באותו יום</div></div>
+  </div>
+  <div class="grid2">
+   <div class="card"><h3>🏖️ בחופשה היום</h3><div class="list">${outToday.map(outRow).join('')||'<div class="empty">כל הצוות נמצא היום 👍</div>'}</div></div>
+   <div class="card"><h3>📆 יוצאים בקרוב (3 שבועות)</h3><div class="list">${soon.slice(0,10).map(soonRow).join('')||'<div class="empty">אין חופשות מתוכננות</div>'}${soon.length>10?`<div class="more">ועוד ${soon.length-10}…</div>`:''}</div></div>
+  </div>
+  <div class="card"><h3>עומס חופשות – 14 הימים הקרובים <span class="legend"><span><i style="background:#9ec1e6"></i>תקין</span><span><i style="background:#f2c14e"></i>${d.settings.warningThreshold} – סף התראה</span><span><i style="background:#e5635a"></i>מעל הסף</span></span></h3>
+   <div class="bars">${next.map(x=>{const h=holiday(x.d);return `<div class="b" title="${fmt(x.d)}${h?' · '+h.name:''} · ${x.n} בחופשה"><span class="n">${x.n||''}</span><div class="col ${loadClass(x.n)}" style="height:${Math.round(x.n/max*100)}%"></div><span class="lbl">${HEB_DAYS[parseD(x.d).getDay()]} ${fmtShort(x.d)}</span></div>`}).join('')}</div></div>`;
+};
+
+/* ---- month calendar ---- */
+function groupFilterHTML(){const gs=groups();if(gs.length<2)return '';return `<select class="input" style="width:auto" data-on="setGroup" aria-label="סינון לפי קבוצה"><option value="">כל הקבוצות</option>${gs.map(g=>`<option ${S.group===g?'selected':''}>${esc(g)}</option>`).join('')}</select>`}
+ON.setGroup=el=>{S.group=el.value;renderPage()};
+const inGroup=r=>!S.group||empById(r.employeeId)?.group===S.group;
+PAGES.calendar=()=>{
+  const y=S.calY,m=S.calM,first=new Date(y,m,1).getDay(),n=new Date(y,m+1,0).getDate(),t=todayISO();
+  const rs=boardRequests().filter(inGroup);
+  let cells=HEB_DAYS_LONG.map(x=>`<div class="weekday">${x}</div>`).join('');
+  for(let i=0;i<first;i++)cells+='<div class="day blank"></div>';
+  for(let dd=1;dd<=n;dd++){
+    const d=`${y}-${pad(m+1)}-${pad(dd)}`,h=holiday(d),list=rs.filter(r=>covers(r,d)).sort((a,b)=>(a.status>b.status?1:-1)||empName(a.employeeId).localeCompare(empName(b.employeeId),'he'));
+    const cnt=new Set(list.filter(r=>r.status==='approved').map(r=>r.employeeId)).size,lc=loadClass(cnt);
+    const off=!S.data.settings.workDays.includes(parseD(d).getDay());
+    cells+=`<button type="button" class="day ${off?'off':''} ${d===t?'today':''}" data-act="dayDetails" data-date="${d}" aria-label="${longDate(d)}, ${cnt} בחופשה">
+      <div class="day-top"><span class="day-num">${dd}</span>${cnt?`<span class="load ${lc}">${cnt}</span>`:''}</div>
+      ${h?`<span class="hol ${h.major?'major':''}">${esc(h.name)}</span>`:''}
+      ${list.slice(0,4).map(chipHTML).join('')}${list.length>4?`<span class="more">+${list.length-4} נוספים</span>`:''}</button>`;
+  }
+  return head('לוח חודשי','לחיצה על יום מציגה מי בחופשה'+(S.me?' ומאפשרת להגיש בקשה':' · להגשת בקשה נדרשת כניסה אישית'),`${groupFilterHTML()}<button class="btn outline sm" data-act="print">🖨️ הדפסה</button>`)+
+  `<div class="card"><div class="cal-head"><div class="toolbar"><button class="btn outline sm" data-act="calMove" data-n="1" aria-label="חודש הבא">▶</button><div class="cal-title">${HEB_MONTHS[m]} ${y}</div><button class="btn outline sm" data-act="calMove" data-n="-1" aria-label="חודש קודם">◀</button><button class="btn sm" data-act="calToday">היום</button></div>
+  <div class="legend"><span><i style="background:hsl(200 60% 75%)"></i>חופשה מאושרת</span><span><i style="background:repeating-linear-gradient(-45deg,#f6c453,#f6c453 3px,#fff 3px,#fff 6px)"></i>ממתין לאישור</span><span><i style="background:#fde2e1"></i>חג</span><span><i style="background:var(--amberbg)"></i>עומס</span></div></div>
+  <div class="calendar">${cells}</div></div>`;
+};
+ACT.calMove=d=>{S.calM+=Number(d.n);if(S.calM<0){S.calM=11;S.calY--}if(S.calM>11){S.calM=0;S.calY++}renderPage()};
+ACT.calToday=()=>{const d=new Date();S.calY=d.getFullYear();S.calM=d.getMonth();renderPage()};
+ACT.print=()=>window.print();
+ACT.dayDetails=d=>{
+  const date=d.date,h=holiday(date),list=boardRequests().filter(r=>covers(r,date));
+  const appr=list.filter(r=>r.status==='approved'),pend=list.filter(r=>r.status==='pending'),cnt=new Set(appr.map(r=>r.employeeId)).size;
+  const row=r=>`<div class="row"><div style="display:flex;gap:9px;align-items:center">${avatar(r.employeeId)}<div><div class="row-title">${esc(empName(r.employeeId))}</div><div class="row-sub">${typeLabel(r.type)} · ${fmt(r.start)} – ${fmt(r.end)}</div></div></div>${r.status==='pending'?'<span class="badge st-pending">ממתין</span>':`<span class="small muted">חוזר/ת ${fmtShort(returnDay(r))}</span>`}</div>`;
+  let action='';
+  const future=date>=todayISO();
+  if(!S.me)action=`<button class="btn" data-act="requestFrom" data-date="${date}">🔑 כניסה והגשת בקשה מתאריך זה</button>`;
+  else if(myEmpId()&&(future||isAdmin()))action=`<button class="btn" data-act="requestFrom" data-date="${date}">✍️ בקשת חופשה מתאריך זה</button>`;
+  if(isAdmin())action+=`<button class="btn green" data-act="adminAddLeave" data-date="${date}">➕ הוספת חופשה לעובד/ת</button>`;
+  openModal(`<h3>${longDate(date)}</h3>${h?`<div class="notice ${h.major?'err':'warn'}" style="margin-bottom:10px">🕎 ${esc(h.name)}${h.major?' – חג (לא נספר כיום עבודה)':''}</div>`:''}
+   <div class="small muted" style="margin-bottom:6px">בחופשה: <b>${cnt}</b>${loadClass(cnt)?` · <span class="badge st-${loadClass(cnt)==='high'?'rejected':'pending'}">עומס</span>`:''}</div>
+   <div class="list">${appr.map(row).join('')||'<div class="empty">אף אחד לא בחופשה ביום זה</div>'}</div>
+   ${pend.length?`<h4 style="margin:14px 0 6px;color:var(--amber)">ממתינות לאישור</h4><div class="list">${pend.map(row).join('')}</div>`:''}
+   <div class="modal-actions">${action}<button class="btn outline" data-act="closeModal">סגירה</button></div>`);
+};
+ACT.requestFrom=d=>{closeModal(true);requireLogin(()=>{if(!myEmpId()){if(isAdmin())return ACT.adminAddLeave(d);toast('לחשבון זה אין כרטיס עובד','err');return}S.reqPrefill={start:d.date,end:d.date};S.page='request';renderAll()})};
+
+/* ---- timeline (Gantt) ---- */
+PAGES.timeline=()=>{
+  const y=S.tlY,m=S.tlM,n=new Date(y,m+1,0).getDate(),t=todayISO();
+  const days=Array.from({length:n},(_,i)=>`${y}-${pad(m+1)}-${pad(i+1)}`),a=days[0],b=days[n-1];
+  const rs=boardRequests().filter(r=>overlaps(r,a,b));
+  const emps=activeEmps().filter(e=>!S.group||e.group===S.group);
+  const dayCls=d=>{const h=holiday(d);return [!S.data.settings.workDays.includes(parseD(d).getDay())?'off':'',h?.major?'holm':'',d===t?'today':''].join(' ')};
+  let body='',lastG=null;
+  for(const e of emps){
+    if(e.group!==lastG){lastG=e.group;body+=`<tr class="grp"><td class="name">${esc(e.group)}</td><td colspan="${n}"></td></tr>`}
+    const mine=rs.filter(r=>r.employeeId===e.id).sort((p,q)=>p.start.localeCompare(q.start));
+    let row=`<td class="name" title="${esc(e.name)}">${esc(S.me||S.data.settings.publicShowNames?e.name:'עובד/ת')}</td>`;
+    for(let i=0;i<n;){
+      const d=days[i],r=mine.find(x=>covers(x,d));
+      if(r){let j=i;while(j+1<n&&covers(r,days[j+1]))j++;const span=j-i+1;
+        row+=`<td colspan="${span}"><div class="bar ${r.status==='pending'?'pending':''}" style="--h:${hue(e.id)}" data-act="reqInfo" data-id="${r.id}" title="${esc(typeOf(r.type).name)} · ${fmt(r.start)}–${fmt(r.end)}${r.status==='pending'?' · ממתין לאישור':''}">${typeOf(r.type).icon}${span>=3?' '+fmtShort(r.start)+'–'+fmtShort(r.end):''}</div></td>`;i=j+1}
+      else{row+=`<td class="${dayCls(d)}"></td>`;i++}
+    }
+    body+=`<tr>${row}</tr>`;
+  }
+  const foot=days.map(d=>{const c=new Set(rs.filter(r=>r.status==='approved'&&covers(r,d)&&(!S.group||empById(r.employeeId)?.group===S.group)).map(r=>r.employeeId)).size;return `<td class="${loadClass(c)}">${c||''}</td>`}).join('');
+  return head('ציר זמן צוות','כל עובד/ת בשורה – רואים במבט אחד מי יוצא ומתי וחפיפות בין חופשות',`${groupFilterHTML()}<button class="btn outline sm" data-act="print">🖨️ הדפסה</button>`)+
+  `<div class="card"><div class="cal-head"><div class="toolbar"><button class="btn outline sm" data-act="tlMove" data-n="1">▶</button><div class="cal-title">${HEB_MONTHS[m]} ${y}</div><button class="btn outline sm" data-act="tlMove" data-n="-1">◀</button><button class="btn sm" data-act="tlToday">החודש</button></div>
+  <div class="legend"><span><i style="background:hsl(200 60% 52%)"></i>מאושר</span><span><i style="background:#f6c453"></i>ממתין</span><span><i style="background:#f6f7f9;border:1px solid #ddd"></i>סוף שבוע</span><span><i style="background:#fdf0ef"></i>חג</span></div></div>
+  ${emps.length?`<div class="tl-wrap"><table class="tl"><thead><tr><th class="name">עובד/ת</th>${days.map(d=>{const h=holiday(d);return `<th class="${dayCls(d)}" title="${h?esc(h.name):''}">${Number(d.slice(8))}<span class="wd">${HEB_DAYS[parseD(d).getDay()]}</span></th>`}).join('')}</tr></thead><tbody>${body}</tbody><tfoot><tr><td class="name">סה״כ בחופשה</td>${foot}</tr></tfoot></table></div>`:'<div class="empty">אין עובדים להצגה'+(isAdmin()?' – הוסף/י עובדים בעמוד "עובדים והרשאות"':'')+'</div>'}</div>`;
+};
+ACT.tlMove=d=>{S.tlM+=Number(d.n);if(S.tlM<0){S.tlM=11;S.tlY--}if(S.tlM>11){S.tlM=0;S.tlY++}renderPage()};
+ACT.tlToday=()=>{const d=new Date();S.tlY=d.getFullYear();S.tlM=d.getMonth();renderPage()};
+ACT.reqInfo=d=>{
+  const r=S.data.requests.find(x=>x.id===Number(d.id));if(!r)return;
+  const own=r.employeeId===myEmpId(),adm=isAdmin();
+  openModal(`<h3>${typeLabel(r.type)} – ${esc(empName(r.employeeId))}</h3><div class="list">
+   <div class="row"><span>תאריכים</span><b>${fmt(r.start)} – ${fmt(r.end)}</b></div>
+   <div class="row"><span>ימי עבודה</span><b>${workDays(r.start,r.end)} (${calDays(r.start,r.end)} ימים קלנדריים)</b></div>
+   <div class="row"><span>חזרה לעבודה</span><b>${longDate(returnDay(r))}</b></div>
+   <div class="row"><span>סטטוס</span>${statusBadge(r)}</div>
+   ${(own||adm)&&r.note?`<div class="row"><span>הערת העובד/ת</span><span>${esc(r.note)}</span></div>`:''}
+   ${(own||adm)&&r.adminNote?`<div class="row"><span>הערת מנהל/ת</span><span>${esc(r.adminNote)}</span></div>`:''}</div>
+   <div class="modal-actions">${adm?`<button class="btn" data-act="editLeave" data-id="${r.id}">עריכה</button>`:''}<button class="btn outline" data-act="closeModal">סגירה</button></div>`);
+};
+
+/* ---- leave form (shared by employee request & admin add) ---- */
+function leaveFormHTML({start='',end='',type='vacation',note='',empId=null,admin=false,status='approved',reqId=''}){
+  const minD=admin?'':`min="${todayISO()}"`;
+  return `<div class="form-grid" id="leaveForm" data-req="${reqId}">
+   ${admin?`<div class="field wide"><label>עובד/ת</label><select name="emp" data-on="leaveCalc" required><option value="">בחר/י עובד/ת…</option>${activeEmps().map(e=>`<option value="${e.id}" ${e.id===empId?'selected':''}>${esc(e.name)} · ${esc(e.group)}</option>`).join('')}</select></div>`:''}
+   <div class="field"><label>סוג היעדרות</label><select name="type" data-on="leaveCalc">${LEAVE_TYPES.map(t=>`<option value="${t.id}" ${t.id===type?'selected':''}>${t.icon} ${t.name}</option>`).join('')}</select></div>
+   ${admin?`<div class="field"><label>סטטוס</label><select name="status">${['approved','pending','rejected','cancelled'].map(s=>`<option value="${s}" ${s===status?'selected':''}>${STATUS[s]}</option>`).join('')}</select></div>`:'<div></div>'}
+   <div class="field"><label>מתאריך</label><input type="date" name="start" value="${start}" ${minD} data-on="leaveStart" required></div>
+   <div class="field"><label>עד תאריך (כולל)</label><input type="date" name="end" value="${end||start}" ${start?`min="${start}"`:minD} data-on="leaveCalc" required></div>
+   <div class="field wide"><label>הערה ${admin?'':'(אופציונלי – תוצג למנהל/ת בלבד)'}</label><textarea name="note" maxlength="500" placeholder="${admin?'':'לדוגמה: נסיעה משפחתית, אפשר לקצר בשבוע הראשון…'}">${esc(note)}</textarea></div>
+   <div class="wide" id="leaveSummary"></div></div>`;
+}
+ON.leaveStart=el=>{const f=el.closest('form,.card,.modal');const e=f.querySelector('[name=end]');if(el.value){e.min=el.value;if(!e.value||e.value<el.value)e.value=el.value}ON.leaveCalc(el)};
+ON.leaveCalc=el=>{const box=el.closest('form,.card,.modal');updateLeaveSummary(box)};
+function updateLeaveSummary(box){
+  const out=box.querySelector('#leaveSummary');if(!out)return;
+  const g=n=>box.querySelector(`[name=${n}]`)?.value||'';
+  const start=g('start'),end=g('end'),type=g('type'),empId=box.querySelector('[name=emp]')?Number(g('emp')):myEmpId();
+  const reqId=Number(box.querySelector('#leaveForm')?.dataset.req)||null;
+  if(!start||!end){out.innerHTML='<div class="summary muted">בחר/י תאריכים כדי לראות סיכום, יתרה וחפיפות.</div>';return}
+  if(end<start){out.innerHTML='<div class="notice err">תאריך הסיום מוקדם מתאריך ההתחלה</div>';return}
+  const wd=workDays(start,end),cd=calDays(start,end),warn=[];
+  let balHTML='';
+  if(empId&&typeOf(type).balance){
+    const years=[...new Set([start.slice(0,4),end.slice(0,4)])].map(Number);
+    balHTML=years.map(y=>{const b=balance(empId,y);let used=workDays(start,end,y);if(reqId){const old=S.data.requests.find(r=>r.id===reqId);if(old&&old.status!=='cancelled'&&old.status!=='rejected'&&typeOf(old.type).balance)used-=workDays(old.start,old.end,y)}const after=b.remaining-b.pending-used;if(after<0)warn.push(`חריגה מהיתרה ב-${y}: ${-after} ימים`);return `<div><div class="k">יתרה ${y} אחרי הבקשה</div><div class="big" style="color:${after<0?'var(--red)':'var(--green)'}">${after}</div></div>`}).join('');
+  }
+  const hol=range(start,end).map(d=>({d,h:holiday(d)})).filter(x=>x.h?.major);
+  const others=new Map();let peak=0,peakDays=[];
+  for(const d of range(start,end)){const ids=approvedOn(d,reqId);ids.delete(empId);const n=ids.size;for(const id of ids)others.set(id,(others.get(id)||0)+1);if(n+1>peak){peak=n+1;peakDays=[d]}else if(n+1===peak)peakDays.push(d)}
+  if(peak>=S.data.settings.warningThreshold)warn.push(`בתאריכים אלה כבר ${peak-1} עובדים בחופשה (סף ההתראה: ${S.data.settings.warningThreshold}) – למשל ${peakDays.slice(0,3).map(fmtShort).join(', ')}`);
+  const own=empId?S.data.requests.find(r=>r.employeeId===empId&&r.id!==reqId&&(r.status==='approved'||r.status==='pending')&&overlaps(r,start,end)):null;
+  if(own)warn.push(`קיימת כבר בקשה חופפת (${fmt(own.start)}–${fmt(own.end)}, ${STATUS[own.status]})`);
+  out.innerHTML=`<div class="summary"><div class="sum-grid"><div><div class="k">ימי עבודה</div><div class="big">${wd}</div></div><div><div class="k">ימים קלנדריים</div><div class="big">${cd}</div></div>${balHTML||`<div><div class="k">חזרה לעבודה</div><div class="big" style="font-size:16px;margin-top:6px">${fmtShort(returnDay({end}))}</div></div>`}</div>
+   ${hol.length?`<div class="small">🕎 כולל חגים: ${hol.map(x=>esc(x.h.name)).join(', ')} (לא נספרים כימי עבודה)</div>`:''}
+   ${others.size?`<div class="small" style="margin-top:4px">👥 בחופשה חופפת: ${[...others.keys()].map(id=>esc(empName(id))).join(', ')}</div>`:'<div class="small" style="margin-top:4px">👥 אין חופשות חופפות של עובדים אחרים</div>'}
+   ${warn.map(w=>`<div class="notice warn" style="margin-top:8px">⚠ ${esc(w)}</div>`).join('')}</div>`;
+}
+function validateLeave(v,empId,{admin=false,reqId=null}={}){
+  if(!empId)throw new Error('יש לבחור עובד/ת');
+  if(!v.start||!v.end)throw new Error('יש לבחור תאריך התחלה וסיום');
+  if(v.end<v.start)throw new Error('תאריך הסיום מוקדם מתאריך ההתחלה');
+  if(!admin&&v.start<todayISO())throw new Error('לא ניתן לבקש חופשה בתאריך שעבר');
+  if(calDays(v.start,v.end)>120)throw new Error('טווח ארוך מדי (מעל 120 יום)');
+  if(!LEAVE_TYPES.some(t=>t.id===v.type))throw new Error('סוג היעדרות לא תקין');
+}
+
+/* ---- new request page ---- */
+PAGES.request=()=>{
+  if(!S.me)return head('בקשת חופשה')+'<div class="card empty">יש להיכנס כדי להגיש בקשה.</div>';
+  if(!myEmpId())return head('בקשת חופשה')+`<div class="card"><div class="notice">לחשבון <b>${esc(displayName())}</b> אין כרטיס עובד/ת, ולכן לא ניתן להגיש ממנו בקשה אישית.${isAdmin()?' כמנהל/ת ניתן להוסיף חופשה מאושרת לכל עובד/ת:':''}</div>${isAdmin()?'<div class="toolbar" style="margin-top:12px"><button class="btn green" data-act="adminAddLeave">➕ הוספת חופשה לעובד/ת</button></div>':''}</div>`;
+  const p=S.reqPrefill||{};S.reqPrefill=null;
+  setTimeout(()=>{const c=$('#reqCard');if(c)updateLeaveSummary(c)},0);
+  return head('בקשת חופשה',`מגיש/ה: ${esc(displayName())} · הבקשה תישלח לאישור מנהל/ת`)+
+  `<div class="grid3"><form class="card" id="reqCard" novalidate><h3>פרטי הבקשה</h3>${leaveFormHTML({start:p.start||'',end:p.end||''})}<div class="merr hidden" id="reqErr"></div><div class="toolbar" style="margin-top:12px"><button class="btn lg" type="submit">📨 שליחת הבקשה</button><button class="btn outline" type="button" data-act="go" data-page="my">לבקשות שלי</button></div></form>
+  <div class="card"><h3>איך זה עובד?</h3><ol class="steps" style="margin:0"><li>בחר/י סוג היעדרות ותאריכים – הסיכום מתעדכן מיד (ימי עבודה, יתרה וחפיפות).</li><li>הבקשה נשלחת ל<b>מנהל/ת</b> ומופיעה בלוח בצהוב (ממתינה).</li><li>לאחר האישור היא תסומן בירוק ותופיע לכל הצוות.</li><li>ניתן לבטל בקשה ממתינה בכל עת, ולבקש ביטול של חופשה מאושרת.</li></ol></div></div>`;
+};
+document.addEventListener('submit',async e=>{
+  if(e.target.id!=='reqCard')return;e.preventDefault();
+  const f=e.target,v=formValues(f),err=$('#reqErr'),btn=f.querySelector('button[type=submit]');err.classList.add('hidden');
+  try{
+    validateLeave(v,myEmpId());btn.disabled=true;
+    await mutate((st,a)=>{
+      if(!a.employeeId)throw new Error('לחשבון אין כרטיס עובד/ת');
+      if(st.requests.some(r=>r.employeeId===a.employeeId&&(r.status==='approved'||r.status==='pending')&&overlaps(r,v.start,v.end)))throw new Error('כבר קיימת בקשה חופפת בתאריכים אלה');
+      const r={id:st.nextRequestId++,employeeId:a.employeeId,start:v.start,end:v.end,type:v.type,status:'pending',note:v.note,createdAt:nowISO(),createdBy:a.id};
+      st.requests.push(r);audit(st,a,'request_created',`#${r.id} ${typeOf(r.type).name} ${fmt(r.start)}–${fmt(r.end)}`);
+    });
+    toast('הבקשה נשלחה לאישור','ok');S.page='my';renderAll();
+  }catch(x){err.textContent=x.message;err.classList.remove('hidden');btn.disabled=false}
+});
+
+/* ---- my requests & balance ---- */
+PAGES.my=()=>{
+  const id=myEmpId();if(!id)return head('הבקשות שלי')+'<div class="card empty">לחשבון זה אין כרטיס עובד/ת.</div>';
+  const y=new Date().getFullYear(),b=balance(id,y),t=todayISO();
+  const rs=S.data.requests.filter(r=>r.employeeId===id).sort((p,q)=>q.start.localeCompare(p.start));
+  const rows=rs.map(r=>{
+    let act='';
+    if(r.status==='pending')act=`<button class="btn sm red" data-act="cancelOwn" data-id="${r.id}">ביטול בקשה</button>`;
+    else if(r.status==='approved'&&r.end>=t)act=r.cancelRequested?`<button class="btn sm outline" data-act="withdrawCancel" data-id="${r.id}">חזרה מבקשת הביטול</button>`:`<button class="btn sm outline" data-act="askCancel" data-id="${r.id}">בקשת ביטול</button>`;
+    return `<tr><td class="nowrap"><b>${fmt(r.start)}</b> – ${fmt(r.end)}</td><td>${typeLabel(r.type)}</td><td>${workDays(r.start,r.end)}</td><td>${statusBadge(r)}</td><td class="small">${esc(r.note||'')}${r.adminNote?`<div class="muted">מנהל/ת: ${esc(r.adminNote)}</div>`:''}</td><td class="small muted">${fmtDT(r.createdAt)}</td><td>${act}</td></tr>`;
+  }).join('');
+  const byType=LEAVE_TYPES.filter(x=>!x.balance&&b.byType[x.id]).map(x=>`${x.icon} ${x.name}: ${b.byType[x.id]}`).join(' · ');
+  return head('הבקשות והיתרה שלי',esc(displayName()),`<button class="btn" data-act="go" data-page="request">✍️ בקשה חדשה</button>`)+
+  `<div class="stats"><div class="stat"><div class="k">מכסה ${y}</div><div class="v">${b.total}</div><div class="sub">${b.allowance} שנתי${b.carry?` + ${b.carry} צבירה`:''}</div></div>
+   <div class="stat"><div class="k">נוצלו</div><div class="v">${b.used}</div><div class="sub">ימי עבודה מאושרים</div></div>
+   <div class="stat warn"><div class="k">ממתינים</div><div class="v">${b.pending}</div><div class="sub">ימים בבקשות פתוחות</div></div>
+   <div class="stat ${b.remaining-b.pending<0?'bad':'good'}"><div class="k">יתרה</div><div class="v">${b.remaining}</div><div class="sub">${b.pending?`${b.remaining-b.pending} אם יאושרו הממתינות`:'ימי חופשה'}</div></div></div>
+   ${byType?`<div class="notice" style="margin-bottom:14px">היעדרויות נוספות ב-${y} (לא מנוכות מהיתרה): ${byType}</div>`:''}
+   <div class="card"><h3>היסטוריית בקשות</h3>${rs.length?`<div class="table-wrap"><table class="table"><thead><tr><th>תאריכים</th><th>סוג</th><th>ימי עבודה</th><th>סטטוס</th><th>הערות</th><th>הוגש</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`:'<div class="empty">עדיין לא הוגשו בקשות</div>'}</div>`;
+};
+ACT.cancelOwn=async d=>{
+  if(!await confirmBox('לבטל את הבקשה הממתינה?',{ok:'ביטול הבקשה',kind:'red'}))return;
+  await mutate((st,a)=>{const r=st.requests.find(x=>x.id===Number(d.id));if(!r||r.employeeId!==a.employeeId)throw new Error('הבקשה לא נמצאה');if(r.status!=='pending')throw new Error('ניתן לבטל רק בקשה ממתינה');r.status='cancelled';r.decidedAt=nowISO();r.decidedBy=a.id;audit(st,a,'request_cancelled',`#${r.id}`)});
+  toast('הבקשה בוטלה','ok');
+};
+ACT.askCancel=async d=>{
+  const v=await formModal({title:'בקשת ביטול חופשה מאושרת',ok:'שליחת בקשת ביטול',kind:'amber',body:`<p>החופשה תישאר בתוקף עד שמנהל/ת יאשר/תאשר את הביטול.</p><div class="field"><label>סיבה (אופציונלי)</label><textarea name="reason" maxlength="300"></textarea></div>`,
+    onSubmit:v=>mutate((st,a)=>{const r=st.requests.find(x=>x.id===Number(d.id));if(!r||r.employeeId!==a.employeeId||r.status!=='approved')throw new Error('הבקשה לא נמצאה');r.cancelRequested=true;r.cancelReason=v.reason;r.cancelRequestedAt=nowISO();audit(st,a,'cancel_requested',`#${r.id}`)})});
+  if(v!==null)toast('בקשת הביטול נשלחה למנהל/ת','ok');
+};
+ACT.withdrawCancel=async d=>{await mutate((st,a)=>{const r=st.requests.find(x=>x.id===Number(d.id));if(!r||r.employeeId!==a.employeeId)throw new Error('הבקשה לא נמצאה');r.cancelRequested=false;audit(st,a,'cancel_request_withdrawn',`#${r.id}`)});toast('בקשת הביטול בוטלה','ok')};
+
+/* ---- approvals (admin) ---- */
+PAGES.approvals=()=>{
+  if(!isAdmin())return '';
+  const pending=S.data.requests.filter(r=>r.status==='pending').sort((a,b)=>a.start.localeCompare(b.start));
+  const cancels=S.data.requests.filter(r=>r.status==='approved'&&r.cancelRequested);
+  const card=r=>{
+    let peak=0,peakDay='';const others=new Set();
+    for(const d of range(r.start,r.end)){const ids=approvedOn(d);ids.delete(r.employeeId);ids.forEach(i=>others.add(i));if(ids.size>peak){peak=ids.size;peakDay=d}}
+    const y=Number(r.start.slice(0,4)),b=balance(r.employeeId,y),wd=workDays(r.start,r.end,y);
+    const after=typeOf(r.type).balance?b.remaining-wd:null;
+    const self=r.employeeId===myEmpId()&&!isSysAdmin();
+    const flags=[];if(peak+1>=S.data.settings.warningThreshold)flags.push(`<span class="badge st-${peak+1>S.data.settings.warningThreshold?'rejected':'pending'}">עומס: ${peak+1} בחופשה ב-${fmtShort(peakDay)}</span>`);if(after!==null&&after<0)flags.push('<span class="badge st-rejected">חריגה מהיתרה</span>');
+    return `<div class="row" style="align-items:flex-start;flex-wrap:wrap"><div style="display:flex;gap:10px;min-width:260px;flex:1">${avatar(r.employeeId)}<div><div class="row-title">${esc(empName(r.employeeId))} <span class="muted small">· ${esc(empById(r.employeeId)?.group||'')}</span></div>
+     <div class="row-sub">${typeLabel(r.type)} · <b>${fmt(r.start)} – ${fmt(r.end)}</b> · ${workDays(r.start,r.end)} ימי עבודה</div>
+     ${r.note?`<div class="small" style="margin-top:4px">💬 ${esc(r.note)}</div>`:''}
+     <div class="small muted" style="margin-top:4px">${after!==null?`יתרה אחרי אישור: <b>${after}</b> · `:''}${others.size?`חופפים: ${[...others].map(i=>esc(empName(i))).join(', ')}`:'אין חפיפות'} · הוגש ${fmtDT(r.createdAt)}</div>
+     <div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap">${flags.join('')}</div></div></div>
+     <div class="actions" style="display:flex;gap:6px">${self?'<span class="small muted">לא ניתן לאשר בקשה עצמית</span>':`<button class="btn green sm" data-act="decide" data-id="${r.id}" data-s="approved">✔ אישור</button><button class="btn red sm" data-act="decide" data-id="${r.id}" data-s="rejected">✖ דחייה</button>`}<button class="btn outline sm" data-act="editLeave" data-id="${r.id}">עריכה</button></div></div>`;
+  };
+  return head('אישור בקשות',`${pending.length} ממתינות · ${cancels.length} בקשות ביטול`,pending.length>1?`<button class="btn green sm" data-act="approveAllSafe">אישור כל הבקשות ללא חריגה</button>`:'')+
+  `<div class="card"><h3>בקשות ממתינות</h3><div class="list">${pending.map(card).join('')||'<div class="empty">אין בקשות ממתינות 🎉</div>'}</div></div>`+
+  (cancels.length?`<div class="card"><h3>בקשות ביטול לחופשות מאושרות</h3><div class="list">${cancels.map(r=>`<div class="row"><div><div class="row-title">${esc(empName(r.employeeId))}</div><div class="row-sub">${typeLabel(r.type)} · ${fmt(r.start)} – ${fmt(r.end)}${r.cancelReason?` · סיבה: ${esc(r.cancelReason)}`:''}</div></div><div class="actions" style="display:flex;gap:6px"><button class="btn sm green" data-act="resolveCancel" data-id="${r.id}" data-ok="1">אישור הביטול</button><button class="btn sm outline" data-act="resolveCancel" data-id="${r.id}" data-ok="">דחיית הביטול</button></div></div>`).join('')}</div></div>`:'');
+};
+function requestFlags(r){let peak=0;for(const d of range(r.start,r.end)){const ids=approvedOn(d,r.id);ids.delete(r.employeeId);peak=Math.max(peak,ids.size)}const y=Number(r.start.slice(0,4));const over=typeOf(r.type).balance&&balance(r.employeeId,y).remaining-workDays(r.start,r.end,y)<0;return{overload:peak+1>=S.data.settings.warningThreshold,over}}
+ACT.decide=async d=>{
+  const r=S.data.requests.find(x=>x.id===Number(d.id));if(!r)return;const ok=d.s==='approved';
+  const fl=requestFlags(r);
+  const warn=ok&&(fl.overload||fl.over)?`<div class="notice warn" style="margin-bottom:10px">⚠ ${fl.overload?'אישור יביא לעומס חופשות בחלק מהימים. ':''}${fl.over?'הבקשה חורגת מיתרת החופשה.':''}</div>`:'';
+  const v=await formModal({title:`${ok?'אישור':'דחיית'} בקשה – ${esc(empName(r.employeeId))}`,ok:ok?'אישור הבקשה':'דחיית הבקשה',kind:ok?'green':'red',
+    body:`${warn}<p class="small">${typeLabel(r.type)} · ${fmt(r.start)} – ${fmt(r.end)} · ${workDays(r.start,r.end)} ימי עבודה</p><div class="field"><label>${ok?'הערה לעובד/ת (אופציונלי)':'סיבת הדחייה (מומלץ)'}</label><textarea name="note" maxlength="300"></textarea></div>`,
+    onSubmit:v=>mutate((st,a)=>{
+      if(!(a.role==='admin'||a.manager))throw new Error('נדרשת הרשאת מנהל/ת');
+      const x=st.requests.find(q=>q.id===r.id);if(!x)throw new Error('הבקשה לא נמצאה');
+      if(x.status!=='pending')throw new Error('הבקשה כבר טופלה ע״י מנהל/ת אחר/ת');
+      if(x.employeeId===a.employeeId&&a.role!=='admin')throw new Error('לא ניתן לאשר בקשה עצמית');
+      x.status=d.s;x.adminNote=v.note;x.decidedAt=nowISO();x.decidedBy=a.id;
+      audit(st,a,ok?'request_approved':'request_rejected',`#${x.id} ${empNameIn(st,x.employeeId)} ${fmt(x.start)}–${fmt(x.end)}`);
+    })});
+  if(v)toast(ok?'הבקשה אושרה':'הבקשה נדחתה','ok');
+};
+const empNameIn=(st,id)=>st.employees.find(e=>e.id===id)?.name||'';
+ACT.approveAllSafe=async()=>{
+  const safe=S.data.requests.filter(r=>r.status==='pending'&&!(r.employeeId===myEmpId()&&!isSysAdmin())).filter(r=>{const f=requestFlags(r);return !f.overload&&!f.over});
+  if(!safe.length){toast('אין בקשות שעומדות בתנאים (ללא עומס וללא חריגת יתרה)','info');return}
+  if(!await confirmBox(`לאשר ${safe.length} בקשות שאינן יוצרות עומס ואינן חורגות מהיתרה?<br><span class="small muted">${safe.map(r=>esc(empName(r.employeeId))+' '+fmtShort(r.start)+'–'+fmtShort(r.end)).join(' · ')}</span>`,{ok:'אישור הכל',kind:'green'}))return;
+  const ids=new Set(safe.map(r=>r.id));
+  const n=await mutate((st,a)=>{if(!(a.role==='admin'||a.manager))throw new Error('נדרשת הרשאת מנהל/ת');let c=0;for(const x of st.requests)if(ids.has(x.id)&&x.status==='pending'){x.status='approved';x.decidedAt=nowISO();x.decidedBy=a.id;c++}audit(st,a,'bulk_approved',`${c} בקשות`);return c});
+  toast(`${n} בקשות אושרו`,'ok');
+};
+ACT.resolveCancel=async d=>{
+  const ok=!!d.ok;if(!await confirmBox(ok?'לאשר את ביטול החופשה? היא תוסר מהלוח והימים יחזרו ליתרה.':'לדחות את בקשת הביטול? החופשה תישאר בתוקף.',{ok:ok?'אישור הביטול':'דחיית הביטול',kind:ok?'red':''}))return;
+  await mutate((st,a)=>{const x=st.requests.find(q=>q.id===Number(d.id));if(!x)throw new Error('לא נמצא');x.cancelRequested=false;if(ok){x.status='cancelled';x.decidedAt=nowISO();x.decidedBy=a.id}audit(st,a,ok?'cancel_approved':'cancel_rejected',`#${x.id}`)});
+  toast('עודכן','ok');
+};
+
+/* ---- all leaves (admin) ---- */
+function filteredLeaves(){
+  const f=S.filters;const q=f.q.toLowerCase();
+  return S.data.requests.filter(r=>{const e=empById(r.employeeId);
+    if(q&&!(`${e?.name||''} ${r.note||''} ${r.adminNote||''}`.toLowerCase().includes(q)))return false;
+    if(f.group&&e?.group!==f.group)return false;if(f.status&&r.status!==f.status)return false;if(f.type&&r.type!==f.type)return false;
+    if(f.from&&r.end<f.from)return false;if(f.to&&r.start>f.to)return false;return true}).sort((a,b)=>b.start.localeCompare(a.start));
+}
+PAGES.leaves=()=>{
+  if(!isAdmin())return '';
+  const f=S.filters,rs=filteredLeaves();
+  const rows=rs.slice(0,500).map(r=>`<tr><td><div style="display:flex;gap:7px;align-items:center">${avatar(r.employeeId)}<b>${esc(empName(r.employeeId))}</b></div></td><td class="small">${esc(empById(r.employeeId)?.group||'')}</td><td class="nowrap">${fmt(r.start)} – ${fmt(r.end)}</td><td>${typeLabel(r.type)}</td><td>${workDays(r.start,r.end)}</td><td>${statusBadge(r)}</td><td class="small">${esc(r.note||'')}${r.adminNote?`<div class="muted">מנהל/ת: ${esc(r.adminNote)}</div>`:''}</td><td><div class="actions"><button class="btn sm outline" data-act="editLeave" data-id="${r.id}">עריכה</button></div></td></tr>`).join('');
+  return head('כל החופשות',`${rs.length} רשומות`,`<button class="btn green" data-act="adminAddLeave">➕ הוספת חופשה</button><button class="btn outline" data-act="exportLeaves">⬇ ייצוא לאקסל (CSV)</button>`)+
+  `<div class="card"><div class="filters">
+    <input class="input" placeholder="🔎 חיפוש שם / הערה" value="${esc(f.q)}" data-on="filter" data-k="q">
+    <select class="input" data-on="filter" data-k="group"><option value="">כל הקבוצות</option>${groups().map(g=>`<option ${f.group===g?'selected':''}>${esc(g)}</option>`).join('')}</select>
+    <select class="input" data-on="filter" data-k="status"><option value="">כל הסטטוסים</option>${Object.entries(STATUS).map(([k,v])=>`<option value="${k}" ${f.status===k?'selected':''}>${v}</option>`).join('')}</select>
+    <select class="input" data-on="filter" data-k="type"><option value="">כל הסוגים</option>${LEAVE_TYPES.map(t=>`<option value="${t.id}" ${f.type===t.id?'selected':''}>${t.name}</option>`).join('')}</select>
+    <input class="input" type="date" title="מתאריך" value="${f.from}" data-on="filter" data-k="from">
+    <input class="input" type="date" title="עד תאריך" value="${f.to}" data-on="filter" data-k="to"></div>
+    ${rs.length?`<div class="table-wrap"><table class="table"><thead><tr><th>עובד/ת</th><th>קבוצה</th><th>תאריכים</th><th>סוג</th><th>ימי עבודה</th><th>סטטוס</th><th>הערות</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${rs.length>500?'<div class="small muted" style="margin-top:6px">מוצגות 500 הרשומות הראשונות – צמצם/י את הסינון.</div>':''}`:'<div class="empty">אין רשומות תואמות</div>'}</div>`;
+};
+let filterT=null;
+ON.filter=(el,e)=>{S.filters[el.dataset.k]=el.value;clearTimeout(filterT);const isText=el.dataset.k==='q';filterT=setTimeout(()=>{renderPage();if(isText){const i=document.querySelector('[data-k=q]');i.focus();i.setSelectionRange(i.value.length,i.value.length)}},isText?250:0)};
+ACT.exportLeaves=()=>{const rows=[['עובד/ת','קבוצה','מתאריך','עד תאריך','סוג','ימי עבודה','ימים קלנדריים','סטטוס','הערת עובד/ת','הערת מנהל/ת','הוגש']];for(const r of filteredLeaves()){const e=empById(r.employeeId);rows.push([e?.name,e?.group,fmt(r.start),fmt(r.end),typeOf(r.type).name,workDays(r.start,r.end),calDays(r.start,r.end),STATUS[r.status],r.note,r.adminNote,fmtDT(r.createdAt)])}downloadFile(`חופשות_${todayISO()}.csv`,toCSV(rows))};
+ACT.adminAddLeave=async d=>{
+  if(!isAdmin())return;
+  const date=d?.date||'';
+  setTimeout(()=>{const m=$('#mform');if(m)updateLeaveSummary(m)},40);
+  const v=await formModal({title:'הוספת חופשה לעובד/ת',ok:'שמירה',wide:true,body:leaveFormHTML({start:date,end:date,admin:true}),
+    onSubmit:v=>{const empId=Number(v.emp);validateLeave(v,empId,{admin:true});return mutate((st,a)=>{
+      if(!(a.role==='admin'||a.manager))throw new Error('נדרשת הרשאת מנהל/ת');
+      if(!st.employees.some(e=>e.id===empId))throw new Error('העובד/ת לא נמצא/ה');
+      if((v.status==='approved'||v.status==='pending')&&st.requests.some(r=>r.employeeId===empId&&(r.status==='approved'||r.status==='pending')&&overlaps(r,v.start,v.end)))throw new Error('לעובד/ת כבר קיימת חופשה חופפת בתאריכים אלה');
+      const r={id:st.nextRequestId++,employeeId:empId,start:v.start,end:v.end,type:v.type,status:v.status,note:v.note,createdAt:nowISO(),createdBy:a.id};
+      if(v.status!=='pending'){r.decidedAt=nowISO();r.decidedBy=a.id}
+      st.requests.push(r);audit(st,a,'leave_added_by_admin',`#${r.id} ${empNameIn(st,empId)} ${fmt(r.start)}–${fmt(r.end)} (${STATUS[r.status]})`);
+    })}});
+  if(v)toast('החופשה נשמרה','ok');
+};
+ACT.editLeave=async d=>{
+  if(!isAdmin())return;const r=S.data.requests.find(x=>x.id===Number(d.id));if(!r)return;
+  setTimeout(()=>{const m=$('#mform');if(m)updateLeaveSummary(m)},40);
+  const res=await formModal({title:`עריכת חופשה #${r.id}`,wide:true,ok:'שמירת שינויים',
+    body:leaveFormHTML({start:r.start,end:r.end,type:r.type,note:r.note||'',empId:r.employeeId,admin:true,status:r.status,reqId:r.id})+`<div class="field"><label>הערת מנהל/ת</label><input name="adminNote" value="${esc(r.adminNote||'')}" maxlength="300"></div><div style="text-align:left"><button type="button" class="linkbtn" style="color:var(--red)" data-act="deleteLeave" data-id="${r.id}">מחיקה לצמיתות</button></div>`,
+    onSubmit:v=>{const empId=Number(v.emp);validateLeave(v,empId,{admin:true});return mutate((st,a)=>{
+      if(!(a.role==='admin'||a.manager))throw new Error('נדרשת הרשאת מנהל/ת');
+      const x=st.requests.find(q=>q.id===r.id);if(!x)throw new Error('הרשומה נמחקה בינתיים');
+      if((v.status==='approved'||v.status==='pending')&&st.requests.some(q=>q.id!==x.id&&q.employeeId===empId&&(q.status==='approved'||q.status==='pending')&&overlaps(q,v.start,v.end)))throw new Error('קיימת חופשה חופפת אחרת לעובד/ת');
+      const before=`${fmt(x.start)}–${fmt(x.end)} ${STATUS[x.status]}`;
+      if(x.status!==v.status){x.decidedAt=nowISO();x.decidedBy=a.id;if(v.status!=='approved')x.cancelRequested=false}
+      Object.assign(x,{employeeId:empId,start:v.start,end:v.end,type:v.type,status:v.status,note:v.note,adminNote:v.adminNote,updatedAt:nowISO(),updatedBy:a.id});
+      audit(st,a,'leave_edited',`#${x.id} ${empNameIn(st,empId)}: ${before} → ${fmt(x.start)}–${fmt(x.end)} ${STATUS[x.status]}`);
+    })}});
+  if(res)toast('השינויים נשמרו','ok');
+};
+ACT.deleteLeave=async d=>{
+  const id=Number(d.id);closeModal(true);
+  if(!await confirmBox('למחוק את הרשומה לצמיתות? (מומלץ בדרך כלל לשנות סטטוס ל"בוטל" כדי לשמור היסטוריה)',{ok:'מחיקה',kind:'red'}))return;
+  await mutate((st,a)=>{if(!(a.role==='admin'||a.manager))throw new Error('נדרשת הרשאת מנהל/ת');const x=st.requests.find(q=>q.id===id);if(!x)return;st.requests=st.requests.filter(q=>q.id!==id);audit(st,a,'leave_deleted',`#${id} ${empNameIn(st,x.employeeId)} ${fmt(x.start)}–${fmt(x.end)}`)});
+  toast('הרשומה נמחקה','ok');
+};
+
+/* ---- balances report (admin) ---- */
+PAGES.reports=()=>{
+  if(!isAdmin())return '';
+  const y=S.reportYear,emps=activeEmps().filter(e=>!S.group||e.group===S.group);
+  const years=[...new Set([new Date().getFullYear()-1,new Date().getFullYear(),new Date().getFullYear()+1,...S.data.requests.map(r=>Number(r.start.slice(0,4)))])].sort();
+  const others=LEAVE_TYPES.filter(t=>!t.balance);
+  const rows=emps.map(e=>{const b=balance(e.id,y);return `<tr><td><b>${esc(e.name)}</b></td><td class="small">${esc(e.group)}</td><td>${b.allowance}</td><td>${b.carry||''}</td><td><b>${b.total}</b></td><td>${b.used}</td><td>${b.pending||''}</td><td><b style="color:${b.remaining<0?'var(--red)':b.remaining<=3?'var(--amber)':'var(--green)'}">${b.remaining}</b></td>${others.map(t=>`<td>${b.byType[t.id]||''}</td>`).join('')}</tr>`}).join('');
+  return head('דוח יתרות חופשה',`שנת ${y} · ימי עבודה (ללא סופי שבוע${S.data.settings.excludeHolidays?' וחגים':''})`,`<select class="input" style="width:auto" data-on="reportYear">${years.map(x=>`<option ${x===y?'selected':''}>${x}</option>`).join('')}</select>${groupFilterHTML()}<button class="btn outline" data-act="exportReport">⬇ CSV</button><button class="btn outline" data-act="print">🖨️ הדפסה</button>`)+
+  `<div class="card">${emps.length?`<div class="table-wrap"><table class="table"><thead><tr><th>עובד/ת</th><th>קבוצה</th><th>מכסה</th><th>צבירה</th><th>סה״כ</th><th>נוצל</th><th>ממתין</th><th>יתרה</th>${others.map(t=>`<th>${t.icon} ${t.name}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div><div class="small muted" style="margin-top:8px">מכסה וצבירה לכל עובד/ת ניתנים לעריכה בעמוד "עובדים והרשאות". יתרה שלילית מסומנת באדום, 3 ימים ומטה בכתום.</div>`:'<div class="empty">אין עובדים</div>'}</div>`;
+};
+ON.reportYear=el=>{S.reportYear=Number(el.value);renderPage()};
+ACT.exportReport=()=>{const y=S.reportYear,others=LEAVE_TYPES.filter(t=>!t.balance);const rows=[['עובד/ת','קבוצה','מכסה','צבירה','סה״כ','נוצל','ממתין','יתרה',...others.map(t=>t.name)]];for(const e of activeEmps().filter(e=>!S.group||e.group===S.group)){const b=balance(e.id,y);rows.push([e.name,e.group,b.allowance,b.carry,b.total,b.used,b.pending,b.remaining,...others.map(t=>b.byType[t.id]||0)])}downloadFile(`יתרות_חופשה_${y}.csv`,toCSV(rows))};
+
+/* ---- employees & users (admin) ---- */
+PAGES.employees=()=>{
+  if(!isAdmin())return '';
+  const es=S.data.employees.slice().sort((a,b)=>(b.active-a.active)||a.group.localeCompare(b.group,'he')||a.name.localeCompare(b.name,'he'));
+  const y=new Date().getFullYear();
+  const admins=S.data.users.filter(u=>u.role==='admin');
+  const rows=es.map(e=>{const u=S.data.users.find(x=>x.employeeId===e.id);const b=balance(e.id,y);
+    return `<tr style="${e.active?'':'opacity:.55'}"><td><div style="display:flex;gap:7px;align-items:center">${avatar(e.id)}<b>${esc(e.name)}</b></div></td><td>${esc(e.group)}</td><td>${e.allowance!=null&&e.allowance!==''?e.allowance:`<span class="muted">${S.data.settings.defaultAllowance}</span>`}${e.carry?.[y]?` <span class="small muted">+${e.carry[y]}</span>`:''}</td><td>${b.remaining}</td>
+    <td class="small">${u?(u.mustChange?'<span class="badge st-pending">ממתין לסיסמה אישית</span>':'<span class="badge st-approved">פעיל</span>'):'<span class="muted">אין משתמש</span>'}${u?.manager?' <span class="badge st-cancelreq">מנהל/ת</span>':''}</td>
+    <td class="small muted">${u?.lastLogin?fmtDT(u.lastLogin):'—'}</td>
+    <td><div class="actions"><button class="btn sm outline" data-act="editEmp" data-id="${e.id}">עריכה</button><button class="btn sm outline" data-act="resetPw" data-id="${e.id}">איפוס סיסמה</button><button class="btn sm ${e.active?'gray':'green'}" data-act="toggleEmp" data-id="${e.id}">${e.active?'השבתה':'הפעלה'}</button><button class="btn sm red" data-act="deleteEmp" data-id="${e.id}" title="מחיקה">🗑</button></div></td></tr>`}).join('');
+  return head('עובדים והרשאות',`${es.filter(e=>e.active).length} עובדים פעילים · לכל עובד/ת נוצר משתמש עם סיסמה זמנית שיש להחליף בכניסה הראשונה`,`<button class="btn green" data-act="addEmp">➕ עובד/ת חדש/ה</button><button class="btn outline" data-act="importEmps">📥 ייבוא רשימה</button>`)+
+  `<div class="card">${es.length?`<div class="table-wrap"><table class="table"><thead><tr><th>שם</th><th>קבוצה</th><th>מכסה ${y}</th><th>יתרה</th><th>משתמש</th><th>כניסה אחרונה</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`:`<div class="empty">עדיין אין עובדים. התחל/י ב<b>ייבוא רשימה</b> (הדבקה מאקסל) או בהוספה ידנית.</div>`}</div>
+  <div class="card"><h3>חשבונות מנהל/ת מערכת <button class="btn sm outline" data-act="addAdmin">➕ מנהל/ת נוסף/ת</button></h3><div class="list">${admins.map(a=>`<div class="row"><div><div class="row-title">${esc(a.displayName)}${a.id===S.me.id?' (את/ה)':''}</div><div class="row-sub">כניסה אחרונה: ${a.lastLogin?fmtDT(a.lastLogin):'—'}${a.active?'':' · מושבת'}</div></div>${isSysAdmin()&&a.id!==S.me.id?`<div class="actions" style="display:flex;gap:6px"><button class="btn sm outline" data-act="resetAdminPw" data-id="${esc(a.id)}">איפוס סיסמה</button><button class="btn sm ${a.active?'gray':'green'}" data-act="toggleAdmin" data-id="${esc(a.id)}">${a.active?'השבתה':'הפעלה'}</button></div>`:''}</div>`).join('')}</div>
+  <div class="small muted" style="margin-top:8px">ניתן גם לתת לעובד/ת הרשאת <b>מנהל/ת</b> (אישור בקשות וניהול) דרך "עריכה" – כך הוא/היא יכול/ה גם להגיש בקשות וגם לאשר בקשות של אחרים.</div></div>`;
+};
+function credentialsModal(list,title='פרטי כניסה'){
+  openModal(`<h3>${title}</h3><div class="notice warn" style="margin-bottom:10px">הסיסמאות הזמניות מוצגות <b>פעם אחת בלבד</b>. מסור/מסרי אותן לעובדים – בכניסה הראשונה יתבקשו לבחור סיסמה אישית.</div>
+   <div class="table-wrap" style="max-height:340px"><table class="table"><thead><tr><th>שם</th><th>קבוצה</th><th>סיסמה זמנית</th></tr></thead><tbody>${list.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.group||'')}</td><td dir="ltr" style="font-family:Consolas,monospace;text-align:right">${esc(x.password)}</td></tr>`).join('')}</tbody></table></div>
+   <div class="modal-actions"><button class="btn" data-act="dlCreds">⬇ הורדה (CSV)</button><button class="btn outline" data-act="printCreds">🖨️ הדפסת פתקים</button><button class="btn outline" data-act="closeModal">סגירה</button></div>`,{wide:true});
+  ACT.dlCreds=()=>downloadFile(`פרטי_כניסה_${todayISO()}.csv`,toCSV([['שם','קבוצה','סיסמה זמנית'],...list.map(x=>[x.name,x.group,x.password])]));
+  ACT.printCreds=()=>{const w=window.open('','_blank');if(!w){toast('חלון ההדפסה נחסם ע״י הדפדפן','err');return}w.document.write(`<html dir="rtl"><head><meta charset="utf-8"><title>פרטי כניסה</title><style>body{font-family:Arial;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px}.s{border:1px dashed #999;padding:12px;border-radius:8px;break-inside:avoid}.p{font-family:Consolas,monospace;font-size:18px;direction:ltr;text-align:right}</style></head><body>${list.map(x=>`<div class="s"><b>מערכת חופשות – ${esc(S.data.settings.department)}</b><br>שם משתמש: ${esc(x.name)}<br>סיסמה זמנית: <span class="p">${esc(x.password)}</span><br><small>בכניסה הראשונה תתבקש/י לבחור סיסמה אישית.</small></div>`).join('')}</body></html>`);w.document.close();w.focus();w.print()};
+}
+function empFields(e={}){const y=new Date().getFullYear();return `<div class="form-grid"><div class="field"><label>שם מלא</label><input name="name" value="${esc(e.name||'')}" required maxlength="80"></div>
+ <div class="field"><label>קבוצה / תפקיד</label><input name="group" value="${esc(e.group||'')}" list="grpList" placeholder="צוות סיעודי"><datalist id="grpList">${groups().map(g=>`<option value="${esc(g)}">`).join('')}</datalist></div>
+ <div class="field"><label>מכסה שנתית (ימי עבודה)</label><input name="allowance" type="number" min="0" max="80" step="0.5" value="${e.allowance??''}" placeholder="ברירת מחדל: ${S.data.settings.defaultAllowance}"></div>
+ <div class="field"><label>צבירה משנה קודמת ל-${y}</label><input name="carry" type="number" min="-50" max="200" step="0.5" value="${e.carry?.[y]??''}" placeholder="0"></div></div>`}
+ACT.addEmp=async()=>{
+  let cred=null;
+  const v=await formModal({title:'עובד/ת חדש/ה',ok:'הוספה',body:empFields(),onSubmit:async v=>{
+    if(!v.name)throw new Error('יש להזין שם');
+    if(S.data.employees.some(e=>e.name.toLocaleLowerCase('he')===v.name.toLocaleLowerCase('he')))throw new Error('כבר קיים/ת עובד/ת בשם זה');
+    const password=tempPassword(),rec=await passwordRecord(password),y=new Date().getFullYear();
+    await mutate((st,a)=>{
+      if(!(a.role==='admin'||a.manager))throw new Error('נדרשת הרשאת מנהל/ת');
+      if(st.employees.some(e=>e.name.toLocaleLowerCase('he')===v.name.toLocaleLowerCase('he')))throw new Error('כבר קיים/ת עובד/ת בשם זה');
+      const id=st.nextEmployeeId++;
+      st.employees.push({id,name:v.name,group:v.group||'צוות',active:true,allowance:v.allowance===''?null:Number(v.allowance),carry:v.carry===''?{}:{[y]:Number(v.carry)}});
+      st.users.push({id:`emp-${id}`,displayName:v.name,role:'employee',employeeId:id,active:true,mustChange:true,createdAt:nowISO(),...rec});
+      audit(st,a,'employee_added',v.name);
+    });
+    cred=[{name:v.name,group:v.group||'צוות',password}];
+  }});
+  if(v&&cred)credentialsModal(cred,'העובד/ת נוספ/ה');
+};
+ACT.importEmps=async()=>{
+  let creds=null,skipped=0;
+  const v=await formModal({title:'ייבוא רשימת עובדים',ok:'ייבוא',wide:true,
+    body:`<div class="notice" style="margin-bottom:10px">הדבק/י עמודות מאקסל: <b>שם</b> ואופציונלית <b>קבוצה</b> ו<b>מכסה</b> (מופרדים בטאב, פסיק או נקודה-פסיק). שורת כותרת ושמות קיימים ידולגו.</div>
+    <div class="field"><label>רשימה</label><textarea name="raw" id="importRaw" style="min-height:180px" placeholder="שרה כהן\tצוות סיעודי\t24&#10;משה לוי\tכוח עזר"></textarea></div>
+    <div class="form-grid"><div class="field"><label>קבוצה ברירת מחדל</label><input name="group" value="צוות סיעודי"></div><div class="field"><label>או קובץ CSV / TXT</label><input type="file" accept=".csv,.txt" data-on="importFile"></div></div>`,
+    onSubmit:async v=>{
+      const parsed=[];const seen=new Set(S.data.employees.map(e=>e.name.toLocaleLowerCase('he')));
+      for(const line of v.raw.split(/\r?\n/)){
+        const L=line.replace(/^\uFEFF/,'').trim();if(!L)continue;
+        const parts=(L.includes('\t')?L.split('\t'):L.includes(';')?L.split(';'):L.split(',')).map(s=>s.trim().replace(/^"|"$/g,'').trim());
+        const name=parts[0];if(!name||['שם','שם מלא','עובד','עובד/ת','name'].includes(name.toLowerCase()))continue;
+        const k=name.toLocaleLowerCase('he');if(seen.has(k)){skipped++;continue}seen.add(k);
+        const al=parts[2]!==undefined&&parts[2]!==''&&!isNaN(Number(parts[2]))?Number(parts[2]):null;
+        parsed.push({name,group:parts[1]||v.group||'צוות',allowance:al});
+      }
+      if(!parsed.length)throw new Error(skipped?'כל השמות כבר קיימים במערכת':'לא נמצאו שמות לייבוא');
+      if(parsed.length>300)throw new Error('ניתן לייבא עד 300 עובדים בפעם אחת');
+      $('#mok').textContent=`מכין ${parsed.length} חשבונות…`;
+      for(const p of parsed){p.password=tempPassword();p.rec=await passwordRecord(p.password)}
+      await mutate((st,a)=>{
+        if(!(a.role==='admin'||a.manager))throw new Error('נדרשת הרשאת מנהל/ת');
+        for(const p of parsed){if(st.employees.some(e=>e.name.toLocaleLowerCase('he')===p.name.toLocaleLowerCase('he')))continue;const id=st.nextEmployeeId++;st.employees.push({id,name:p.name,group:p.group,active:true,allowance:p.allowance,carry:{}});st.users.push({id:`emp-${id}`,displayName:p.name,role:'employee',employeeId:id,active:true,mustChange:true,createdAt:nowISO(),...p.rec})}
+        audit(st,a,'employees_imported',`${parsed.length} עובדים`);
+      });
+      creds=parsed.map(p=>({name:p.name,group:p.group,password:p.password}));
+    }});
+  if(v&&creds){credentialsModal(creds,`יובאו ${creds.length} עובדים${skipped?` (${skipped} קיימים דולגו)`:''}`)}
+};
+ON.importFile=async el=>{const f=el.files?.[0];if(!f)return;if(!/\.(csv|txt)$/i.test(f.name)){toast('ניתן לייבא קובץ CSV או TXT. מאקסל – העתק/י והדבק/י את העמודות.','err');el.value='';return}$('#importRaw').value=await f.text()};
+ACT.editEmp=async d=>{
+  const e=empById(Number(d.id));if(!e)return;const u=S.data.users.find(x=>x.employeeId===e.id);const y=new Date().getFullYear();
+  const v=await formModal({title:`עריכת עובד/ת – ${esc(e.name)}`,body:empFields(e)+(u?`<label class="check"><input type="checkbox" name="manager" ${u.manager?'checked':''}> הרשאת מנהל/ת (אישור בקשות וניהול עובדים)</label>`:''),
+    onSubmit:v=>{if(!v.name)throw new Error('יש להזין שם');return mutate((st,a)=>{
+      if(!(a.role==='admin'||a.manager))throw new Error('נדרשת הרשאת מנהל/ת');
+      const x=st.employees.find(q=>q.id===e.id);if(!x)throw new Error('העובד/ת לא נמצא/ה');
+      if(st.employees.some(q=>q.id!==x.id&&q.name.toLocaleLowerCase('he')===v.name.toLocaleLowerCase('he')))throw new Error('קיים/ת עובד/ת אחר/ת בשם זה');
+      x.name=v.name;x.group=v.group||'צוות';x.allowance=v.allowance===''?null:Number(v.allowance);x.carry={...(x.carry||{})};if(v.carry==='')delete x.carry[y];else x.carry[y]=Number(v.carry);
+      const uu=st.users.find(q=>q.employeeId===x.id);if(uu){uu.displayName=v.name;if('manager' in v){if(uu.id===a.id&&!v.manager&&a.role!=='admin')throw new Error('לא ניתן להסיר את הרשאת הניהול מעצמך');uu.manager=!!v.manager}}
+      audit(st,a,'employee_edited',v.name);
+    })}});
+  if(v)toast('נשמר','ok');
+};
+ACT.resetPw=async d=>{
+  const e=empById(Number(d.id));if(!e)return;
+  if(!await confirmBox(`לאפס את הסיסמה של <b>${esc(e.name)}</b>? תיווצר סיסמה זמנית חדשה.`,{ok:'איפוס',kind:'amber'}))return;
+  const password=tempPassword(),rec=await passwordRecord(password);
+  await mutate((st,a)=>{
+    if(!(a.role==='admin'||a.manager))throw new Error('נדרשת הרשאת מנהל/ת');
+    let u=st.users.find(q=>q.employeeId===e.id);
+    if(!u){u={id:`emp-${e.id}`,displayName:e.name,role:'employee',employeeId:e.id,active:true,createdAt:nowISO()};st.users.push(u)}
+    Object.assign(u,rec,{mustChange:true,active:true});audit(st,a,'password_reset',e.name);
+  });
+  throttleSet(`emp-${e.id}`,null);
+  credentialsModal([{name:e.name,group:e.group,password}],'הסיסמה אופסה');
+};
+ACT.toggleEmp=async d=>{
+  const e=empById(Number(d.id));if(!e)return;
+  if(e.active&&!await confirmBox(`להשבית את <b>${esc(e.name)}</b>? העובד/ת לא יוכל/תוכל להיכנס ולא י/תופיע בלוחות. ההיסטוריה נשמרת.`,{ok:'השבתה',kind:'gray'}))return;
+  await mutate((st,a)=>{const x=st.employees.find(q=>q.id===e.id);if(!x)throw new Error('לא נמצא');if(st.users.find(q=>q.employeeId===x.id)?.id===a.id)throw new Error('לא ניתן להשבית את עצמך');x.active=!x.active;st.users.filter(q=>q.employeeId===x.id).forEach(q=>q.active=x.active);audit(st,a,x.active?'employee_enabled':'employee_disabled',x.name)});
+  toast('עודכן','ok');
+};
+ACT.deleteEmp=async d=>{
+  const e=empById(Number(d.id));if(!e)return;const n=S.data.requests.filter(r=>r.employeeId===e.id).length;
+  const v=await formModal({title:'מחיקת עובד/ת לצמיתות',ok:'מחיקה לצמיתות',kind:'red',body:`<div class="notice err" style="margin-bottom:10px">פעולה זו תמחק את <b>${esc(e.name)}</b>, את המשתמש ואת כל ${n} הבקשות שלו/ה. לרוב עדיף <b>השבתה</b>, שמשמרת היסטוריה.</div><div class="field"><label>להמשך הקלד/י את השם המלא: ${esc(e.name)}</label><input name="confirm" autocomplete="off"></div>`,
+    onSubmit:v=>{if(v.confirm!==e.name)throw new Error('השם שהוקלד אינו תואם');return mutate((st,a)=>{if(st.users.find(q=>q.employeeId===e.id)?.id===a.id)throw new Error('לא ניתן למחוק את עצמך');st.employees=st.employees.filter(q=>q.id!==e.id);st.users=st.users.filter(q=>q.employeeId!==e.id);st.requests=st.requests.filter(r=>r.employeeId!==e.id);audit(st,a,'employee_deleted',`${e.name} (${n} בקשות)`)})}});
+  if(v)toast('העובד/ת נמחק/ה','ok');
+};
+ACT.addAdmin=async()=>{
+  if(!isSysAdmin()){toast('רק מנהל/ת מערכת יכול/ה להוסיף מנהלים','err');return}
+  let cred=null;
+  const v=await formModal({title:'מנהל/ת מערכת נוסף/ת',ok:'יצירה',body:`<div class="field"><label>שם</label><input name="name" required></div><p class="small muted">תיווצר סיסמה זמנית שיש להחליף בכניסה הראשונה. למנהל/ת זה/זו אין כרטיס עובד/ת (לא מגיש/ה בקשות). לעובד/ת שצריך/ה גם לאשר – השתמש/י בהרשאת מנהל/ת בעריכת העובד/ת.</p>`,
+    onSubmit:async v=>{if(!v.name)throw new Error('יש להזין שם');const password=tempPassword(),rec=await passwordRecord(password);await mutate((st,a)=>{if(a.role!=='admin')throw new Error('נדרשת הרשאת מנהל/ת מערכת');const id='admin-'+Date.now().toString(36);st.users.push({id,displayName:v.name,role:'admin',employeeId:null,active:true,mustChange:true,createdAt:nowISO(),...rec});audit(st,a,'admin_added',v.name)});cred=[{name:v.name,group:'מנהל/ת מערכת',password}]}});
+  if(v&&cred)credentialsModal(cred,'נוצר חשבון מנהל/ת');
+};
+ACT.resetAdminPw=async d=>{
+  const u=S.data.users.find(x=>x.id===d.id);if(!u||!await confirmBox(`לאפס את הסיסמה של ${esc(u.displayName)}?`,{ok:'איפוס',kind:'amber'}))return;
+  const password=tempPassword(),rec=await passwordRecord(password);
+  await mutate((st,a)=>{if(a.role!=='admin')throw new Error('נדרשת הרשאת מנהל/ת מערכת');const x=st.users.find(q=>q.id===u.id);Object.assign(x,rec,{mustChange:true});audit(st,a,'password_reset',x.displayName)});
+  credentialsModal([{name:u.displayName,group:'מנהל/ת מערכת',password}],'הסיסמה אופסה');
+};
+ACT.toggleAdmin=async d=>{await mutate((st,a)=>{if(a.role!=='admin')throw new Error('נדרשת הרשאת מנהל/ת מערכת');const x=st.users.find(q=>q.id===d.id);if(!x||x.id===a.id)throw new Error('לא ניתן');if(x.active&&st.users.filter(q=>q.role==='admin'&&q.active).length<=1)throw new Error('חייב להישאר לפחות מנהל/ת מערכת פעיל/ה אחד/ת');x.active=!x.active;audit(st,a,x.active?'admin_enabled':'admin_disabled',x.displayName)});toast('עודכן','ok')};
+
+/* ---- settings & backups (admin) ---- */
+PAGES.settings=()=>{
+  if(!isAdmin())return '';
+  const s=S.data.settings;
+  setTimeout(loadBackupList,0);
+  return head('הגדרות וגיבויים','הגדרות משותפות לכל התחנות')+
+  `<div class="grid2"><form class="card" id="settingsForm" novalidate><h3>הגדרות מחלקה</h3>
+   <div class="field"><label>שם המחלקה</label><input name="department" value="${esc(s.department)}" maxlength="80"></div>
+   <div class="form-grid"><div class="field"><label>מכסת חופשה שנתית (ברירת מחדל)</label><input name="defaultAllowance" type="number" min="0" max="80" step="0.5" value="${s.defaultAllowance}"></div>
+   <div class="field"><label>התראת עומס מ-X עובדים ביום</label><input name="warningThreshold" type="number" min="1" max="50" value="${s.warningThreshold}"></div></div>
+   <div class="field"><label>ימי עבודה (לחישוב ימי חופשה)</label><div class="days-pick">${HEB_DAYS_LONG.map((n,i)=>`<label><input type="checkbox" name="workDays" data-multi="1" value="${i}" ${s.workDays.includes(i)?'checked':''}> ${n}</label>`).join('')}</div></div>
+   <label class="check"><input type="checkbox" name="excludeHolidays" ${s.excludeHolidays?'checked':''}> חגים (ראש השנה, כיפור, סוכות, פסח, שבועות, יום העצמאות) אינם נספרים כימי חופשה</label>
+   <h3 style="margin-top:16px">פרטיות ואבטחה</h3>
+   <label class="check"><input type="checkbox" name="publicView" ${s.publicView?'checked':''}> צפייה בלוחות ללא כניסה (מומלץ – נוח לעקוב; הגשת בקשה תמיד דורשת סיסמה)</label>
+   <label class="check"><input type="checkbox" name="publicShowNames" ${s.publicShowNames?'checked':''}> הצגת שמות העובדים בצפייה ללא כניסה</label>
+   <div class="field" style="margin-top:8px"><label>ניתוק אוטומטי לאחר (דקות ללא פעילות)</label><input name="sessionMinutes" type="number" min="1" max="240" value="${s.sessionMinutes}"></div>
+   <div class="notice small">ללא כניסה מוצגות רק חופשות <b>מאושרות</b> – ללא הערות, בקשות ממתינות או יתרות.</div>
+   <div class="merr hidden" id="setErr"></div><button class="btn" type="submit" style="margin-top:12px">שמירת הגדרות</button></form>
+  <div><div class="card"><h3>תיקיית רשת וסנכרון</h3><div class="list small">
+   <div class="row"><span>תיקייה</span><b>${esc(S.connName)}</b></div>
+   <div class="row"><span>קובץ נתונים</span><span dir="ltr">data\\${DATA_FILE}</span></div>
+   <div class="row"><span>גרסת נתונים / עדכון אחרון</span><span>${S.data.revision} · ${fmtDT(S.data.updatedAt)}</span></div>
+   <div class="row"><span>תחנות פעילות</span><span>${S.stations}</span></div></div>
+   <div class="toolbar" style="margin-top:10px"><button class="btn sm" data-act="syncNow">סנכרון עכשיו</button><button class="btn sm outline" data-act="pickFolder">החלפת תיקייה</button></div></div>
+  <div class="card"><h3>גיבויים <span class="toolbar"><button class="btn sm" data-act="doBackup">גיבוי עכשיו</button><button class="btn sm outline" data-act="exportJson">⬇ הורדת קובץ גיבוי</button><button class="btn sm outline" data-act="importJson">⬆ שחזור מקובץ</button></span></h3>
+   <p class="small muted" style="margin-top:0">גיבוי אוטומטי נשמר פעם ביום בתיקייה <span dir="ltr">backups\\</span> (נשמרים ${BACKUP_KEEP} אחרונים). לפני כל שמירה נשמר גם העותק הקודם.</p>
+   <div id="backupList" class="list"><div class="empty">טוען…</div></div></div>
+  ${isSysAdmin()?`<div class="card"><h3>קוד שחזור מנהל/ת</h3><p class="small muted" style="margin-top:0">${s.recovery?'קיים קוד שחזור. יצירת קוד חדש מבטלת את הקודם.':'<b style="color:var(--red)">לא הוגדר קוד שחזור!</b> מומלץ ליצור כעת.'}</p><button class="btn sm amber" data-act="newRecovery">יצירת קוד שחזור חדש</button></div>`:''}</div></div>`;
+};
+async function loadBackupList(){
+  const el=$('#backupList');if(!el)return;
+  try{const names=(await listBackups()).slice(0,12);el.innerHTML=names.length?names.map(n=>`<div class="row"><span class="small" dir="ltr">${esc(n)}</span><button class="btn sm outline" data-act="restoreBackup" data-name="${esc(n)}">שחזור</button></div>`).join(''):'<div class="empty">אין גיבויים עדיין</div>'}catch{el.innerHTML='<div class="empty">לא ניתן לקרוא את תיקיית הגיבויים</div>'}
+}
+document.addEventListener('submit',async e=>{
+  if(e.target.id!=='settingsForm')return;e.preventDefault();
+  const v=formValues(e.target),err=$('#setErr');err.classList.add('hidden');
+  try{
+    const wd=(v.workDays||[]).map(Number);if(!wd.length)throw new Error('יש לבחור לפחות יום עבודה אחד');if(!v.department)throw new Error('יש להזין שם מחלקה');
+    await mutate((st,a)=>{if(!(a.role==='admin'||a.manager))throw new Error('נדרשת הרשאת מנהל/ת');Object.assign(st.settings,{department:v.department,defaultAllowance:Number(v.defaultAllowance)||0,warningThreshold:Math.max(1,Number(v.warningThreshold)||3),workDays:wd,excludeHolidays:v.excludeHolidays,publicView:v.publicView,publicShowNames:v.publicShowNames,sessionMinutes:Math.max(1,Number(v.sessionMinutes)||10)});audit(st,a,'settings_saved')});
+    toast('ההגדרות נשמרו','ok');
+  }catch(x){err.textContent=x.message;err.classList.remove('hidden')}
+});
+ACT.doBackup=async()=>{const n=await backupNow('manual');toast('נשמר גיבוי: '+n,'ok');loadBackupList()};
+ACT.exportJson=async()=>{const t=await readText(FS.data,DATA_FILE);downloadFile(`גיבוי_חופשות_${todayISO()}.json`,t,'application/json')};
+ACT.importJson=()=>{
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';
+  inp.onchange=async()=>{const f=inp.files[0];if(!f)return;let data;try{data=normalizeState(JSON.parse(await f.text()))}catch{toast('הקובץ אינו קובץ גיבוי תקין','err');return}
+    if(!data.users.some(u=>u.role==='admin'))return toast('בקובץ אין חשבון מנהל/ת – השחזור בוטל','err');
+    if(!await confirmBox(`לשחזר מהקובץ <b>${esc(f.name)}</b>?<br>${data.employees.length} עובדים · ${data.requests.length} בקשות · עדכון אחרון ${fmtDT(data.updatedAt)}<br><br>הנתונים הנוכחיים יגובו לפני השחזור.`,{ok:'שחזור',kind:'red'}))return;
+    await restoreData(data,f.name);};
+  inp.click();
+};
+ACT.restoreBackup=async d=>{
+  let data;try{data=normalizeState(JSON.parse(await readText(FS.backups,d.name)))}catch{toast('קובץ הגיבוי פגום','err');return}
+  if(!await confirmBox(`לשחזר את הגיבוי <span dir="ltr">${esc(d.name)}</span>?<br>${data.employees.length} עובדים · ${data.requests.length} בקשות · עדכון ${fmtDT(data.updatedAt)}<br><br>הנתונים הנוכחיים יישמרו כגיבוי לפני השחזור.`,{ok:'שחזור',kind:'red'}))return;
+  await restoreData(data,d.name,!!d.anon);
+};
+async function restoreData(data,label,anonymous=false){
+  if(anonymous){ // מסך שגיאה – הקובץ הראשי לא קריא; אין משתמש מחובר
+    await acquireLock();
+    try{const cur=await readText(FS.data,DATA_FILE);if(cur)await writeText(FS.backups,`vacation-manager_${todayISO()}_${Date.now()}_broken.json`,cur);data.revision=(data.revision||0)+1000;audit(data,null,'restored_from_backup',label);await writeText(FS.data,DATA_FILE,JSON.stringify(data))}finally{await releaseLock()}
+    S.me=null;toast('השחזור הושלם','ok');await activate(FS.root);return;
+  }
+  try{await backupNow('pre-restore')}catch(e){if(!await confirmBox('לא ניתן היה לגבות את הנתונים הנוכחיים. להמשיך בכל זאת?',{kind:'red'}))return}
+  await mutate((st,a)=>{if(a.role!=='admin')throw new Error('שחזור מותר למנהל/ת מערכת בלבד');const rev=st.revision;for(const k of Object.keys(st))delete st[k];Object.assign(st,clone(data));st.revision=rev;audit(st,a,'restored_from_backup',label)});
+  toast('השחזור הושלם','ok');renderAll();
+}
+ACT.newRecovery=async()=>{
+  if(!await confirmBox('ליצור קוד שחזור חדש? הקוד הקודם יפסיק לעבוד.',{ok:'יצירה',kind:'amber'}))return;
+  const code=recoveryCode(),rec=await passwordRecord(normCode(code));
+  await mutate((st,a)=>{if(a.role!=='admin')throw new Error('נדרשת הרשאת מנהל/ת מערכת');st.settings.recovery=rec;audit(st,a,'recovery_code_created')});
+  showRecoveryCode(code,false);
+};
+
+/* ---- audit log (admin) ---- */
+const AUDIT_LABELS={system_created:'הקמת מערכת',blank_system_created:'הקמת מערכת',login:'כניסה',password_set:'הגדרת סיסמה',password_changed:'שינוי סיסמה',password_reset:'איפוס סיסמה',admin_password_recovered:'שחזור סיסמת מנהל/ת',request_created:'בקשה חדשה',request_cancelled:'ביטול בקשה',cancel_requested:'בקשת ביטול',cancel_request_withdrawn:'חזרה מבקשת ביטול',request_approved:'אישור בקשה',request_rejected:'דחיית בקשה',bulk_approved:'אישור מרוכז',cancel_approved:'אישור ביטול',cancel_rejected:'דחיית ביטול',leave_added_by_admin:'הוספת חופשה ע״י מנהל/ת',leave_edited:'עריכת חופשה',leave_deleted:'מחיקת חופשה',employee_added:'הוספת עובד/ת',employees_imported:'ייבוא עובדים',bulk_import_employees:'ייבוא עובדים',employee_edited:'עריכת עובד/ת',employee_enabled:'הפעלת עובד/ת',employee_disabled:'השבתת עובד/ת',employee_deleted:'מחיקת עובד/ת',admin_added:'הוספת מנהל/ת',admin_enabled:'הפעלת מנהל/ת',admin_disabled:'השבתת מנהל/ת',settings_saved:'שמירת הגדרות',restored_from_backup:'שחזור מגיבוי',recovery_code_created:'קוד שחזור חדש'};
+PAGES.audit=()=>{
+  if(!isAdmin())return '';
+  const q=S.auditQ.toLowerCase();
+  const rows=S.data.audit.slice().reverse().filter(a=>!q||`${a.displayName} ${AUDIT_LABELS[a.action]||a.action} ${a.detail}`.toLowerCase().includes(q)).slice(0,400);
+  return head('יומן פעולות','תיעוד מלא של כל שינוי במערכת – מי, מה ומתי',`<input class="input" style="width:220px" placeholder="🔎 חיפוש ביומן" value="${esc(S.auditQ)}" data-on="auditQ">`)+
+  `<div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>זמן</th><th>משתמש/ת</th><th>פעולה</th><th>פרטים</th></tr></thead><tbody>${rows.map(a=>`<tr><td class="nowrap small">${fmtDT(a.at)}</td><td>${esc(a.displayName)}</td><td>${esc(AUDIT_LABELS[a.action]||a.action)}</td><td class="small">${esc(a.detail||'')}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">אין רשומות</td></tr>'}</tbody></table></div></div>`;
+};
+let auditT=null;
+ON.auditQ=el=>{S.auditQ=el.value;clearTimeout(auditT);auditT=setTimeout(()=>{renderPage();const i=document.querySelector('[data-on=auditQ]');i.focus();i.setSelectionRange(i.value.length,i.value.length)},250)};
+
+/* ---------------- start ---------------- */
+window.addEventListener('error',ev=>{console.error(ev.error||ev.message)});
+window.addEventListener('unhandledrejection',ev=>{console.error(ev.reason)});
+window.addEventListener('beforeunload',()=>{if(busy)releaseLock()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncNow(false)});
+boot();
+</script>
+</body>
+</html>
