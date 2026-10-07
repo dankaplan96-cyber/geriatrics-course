@@ -564,7 +564,7 @@ main{max-width:1500px;margin:18px auto 60px;padding:0 20px}
       <div><h2>סימנים חיוניים</h2><p class="hint" id="vitalsDateLabel"></p></div>
       <div class="page-actions"><button class="btn primary big" data-print="vitals-nurses">🖨️ דף לכל אחות</button><button class="btn" data-print="vitals-ward">דף אחד לכל המחלקה</button></div>
     </div>
-    <p class="hint">הדף מיועד לכתיבה ביד. תא כהה = אין צורך למדוד באותה שעה. בתא החום מודפס אופן המדידה (PO / PR).</p>
+    <p class="hint">הדף מיועד לכתיבה ביד. תא כהה = אין צורך למדוד באותה שעה. מדידת חום רקטלית מסומנת "PR" בתא החום; בכל השאר המדידה פומית (PO).</p>
     <div class="assignment-summary" id="vitalsAssignments"></div>
     <div class="table-wrap"><table class="preview-table" id="vitalsPreview"></table></div>
   </section>
@@ -719,7 +719,7 @@ main{max-width:1500px;margin:18px auto 60px;padding:0 20px}
         <div class="form-field"><label>שליטה שתן</label><select id="pUrine"><option value=""></option><option>מלאה</option><option>חלקית</option><option>אי שליטה</option><option>קטטר</option><option>אחר</option></select></div>
         <div class="form-field"><label>שליטה פ״מ</label><select id="pBowel"><option value=""></option><option>מלאה</option><option>חלקית</option><option>אי שליטה</option><option>סטומה</option><option>אחר</option></select></div>
         <div class="form-field full"><label>כמה פעמים ביום למדוד סימנים חיוניים?</label><select id="pVitalsChecks"><option value="1">פעם ביום · 08:00</option><option value="2">פעמיים ביום · 08:00 + 18:00</option><option value="3">3 פעמים ביום · 08:00 + 12:00 + 18:00</option></select><div class="hint">השעות קבועות לפי סבבי המחלקה. בדף הסימנים תאים שאינם נדרשים יופיעו כהים.</div></div>
-        <div class="form-field full"><label>אופן מדידת חום</label><select id="pTempRoute"><option value="">לא הוגדר (PO / PR)</option><option value="PO">PO · פומי</option><option value="PR">PR · רקטלי</option></select><div class="hint">יודפס בתא החום בדף הסימנים החיוניים של המטופל.</div></div>
+        <div class="form-field full"><label>אופן מדידת חום</label><select id="pTempRoute"><option value="PO">PO · פומי (ברירת מחדל)</option><option value="PR">PR · רקטלי</option></select><div class="hint">אם נבחר PR – יודפס "PR" בתא החום בדף הסימנים. PO לא מסומן בדף.</div></div>
         <div class="form-field"><label>בידוד – בחירה ידנית בלבד</label><select id="pIsolation"><option value="no">לא</option><option value="yes">כן</option></select><div class="hint">המערכת אינה מסיקה בידוד מאבחנה, מחולל, חדר או מידע אחר.</div></div>
         <div class="form-field full isolation-types-field" id="isolationTypesField">
           <label>סוג בידוד</label>
@@ -1286,7 +1286,7 @@ function openPatient(id){if(!requireNetworkReady('עריכת מטופל'))return
   const stored=Array.isArray(p.backgroundConditions)?p.backgroundConditions.filter(id=>BACKGROUND_CONDITIONS.some(c=>c.id===id)):[];
   currentBackgroundConditions=new Set(stored.length?stored:[...inferBackgroundConditions(p.background)]);
   $('#pBackground').value=(typeof p.backgroundOther==='string'?p.backgroundOther:(p.background||''));$('#backgroundSearch').value='';renderBackgroundConditions();
-  $('#pAssessment').value=p.assessment;$('#pEducation').value=p.education;$('#pUrine').value=p.urine;$('#pBowel').value=p.bowel;$('#pVitalsChecks').value=String(Math.max(1,Math.min(3,Number(p.vitalsChecks)||3)));$('#pTempRoute').value=['PO','PR'].includes(p.tempRoute)?p.tempRoute:'';$('#pIsolation').value=p.isolation?'yes':'no';document.querySelectorAll('#isolationTypeList input').forEach(x=>x.checked=(p.isolationTypes||[]).includes(x.value));$('#pIsolationOther').value=p.isolationOther||'';document.querySelectorAll('#isolationOrganismList input').forEach(x=>x.checked=(p.isolationOrganisms||[]).includes(x.value));$('#pIsolationOrganismOther').value=p.isolationOrganismOther||'';refreshIsolationFields();
+  $('#pAssessment').value=p.assessment;$('#pEducation').value=p.education;$('#pUrine').value=p.urine;$('#pBowel').value=p.bowel;$('#pVitalsChecks').value=String(Math.max(1,Math.min(3,Number(p.vitalsChecks)||3)));$('#pTempRoute').value=p.tempRoute==='PR'?'PR':'PO';$('#pIsolation').value=p.isolation?'yes':'no';document.querySelectorAll('#isolationTypeList input').forEach(x=>x.checked=(p.isolationTypes||[]).includes(x.value));$('#pIsolationOther').value=p.isolationOther||'';document.querySelectorAll('#isolationOrganismList input').forEach(x=>x.checked=(p.isolationOrganisms||[]).includes(x.value));$('#pIsolationOrganismOther').value=p.isolationOrganismOther||'';refreshIsolationFields();
   $('#pGlucoseRequired').value=p.glucoseRequired?'yes':'no';$('#pGlucoseChecks').value=String(p.glucoseChecks||1);$('#pGlucoseScheduleMode').value=p.glucoseScheduleMode||'daily';setGlucoseWeekdays(p.glucoseWeekdays||[]);$('#pGlucoseEveryDays').value=String(p.glucoseEveryDays||2);$('#pGlucoseStartDate').value=p.glucoseStartDate||'';refreshGlucoseFields(p.glucosePattern||'');refreshGlucoseScheduleFields();
   $('#pNotes').value=p.notes;
   $('#savePatient').textContent=active?'שמור וסגור':'הוסף מטופל';
@@ -1364,9 +1364,9 @@ function vitalsNeeded(p,time){
   if(String(time)==='night')return true;
   return vitalsTimesForChecks(p.vitalsChecks).includes(String(time));
 }
-function tempRouteLabel(p){return p&&['PO','PR'].includes(p.tempRoute)?p.tempRoute:'PO / PR'}
+function tempRouteLabel(p){return p&&p.tempRoute==='PR'?'PR':''}
 function vitalFields(){return '<th>לחץ דם</th><th>דופק</th><th>חום</th><th>SAT</th><th>כאב</th><th>פ״מ</th><th>DEX</th>'}
-function blankVitalsCells(p,time){const vitalOpen=vitalsNeeded(p,time),dexOpen=dexNeeded(p,time),vitalCls=p&&!vitalOpen?'dark-cell':'';const tempCell=p&&vitalOpen?`<td class="temp-cell"><span class="temp-route ${p.tempRoute==='PR'?'pr':''}">${esc(tempRouteLabel(p))}</span></td>`:`<td class="${vitalCls}"></td>`;return `<td class="${vitalCls}"></td><td class="${vitalCls}"></td>${tempCell}<td class="${vitalCls}"></td><td class="${vitalCls}"></td><td class="${vitalCls}"></td><td class="${p&&!dexOpen?'dark-cell':''}"></td>`}
+function blankVitalsCells(p,time){const vitalOpen=vitalsNeeded(p,time),dexOpen=dexNeeded(p,time),vitalCls=p&&!vitalOpen?'dark-cell':'';const tempCell=p&&vitalOpen&&tempRouteLabel(p)?`<td class="temp-cell"><span class="temp-route pr">${esc(tempRouteLabel(p))}</span></td>`:`<td class="${vitalCls}"></td>`;return `<td class="${vitalCls}"></td><td class="${vitalCls}"></td>${tempCell}<td class="${vitalCls}"></td><td class="${vitalCls}"></td><td class="${vitalCls}"></td><td class="${p&&!dexOpen?'dark-cell':''}"></td>`}
 
 function renderVitals(){
   const morning=state.activeShift==='morning',pts=reportingPatients();let head='';
