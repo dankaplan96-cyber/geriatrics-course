@@ -6,6 +6,7 @@ import { Physics } from '../engine/physics.js';
 import { ZoneSystem } from '../engine/scripts.js';
 import { fbm, noise2, smoothstep, lerp, rng, distToSegment } from '../engine/math.js';
 import { mat } from '../engine/rig.js';
+import { textures } from '../engine/textures.js';
 
 export const POI = {
   start: { x: -38, z: 4 },
@@ -65,26 +66,33 @@ export function islandHeight(x, z) {
   return h;
 }
 
+// Vertex tint: subtle painterly variation + darkening in hollows (like
+// LBA2's baked terrain intensity map). The texture colour comes from the splat.
 function islandColor(x, z, h, slope, c) {
-  const n = fbm(x * 0.15, z * 0.15, 2);
-  if (h < 0.15) c.setRGB(0.55 + n * 0.05, 0.5, 0.36);
-  else if (h < 1.0) c.setRGB(0.86 + n * 0.04, 0.79 + n * 0.04, 0.56);
-  else c.setRGB(0.27 + n * 0.06, 0.5 + n * 0.08, 0.2);
-  if (slope > 0.75 && h > 0.5) {
-    const k = smoothstep(0.75, 1.2, slope);
-    c.lerp(new THREE.Color(0.45 + n * 0.05, 0.41, 0.36), k);
-  }
-  if (h > 0.9) {
+  const n = fbm(x * 0.09, z * 0.09, 3);
+  const v = 0.92 + n * 0.16;
+  c.setRGB(v, v, v * 0.97);
+  if (h < -0.2) c.multiplyScalar(0.8);
+}
+
+// Splat weights: [grass, sand, rock, dirt, cobbles]
+function islandSplat(x, z, h, slope, w) {
+  const n = fbm(x * 0.2, z * 0.2, 2);
+  w[0] = smoothstep(0.7, 1.4, h + n * 0.3);
+  w[1] = 1 - w[0];
+  w[2] = smoothstep(0.65, 1.1, slope) * (h > 0.5 ? 1.5 : 0);
+  w[3] = 0; w[4] = 0;
+  if (h > 0.8) {
     const pd = pathDist(x, z);
-    if (pd < 2.2) c.lerp(new THREE.Color(0.58, 0.48, 0.33), smoothstep(2.2, 1.0, pd) * 0.9);
+    w[3] = smoothstep(2.4, 1.2, pd + n * 0.6) * 2;
+    const cd = Math.hypot(x - POI.camp.x, z - POI.camp.z);
+    w[3] = Math.max(w[3], smoothstep(12, 8, cd + n * 2) * 2);
   }
-  // cobbled plazas
   const vd = Math.hypot(x - POI.village.x, z - POI.village.z);
-  if (vd < 9) c.lerp(new THREE.Color(0.62, 0.6, 0.56), smoothstep(9, 7, vd) * (0.8 + n * 0.2));
+  w[4] = smoothstep(10, 7.5, vd + n * 1.5) * 3;
   const fd = Math.max(Math.abs(x - POI.fort.x), Math.abs(z - POI.fort.z));
-  if (fd < 10.5) c.setRGB(0.5 + n * 0.04, 0.48, 0.45);
-  const cd = Math.hypot(x - POI.camp.x, z - POI.camp.z);
-  if (cd < 12) c.lerp(new THREE.Color(0.48, 0.4, 0.3), smoothstep(12, 8, cd) * 0.8);
+  if (fd < 11) w[4] = 3;
+  if (w[2] > 0) { w[0] *= 1 - Math.min(1, w[2]); w[3] *= 1 - Math.min(1, w[2]); }
 }
 
 function add(scene, geo, material, x, y, z, { rx = 0, ry = 0, rz = 0, cast = true, receive = true } = {}) {
@@ -98,14 +106,15 @@ function add(scene, geo, material, x, y, z, { rx = 0, ry = 0, rz = 0, cast = tru
 }
 
 export function buildWorld(scene) {
-  const terrain = new Terrain({ size: 260, segs: 200, heightFn: islandHeight, colorFn: islandColor });
+  const TX = textures();
+  const terrain = new Terrain({ size: 260, segs: 200, heightFn: islandHeight, colorFn: islandColor, splatFn: islandSplat, textures: TX });
   scene.add(terrain.mesh);
   const physics = new Physics(terrain);
   const zones = new ZoneSystem();
   const H = (x, z) => terrain.heightAt(x, z);
   const W = {
     terrain, physics, zones, H, POI,
-    interactables: [], ballTargets: [], crates: [], updaters: [], lights: [], swayMats: [],
+    interactables: [], ballTargets: [], crates: [], updaters: [], lights: [], swayMats: [], TX,
   };
   const rand = rng(42);
 
@@ -222,34 +231,76 @@ export function buildWorld(scene) {
   for (const r of rocks) if (r.s > 0.7) physics.add({ type: 'cyl', x: r.x, z: r.z, r: r.s * 1.1, top: r.h + r.s * 0.9, seeThrough: true });
 
   // ---------- village of Port Lumen ----------
-  const wallMat = mat('#f1ece2', { roughness: 0.9 });
-  const roofCols = ['#3c6fd1', '#c8452f', '#e08a2c', '#3c9a8a', '#8f4fc1'];
-  const winMat = new THREE.MeshStandardMaterial({ color: '#ffd27a', emissive: '#ffb347', emissiveIntensity: 1.6 });
-  const house = (x, z, ry, w, d, roofCol) => {
+  // Citadel-style houses: plaster walls on a stone base, tiled gable roofs,
+  // arched doors and coloured shutters.
+  const texMat = (tex, rx, ry, extra = {}) => {
+    const t = tex.clone(); t.needsUpdate = true; t.repeat.set(rx, ry);
+    return new THREE.MeshStandardMaterial({ map: t, roughness: 0.9, ...extra });
+  };
+  const wallMat = texMat(TX.plaster, 1, 1);
+  const roofMats = [texMat(TX.roof, 2, 2), texMat(TX.roofBlue, 2, 2)];
+  const doorMat = texMat(TX.wood, 1, 1);
+  const shutterCols = ['#3b78d8', '#2f9a7a', '#d8a13b', '#b8483b'];
+  const winMat = new THREE.MeshStandardMaterial({ color: '#ffd27a', emissive: '#ffb347', emissiveIntensity: 1.4 });
+  const frameMat = mat('#f9f4ea');
+  const house = (x, z, ry, w, d, variant) => {
     const g = H(x, z);
     const grp = new THREE.Group();
     grp.position.set(x, g, z); grp.rotation.y = ry;
     scene.add(grp);
-    const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 3.2, d), wallMat);
-    wall.position.y = 1.5; wall.castShadow = wall.receiveShadow = true; grp.add(wall);
-    const roof = new THREE.Mesh(new THREE.ConeGeometry(Math.hypot(w, d) * 0.62, 2.4, 4), mat(roofCol, { roughness: 0.7 }));
-    roof.position.y = 4.3; roof.rotation.y = Math.PI / 4; roof.scale.set(w / Math.max(w, d), 1, d / Math.max(w, d)); roof.castShadow = true; grp.add(roof);
-    const door = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.9, 0.1), mat('#6a4224'));
-    door.position.set(0, 0.95, d / 2 + 0.02); grp.add(door);
+    const wallH = 3.2;
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(w, wallH + 0.2, d), wallMat);
+    wall.position.y = wallH / 2 - 0.1; grp.add(wall);
+    // gable (triangular end walls) + roof slabs
+    const rh = Math.min(2.4, w * 0.42);
+    const tri = new THREE.Shape([new THREE.Vector2(-w / 2, 0), new THREE.Vector2(w / 2, 0), new THREE.Vector2(0, rh)]);
+    const gable = new THREE.Mesh(new THREE.ExtrudeGeometry(tri, { depth: d, bevelEnabled: false }), wallMat);
+    gable.position.set(0, wallH, -d / 2); grp.add(gable);
+    const slope = Math.hypot(w / 2, rh) + 0.45;
+    const ang = Math.atan2(rh, w / 2);
+    const rm = roofMats[variant % 2];
     for (const sx of [-1, 1]) {
-      const win = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.08), winMat);
-      win.position.set(sx * w * 0.3, 1.9, d / 2 + 0.03); grp.add(win);
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(slope, 0.16, d + 0.8), rm);
+      slab.position.set(sx * (w / 4 - 0.08), wallH + rh / 2 + 0.08, 0);
+      slab.rotation.z = -sx * ang;
+      grp.add(slab);
     }
-    const ch = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.4, 0.5), mat('#9c8a7a'));
-    ch.position.set(w * 0.25, 4.6, -d * 0.15); ch.castShadow = true; grp.add(ch);
+    // arched door
+    const door = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.8, 0.12), doorMat);
+    door.position.set(0, 0.9, d / 2 + 0.03); grp.add(door);
+    const arch = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.12, 12, 1, false, 0, Math.PI), doorMat);
+    arch.rotation.set(Math.PI / 2, Math.PI / 2, 0); arch.position.set(0, 1.8, d / 2 + 0.03); grp.add(arch);
+    const step = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.18, 0.7), mat('#b8ad98'));
+    step.position.set(0, 0.09, d / 2 + 0.35); grp.add(step);
+    // windows with shutters on the front and back
+    const sh = mat(shutterCols[variant % shutterCols.length]);
+    for (const side of [1, -1]) for (const sxw of [-1, 1]) {
+      const wx = sxw * w * 0.3, wz = side * (d / 2 + 0.04);
+      const fr = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.96, 0.06), frameMat); fr.position.set(wx, 1.95, wz); grp.add(fr);
+      const win = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.76, 0.08), winMat); win.position.set(wx, 1.95, wz + side * 0.01); grp.add(win);
+      for (const ss of [-1, 1]) {
+        const s2 = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.9, 0.06), sh);
+        s2.position.set(wx + ss * 0.62, 1.95, wz + side * 0.02); s2.rotation.y = ss * side * 0.25; grp.add(s2);
+      }
+      const box = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.18, 0.25), doorMat); box.position.set(wx, 1.48, wz + side * 0.13); grp.add(box);
+      for (let f = 0; f < 3; f++) {
+        const fl = new THREE.Mesh(new THREE.IcosahedronGeometry(0.1, 0), mat(['#ff5a7a', '#ffd84a', '#ff8a3d'][f]));
+        fl.position.set(wx - 0.25 + f * 0.25, 1.62, wz + side * 0.15); grp.add(fl);
+      }
+    }
+    const ch = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.6, 0.55), mat('#b0a28e'));
+    ch.position.set(w * 0.22, wallH + rh * 0.75, -d * 0.2); grp.add(ch);
+    grp.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     physics.add({ type: 'box', x, z, hw: w / 2, hd: d / 2, rot: ry, top: g + 6 });
+    W.houses.push({ x, z, ry, w, d, g, door: { x: x + Math.sin(ry) * (d / 2 + 0.9), z: z + Math.cos(ry) * (d / 2 + 0.9) } });
   };
+  W.houses = [];
   const V = POI.village;
-  house(V.x - 9, V.z - 11, 0.25, 6, 5, roofCols[0]);
-  house(V.x + 8, V.z - 12, -0.3, 5, 5, roofCols[1]);
-  house(V.x - 13, V.z + 6, Math.PI / 2 + 0.2, 6, 4.5, roofCols[2]);
-  house(V.x + 11, V.z + 10, Math.PI + 0.5, 5.5, 5, roofCols[3]);
-  house(V.x - 3, V.z + 15, Math.PI - 0.1, 5, 4.5, roofCols[4]);
+  house(V.x - 9, V.z - 11, 0.25, 6, 5, 0);
+  house(V.x + 8, V.z - 12, -0.3, 5, 5, 1);
+  house(V.x - 13, V.z + 6, Math.PI / 2 + 0.2, 6, 4.5, 2);
+  house(V.x + 11, V.z + 10, Math.PI + 0.5, 5.5, 5, 3);
+  house(V.x - 3, V.z + 15, Math.PI - 0.1, 5, 4.5, 4);
 
   // well (hidden object zone)
   {

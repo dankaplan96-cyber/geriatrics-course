@@ -143,3 +143,94 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
   #dialog .text { font-size: 16px; }
   .settings { grid-template-columns: 1fr; }
 }
+
+/* =====================================================================
+   LBA2 art direction
+   - frames: thin white rectangle with corner ornaments (DrawCadre/DrawAngles)
+   - dialogue: full-width shaded box at the bottom, 3 lines, text coloured per
+     speaker with a vertical gradient (TestCoulDial / CoulObj)
+   - menus: selected entry burns with an animated "fire bar" (DrawFireBar)
+   - in-game HUD: nothing on screen; counters "incrust" in briefly on change
+   ===================================================================== */
+.lba-frame { position: relative; border: 1px solid rgba(255, 255, 255, 0.9); border-radius: 0; }
+.lba-frame::before, .lba-frame::after {
+  content: ''; position: absolute; width: 12px; height: 12px; pointer-events: none;
+  border-color: #fff; border-style: solid;
+}
+.lba-frame::before { top: -4px; left: -4px; border-width: 3px 0 0 3px; }
+.lba-frame::after { bottom: -4px; right: -4px; border-width: 0 3px 3px 0; }
+
+#dialog { left: 8px; right: 8px; width: auto; transform: none; bottom: 8px; min-height: 26vh; max-width: none; border-radius: 0; background: rgba(0, 0, 0, 0.55); border: 1px solid rgba(255, 255, 255, 0.9); padding: 18px 26px 26px; box-shadow: none; }
+#dialog .text { font-size: clamp(18px, 2.6vw, 26px); line-height: 1.45; font-weight: 700; letter-spacing: 0.01em;
+  background: linear-gradient(180deg, var(--spk-hi, #fff) 10%, var(--spk, #fff) 55%, var(--spk-lo, #bbb) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.85)); }
+#dialog .name { top: -14px; background: #000; color: var(--spk, #fff); border: 1px solid #fff; border-radius: 0; font-size: 13px; padding: 2px 10px; }
+#dialog .next { color: #fff; }
+
+.menu button, .langs button { border-radius: 0; border: 1px solid rgba(255, 255, 255, 0.85); background: rgba(0, 0, 0, 0.6); position: relative; overflow: hidden; text-shadow: 1px 1px 0 #000; }
+.menu button.sel, .menu button:hover, .menu button:focus-visible {
+  transform: none; border-color: #fff;
+  background: linear-gradient(0deg, #3a0400 0%, #b11d00 35%, #ff7a00 65%, #ffd23a 100%);
+  background-size: 100% 300%; animation: fire 0.9s linear infinite alternate;
+}
+.menu button.sel::after, .menu button:hover::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; opacity: 0.6;
+  background: repeating-linear-gradient(100deg, transparent 0 14px, rgba(255, 200, 80, 0.35) 14px 22px, transparent 22px 38px);
+  background-size: 200% 100%; animation: flick 0.6s linear infinite;
+}
+@keyframes fire { from { background-position: 0 0; } to { background-position: 0 100%; } }
+@keyframes flick { from { background-position: 0 0; } to { background-position: 76px 0; } }
+.seg button { border-radius: 0; }
+.seg button.on { background: linear-gradient(0deg, #6a0c00, #d24a00 60%, #ffb43a); color: #fff; border-color: #fff; }
+.settings, .keys, #shop { border-radius: 0; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.85); }
+#shop button { border-radius: 0; }
+#shop button.sel, #shop button:hover { background: linear-gradient(0deg, #6a0c00, #d24a00 60%, #ffb43a); border-color: #fff; }
+
+/* incrust HUD: hidden until something changes */
+body.hud-lba #objective, body.hud-lba #minimap, body.hud-lba #behaviour, body.hud-lba #pausebtn { display: none; }
+body.hud-lba #stats { opacity: 0; transform: translateY(-6px); transition: opacity 0.35s, transform 0.35s; }
+body.hud-lba #stats.show { opacity: 1; transform: none; }
+body.hud-lba #prompt { border-radius: 0; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.8); }
+body.hud-lba .bar { border-radius: 0; border: 1px solid #fff; }
+body.hud-lba .toast { border-radius: 0; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.8); }
+@media (pointer: coarse) { body.hud-lba #pausebtn { display: block; } }
+
+#floats { position: fixed; inset: 0; pointer-events: none; z-index: 3; }
+.float { position: absolute; transform: translate(-50%, -50%); font-weight: 900; font-size: 22px; color: #ffe35a; text-shadow: 2px 2px 0 #000, -1px -1px 0 #000; white-space: nowrap; }
+
+/* behaviour menu */
+#behmenu { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 7; display: flex; flex-direction: column; align-items: center; gap: 12px; pointer-events: none; }
+.bboxes { display: flex; gap: 10px; }
+.bbox { width: clamp(70px, 13vw, 120px); height: clamp(84px, 15.6vw, 144px); }
+.bbox.on { border-color: #ffe35a; }
+.blabel { width: 100%; text-align: center; padding: 6px; font-size: 22px; font-weight: 900; color: #fff; background: rgba(0, 0, 0, 0.75); text-shadow: 2px 2px 0 #000; }
+.binfo { width: 100%; background: rgba(0, 0, 0, 0.75); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.binfo .row { display: flex; align-items: center; gap: 8px; }
+.binfo .gauge { height: 14px; border: 1px solid #fff; background: #000; }
+.binfo .gauge i { display: block; height: 100%; }
+.binfo .life { flex: 1; }
+.binfo .life i { background: linear-gradient(180deg, #ff9a7a, #e01a1a 50%, #7a0000); }
+.binfo .gtrack { flex: 1; }
+.binfo .magic i { background: linear-gradient(180deg, #9fd0ff, #2a6ae0 50%, #0a2a7a); }
+.binfo .kash, .binfo .keys { min-width: 44px; font-weight: 900; font-size: 18px; color: #ffe35a; text-shadow: 1px 1px 0 #000; }
+.binfo .ico { width: 18px; height: 18px; display: inline-block; flex: none; }
+.ico.heart { background: radial-gradient(circle at 30% 35%, #ff9a9a, #e01a2a 60%); clip-path: path('M9 17 L1.5 9.5 A4.3 4.3 0 0 1 9 3.5 A4.3 4.3 0 0 1 16.5 9.5 Z'); }
+.ico.flask { background: radial-gradient(circle at 40% 60%, #bfe2ff, #2a6ae0 70%); border-radius: 50% 50% 45% 45%; }
+.ico.kashico { background: linear-gradient(135deg, #fff2a0, #e0a000); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+.ico.keyico { background: #e6c25a; clip-path: polygon(0 30%, 40% 30%, 40% 0, 60% 0, 60% 40%, 100% 40%, 100% 60%, 80% 60%, 80% 80%, 65% 80%, 65% 60%, 0 60%); }
+.binfo .clovers { display: flex; gap: 4px; flex: 1; }
+.binfo .clovers span { width: 18px; height: 18px; border: 1px solid #fff; background: #000; }
+.binfo .clovers span.full { background: radial-gradient(circle at 50% 30%, #8ff08a 25%, transparent 26%), radial-gradient(circle at 28% 62%, #5fe36a 25%, transparent 26%), radial-gradient(circle at 72% 62%, #5fe36a 25%, transparent 26%), #0b2a0b; }
+.binfo .shardrow { display: flex; gap: 4px; }
+.binfo .shardrow span { width: 12px; height: 18px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); background: rgba(255, 255, 255, 0.2); }
+.binfo .shardrow span.got { background: linear-gradient(180deg, #fff6c0, #ffb000); }
+
+#pause-objective { max-width: 560px; padding: 10px 16px; background: rgba(0, 0, 0, 0.6); font-size: 15px; line-height: 1.5; text-align: start; }
+#pause-objective:empty { display: none; }
+#pause-objective b { color: #ffe35a; display: block; }
+#pause-objective .s { display: block; color: var(--ink-dim); }
+#pause-objective .s.ok { color: #8ef08e; text-decoration: line-through; }
+#holomap .objective { color: #cfefff; text-align: center; margin-top: 8px; font-size: 14px; }
+#holomap .objective b { color: #ffe35a; }
+#holomap .objective .s { margin: 0 8px; }
+#holomap .objective .s.ok { text-decoration: line-through; opacity: 0.6; }

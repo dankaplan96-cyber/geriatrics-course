@@ -1,11 +1,13 @@
 // Actors: the hero, NPCs, Grey Sentinels (+ the Warden), the magic ball,
 // projectiles, pickups and particles.
 import * as THREE from 'three';
-import { createHumanoid } from '../engine/rig.js';
+import { createHumanoid, createBlobShadow, placeBlobShadow } from '../engine/rig.js';
 import { TrackRunner } from '../engine/scripts.js';
 import { angleDiff, dampAngle, clamp } from '../engine/math.js';
 
 export const BEHAVIOURS = ['normal', 'athletic', 'aggressive', 'discreet'];
+// Twinsen: blue tunic, light trousers, brown ponytail
+export const HERO_LOOK = { tunic: '#2a66d9', pants: '#f2ead6', hair: '#4a2a14', boots: '#6b4423', ponytail: true };
 
 export class Actor {
   constructor(game, rig, x, z, radius = 0.45) {
@@ -19,10 +21,17 @@ export class Actor {
     this.radius = radius;
     this.kb = new THREE.Vector2();
     game.scene.add(rig.root);
+    this.shadow = createBlobShadow(radius * 1.9);
+    game.scene.add(this.shadow);
   }
   distTo(o) { return Math.hypot(o.pos.x - this.pos.x, o.pos.z - this.pos.z); }
   angleTo(o) { return Math.atan2(o.pos.x - this.pos.x, o.pos.z - this.pos.z); }
-  sync() { this.rig.root.position.copy(this.pos); this.rig.root.rotation.y = this.angle; }
+  sync() {
+    this.rig.root.position.copy(this.pos);
+    this.rig.root.rotation.y = this.angle;
+    this.shadow.visible = this.rig.root.visible || this.isHero;
+    placeBlobShadow(this.shadow, this.game.physics, this.rig.root.position.x, this.rig.root.position.y, this.rig.root.position.z);
+  }
   applyKnockback(dt) {
     if (this.kb.lengthSq() > 0.001) {
       this.game.physics.move(this, this.kb.x * dt, this.kb.y * dt);
@@ -34,7 +43,8 @@ export class Actor {
 // ------------------------------------------------------------------ hero
 export class Hero extends Actor {
   constructor(game, x, z) {
-    super(game, createHumanoid({ tunic: '#2a66d9', pants: '#f2ead6', hair: '#3a2416', ponytail: true }), x, z, 0.4);
+    super(game, createHumanoid(HERO_LOOK), x, z, 0.4);
+    this.isHero = true;
     this.behaviour = 'normal';
     this.maxHp = 10; this.hp = 10;
     this.magicLevel = 1; this.mp = 8;
@@ -358,6 +368,7 @@ export class Sentinel extends Actor {
       if (this.deadT > 2.2) this.rig.root.position.y -= dt * 0.8;
       if (this.deadT > 4) this.rig.root.visible = false;
       else { this.rig.root.position.x = this.pos.x; this.rig.root.position.z = this.pos.z; if (this.deadT <= 2.2) this.rig.root.position.y = this.pos.y; }
+      this.shadow.visible = this.deadT < 2.2;
       return;
     }
     if (this.state === 'dormant') {
@@ -497,6 +508,9 @@ export class MagicBall {
     this.mesh = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 12), this.mat);
     this.mesh.visible = false;
     game.scene.add(this.mesh);
+    this.shadow = createBlobShadow(0.3);
+    this.shadow.visible = false;
+    game.scene.add(this.shadow);
     this.trail = [];
     const tg = new THREE.SphereGeometry(0.12, 8, 6);
     for (let i = 0; i < 10; i++) {
@@ -525,6 +539,7 @@ export class MagicBall {
   }
 
   update(dt) {
+    this.shadow.visible = this.state !== 'idle';
     if (this.state === 'idle') { this.trail.forEach((m) => (m.visible = false)); return; }
     const g = this.game, P = g.physics;
     this.life += dt;
@@ -564,6 +579,7 @@ export class MagicBall {
       this.pos.addScaledVector(d.normalize(), Math.min(len, 24 * dt));
     }
     this.mesh.position.copy(this.pos);
+    placeBlobShadow(this.shadow, P, this.pos.x, this.pos.y, this.pos.z);
     this.history.unshift(this.pos.clone());
     if (this.history.length > 20) this.history.pop();
     this.trail.forEach((m, i) => {

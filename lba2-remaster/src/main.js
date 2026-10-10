@@ -7,7 +7,8 @@ import { Input } from './engine/input.js';
 import { CameraRig } from './engine/camera.js';
 import { lerp, angleDiff, smoothstep } from './engine/math.js';
 import { buildWorld, POI } from './game/world.js';
-import { Hero, NPC, Sentinel, MagicBall, Bolts, Pickups, Particles } from './game/actors.js';
+import { Hero, NPC, Sentinel, MagicBall, Bolts, Pickups, Particles, BEHAVIOURS, HERO_LOOK } from './game/actors.js';
+import { BehaviourMenu } from './game/behmenu.js';
 import { HUD } from './game/hud.js';
 import { t, setLang } from './game/i18n.js';
 
@@ -23,11 +24,11 @@ const store = {
 
 // ----------------------------------------------------------- actor defs
 const NPCS = [
-  { id: 'sage', name: 'n_sage', x: POI.sage.x, z: POI.sage.z, angle: Math.PI, look: { tunic: '#5b3f8f', robe: '#5b3f8f', beard: '#e8e8e8', hair: '#e8e8e8', staff: true, skin: '#e6b993' } },
-  { id: 'pippa', name: 'n_pippa', x: POI.village.x + 7, z: POI.village.z + 2.7, angle: 0, look: { tunic: '#e58a3a', pants: '#6a4a8a', ears: '#f4e9dc', apron: '#ffffff', skin: '#f4e9dc', hair: '#f4e9dc' } },
-  { id: 'doran', name: 'n_doran', x: 0, z: 0, pier: true, angle: -Math.PI / 2, look: { tunic: '#2f8a6a', pants: '#3a4a6a', hat: '#d8b94a', beard: '#7a5a3a', skin: '#d9a57e' } },
+  { id: 'sage', name: 'n_sage', color: '#c9a6ff', x: POI.sage.x, z: POI.sage.z, angle: Math.PI, look: { tunic: '#5b3f8f', robe: '#5b3f8f', beard: '#e8e8e8', hair: '#e8e8e8', staff: true, skin: '#e6b993' } },
+  { id: 'pippa', name: 'n_pippa', color: '#ffb070', x: POI.village.x + 7, z: POI.village.z + 2.7, angle: 0, look: { tunic: '#e58a3a', pants: '#6a4a8a', ears: '#f4e9dc', apron: '#ffffff', skin: '#f4e9dc', hair: '#f4e9dc' } },
+  { id: 'doran', name: 'n_doran', color: '#8fd3ff', x: 0, z: 0, pier: true, angle: -Math.PI / 2, look: { tunic: '#2f8a6a', pants: '#3a4a6a', hat: '#d8b94a', trunk: true, skin: '#8fa3b8', hair: '#8fa3b8', scale: 1.15 } },
   {
-    id: 'nilo', name: 'n_nilo', x: POI.village.x - 4, z: POI.village.z + 4, look: { tunic: '#e0c03a', pants: '#3a5a9a', scale: 0.72, hair: '#c06a2a' },
+    id: 'nilo', name: 'n_nilo', color: '#ffe070', x: POI.village.x - 4, z: POI.village.z + 4, look: { tunic: '#e0c03a', pants: '#3a5a9a', scale: 0.72, hair: '#c06a2a' },
     track: [{ op: 'goto', x: POI.village.x - 4, z: POI.village.z + 4 }, { op: 'wait', t: 2 }, { op: 'goto', x: POI.village.x + 3, z: POI.village.z + 6 }, { op: 'wait', t: 1.5 }, { op: 'goto', x: POI.village.x + 2, z: POI.village.z - 4 }, { op: 'wait', t: 2 }, { op: 'loop' }],
   },
 ];
@@ -58,7 +59,8 @@ const SHOP = [
 // ----------------------------------------------------------- game
 class Game {
   constructor() {
-    this.settings = { lang: 'he', controls: 'modern', camera: 'modern', visual: '2026', quality: 'high', music: 0.55, sfx: 0.8, ...store.get(SET_KEY) };
+    this.settings = { lang: 'he', controls: 'modern', camera: 'lba', hud: 'lba', visual: '2026', quality: 'high', music: 0.55, sfx: 0.8, ...store.get(SET_KEY) };
+    if (!['lba', 'free'].includes(this.settings.camera)) this.settings.camera = 'lba';
     if (!store.get(SET_KEY) && !navigator.language.startsWith('he')) this.settings.lang = 'en';
     setLang(this.settings.lang);
 
@@ -94,6 +96,8 @@ class Game {
     this.combat = 0;
 
     this.spawnActors();
+    this.behMenu = new BehaviourMenu(this, HERO_LOOK);
+    this.bubble = this.makeBubble();
     this.applySettings();
     this.wireUI();
     this.last = performance.now();
@@ -260,8 +264,13 @@ class Game {
     document.querySelectorAll('.langs button').forEach((b) => b.classList.toggle('sel', b.dataset.lang === s.lang));
     this.hud.refreshText();
     this.renderer.setQuality(s.quality);
-    this.renderer.setRetro(s.visual === '1997');
+    const retro = s.visual === '1997';
+    this.renderer.setRetro(retro);
     this.camRig.setMode(s.camera);
+    this.camRig.cut = retro; // 1997: hard cuts between shots, remaster: glide
+    this.env.setFogRange(...(retro ? [18, 72] : [45, 190]));
+    this.env.waterU.uWaveAmp.value = retro ? 0.3 : 1;
+    this.hud.setStyle(s.hud === 'lba');
     this.audio.vol.music = s.music;
     this.audio.vol.sfx = s.sfx;
     this.audio.applyVolumes();
@@ -329,7 +338,7 @@ class Game {
       this.pickups.spawn('shard', k.x, this.physics.groundAt(k.x, k.z) + 1.4, k.z, { id: 'shard1', idx: 1, pop: true });
       h.hasKey = true;
       this.hud.toast('toast_key');
-      this.say('n_hero', t('d_shard2'));
+      this.say('n_hero', t('d_shard2'), null, h);
     } else if (it.kind === 'gate') {
       if (!h.hasKey) { this.audio.play('deny'); this.say('', [t('gate_locked')]); return; }
       W.gate.open = true; W.gate.c.enabled = false;
@@ -348,10 +357,46 @@ class Game {
     }
   }
 
-  say(name, lines, done) {
+  say(name, lines, done, speaker = null) {
     this.setState('dialog');
     this.hud.prompt(null);
-    this.hud.say(name, lines, () => { this.setState('play'); done?.(); });
+    this.speaker = speaker;
+    const color = speaker?.def?.color || (speaker?.boss ? '#ff7a5a' : speaker === this.hero ? '#8fc2ff' : '#ffffff');
+    this.bubbleSide = !this.bubbleSide;
+    this.hud.say(name, lines, () => { this.speaker = null; this.setState('play'); done?.(); }, color);
+  }
+
+  // LBA2's speech-bubble sprite above whoever is talking (DrawBulle in INCRUST.CPP)
+  makeBubble() {
+    const c = document.createElement('canvas');
+    c.width = 96; c.height = 72;
+    const x = c.getContext('2d');
+    x.fillStyle = '#fff'; x.strokeStyle = '#000'; x.lineWidth = 4;
+    x.beginPath(); x.ellipse(48, 30, 40, 24, 0, 0, Math.PI * 2); x.fill(); x.stroke();
+    x.beginPath(); x.moveTo(30, 48); x.lineTo(20, 68); x.lineTo(44, 52); x.closePath(); x.fill(); x.stroke();
+    x.fillStyle = '#fff'; x.fillRect(28, 44, 18, 8);
+    x.fillStyle = '#000';
+    for (let i = 0; i < 3; i++) { x.beginPath(); x.arc(32 + i * 16, 30, 4, 0, Math.PI * 2); x.fill(); }
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true }));
+    sp.scale.set(0.9, 0.68, 1);
+    sp.renderOrder = 11;
+    sp.visible = false;
+    this.scene.add(sp);
+    return sp;
+  }
+
+  updateBubble() {
+    const s = this.speaker;
+    this.bubble.visible = !!s && this.state === 'dialog';
+    if (!this.bubble.visible) return;
+    const top = s.pos.y + 2.1 * (s.rig.root.scale.y || 1);
+    const right = new THREE.Vector3().setFromMatrixColumn(this.camera.matrixWorld, 0);
+    const side = this.bubbleSide ? 1 : -1;
+    this.bubble.position.set(s.pos.x, top + 0.3, s.pos.z).addScaledVector(right, side * 0.7);
+    this.bubble.material.rotation = 0;
+    this.bubble.scale.x = side * 0.9;
   }
 
   talkTo(npc) {
@@ -360,14 +405,14 @@ class Game {
     const end = () => { npc.talking = false; };
     if (id === 'sage') {
       const n = h.shards.filter(Boolean).length;
-      if (f.ending) this.say('n_sage', t('d_sage_after'), end);
-      else if (n === 3) this.say('n_sage', t('d_sage_done'), () => { end(); this.startEnding(); });
-      else if (!f.talkedSage) this.say('n_sage', t('d_sage_1'), () => { end(); f.talkedSage = true; this.updateObjective(); this.save(); });
-      else this.say('n_sage', t('d_sage_wait').map((l) => l.replace('{n}', n)), end);
+      if (f.ending) this.say('n_sage', t('d_sage_after'), end, npc);
+      else if (n === 3) this.say('n_sage', t('d_sage_done'), () => { end(); this.startEnding(); }, npc);
+      else if (!f.talkedSage) this.say('n_sage', t('d_sage_1'), () => { end(); f.talkedSage = true; this.updateObjective(); this.save(); }, npc);
+      else this.say('n_sage', t('d_sage_wait').map((l) => l.replace('{n}', n)), end, npc);
     } else if (id === 'pippa') {
-      this.say('n_pippa', t('d_pippa'), () => { end(); this.openShop(); });
-    } else if (id === 'doran') this.say('n_doran', t('d_doran'), end);
-    else if (id === 'nilo') this.say('n_nilo', t('d_nilo'), end);
+      this.say('n_pippa', t('d_pippa'), () => { end(); this.openShop(); }, npc);
+    } else if (id === 'doran') this.say('n_doran', t('d_doran'), end, npc);
+    else if (id === 'nilo') this.say('n_nilo', t('d_nilo'), end, npc);
   }
 
   openShop() {
@@ -479,6 +524,8 @@ class Game {
   collect(p) {
     const h = this.hero;
     if (p.id) this.collected.push(p.id);
+    const fl = { coin: ['+1', '#ffe35a'], heart: ['♥', '#ff5a6a'], flask: ['✦', '#7fc4ff'], clover: ['♣', '#7fef7a'] }[p.type];
+    if (fl) this.hud.float(fl[0], p.pos, fl[1]);
     switch (p.type) {
       case 'coin': h.coins++; this.audio.play('coin'); break;
       case 'heart': h.hp = Math.min(h.maxHp, h.hp + 3); this.audio.play('heal'); break;
@@ -509,7 +556,7 @@ class Game {
           boss.state = 'chase';
           boss.alert(h.pos);
           this.hud.boss(boss.hp / boss.maxHp);
-        });
+        }, boss);
       }
     } else if (z.type === 'hint' && !this.flags.target) this.hud.toast('hint_target');
   }
@@ -566,7 +613,8 @@ class Game {
       case 'play': this.updatePlay(dt); break;
       case 'dialog':
         this.hud.updateDialog(dt);
-        if (input.pressed('interact') || input.pressed('action') || input.pressed('click')) this.hud.advance();
+        if (input.pressed('interact') || input.pressed('action') || input.pressed('click') || input.pressed('recenter')) this.hud.advance();
+        this.updateBubble();
         this.hero.rig.play('idle'); this.hero.rig.update(dt, 0); this.hero.sync();
         for (const n of this.npcs) n.update(dt);
         this.camRig.update(dt, this.hero.pos, this.hero.angle, false, input);
@@ -591,7 +639,13 @@ class Game {
     this.world.update(dt, this.time);
     this.particles.update(dt);
     if (this.state !== 'title') this.pickups.update(this.state === 'play' ? dt : 0);
-    if (render) this.renderer.render();
+    if (this.state !== 'play') this.behMenu.show(false);
+    this.hud.updateFloats(dt, this.camera);
+    if (this.state !== 'dialog') this.bubble.visible = false;
+    if (render) {
+      this.renderer.render();
+      this.behMenu.render(this.renderer.renderer, dt);
+    }
   }
 
   menuNav() {
@@ -600,7 +654,7 @@ class Game {
     const i = this.input;
     if (i.pressed('down')) { this.menuSel = (this.menuSel + 1) % btns.length; this.focusMenu(); this.audio.play('blip'); }
     if (i.pressed('up')) { this.menuSel = (this.menuSel + btns.length - 1) % btns.length; this.focusMenu(); this.audio.play('blip'); }
-    if (i.pressed('interact') || i.pressed('action')) { this.audio.init(); btns[this.menuSel]?.click(); }
+    if (i.pressed('interact') || i.pressed('action') || i.pressed('recenter')) { this.audio.init(); btns[this.menuSel]?.click(); }
   }
 
   titleCamera(dt) {
@@ -616,6 +670,20 @@ class Game {
     this.dirty = true;
     if (input.pressed('pause')) { this.pause(); return; }
     if (input.pressed('map')) { this.setState('map'); $('#holomap').classList.remove('hidden'); return; }
+    if (input.down('wheel')) {
+      // hold Ctrl: behaviour menu, world frozen
+      const i = BEHAVIOURS.indexOf(h.behaviour);
+      if (input.pressed('right') || input.pressed('next')) h.setBehaviour(BEHAVIOURS[(i + 1) % 4]);
+      if (input.pressed('left') || input.pressed('prev')) h.setBehaviour(BEHAVIOURS[(i + 3) % 4]);
+      for (let k = 0; k < 4; k++) if (input.pressed('b' + (k + 1))) h.setBehaviour(BEHAVIOURS[k]);
+      this.behMenu.show(true);
+      this.behMenu.refresh();
+      this.hud.prompt(null);
+      return;
+    }
+    this.behMenu.show(false);
+    if (input.pressed('recenter')) this.camRig.recenter();
+    if (input.pressed('view')) this.camRig.toggleView();
     this.saveTimer -= dt;
 
     h.update(dt, input);

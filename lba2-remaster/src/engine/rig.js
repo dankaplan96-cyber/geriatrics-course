@@ -5,17 +5,44 @@
 import * as THREE from 'three';
 import { damp } from './math.js';
 
+import { textures } from './textures.js';
+
+// LBA2 draws a shaded quad under every actor instead of real shadows
+// (AfficheShadow / DrawShadow in the original source). This is its remaster.
+let blobGeo = null, blobMat = null;
+export function createBlobShadow(radius) {
+  blobGeo ??= new THREE.CircleGeometry(1, 20);
+  blobMat ??= new THREE.MeshBasicMaterial({ map: textures().blob, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, fog: true });
+  const m = new THREE.Mesh(blobGeo, blobMat);
+  m.scale.setScalar(radius);
+  m.renderOrder = 1;
+  m.userData.r = radius;
+  return m;
+}
+const _n = new THREE.Vector3(), _z = new THREE.Vector3(0, 0, 1);
+export function placeBlobShadow(m, physics, x, y, z) {
+  const t = physics.terrain;
+  const g = physics.groundAt(x, z, y + 0.1);
+  const e = 0.5;
+  _n.set(t.heightAt(x - e, z) - t.heightAt(x + e, z), 2 * e, t.heightAt(x, z - e) - t.heightAt(x, z + e)).normalize();
+  if (g > t.heightAt(x, z) + 0.05) _n.set(0, 1, 0); // standing on a brick: flat
+  m.quaternion.setFromUnitVectors(_z, _n);
+  m.position.set(x, g + 0.05, z);
+  const k = Math.max(0.35, 1 - (y - g) * 0.15);
+  m.scale.setScalar(m.userData.r * k);
+}
+
 const matCache = new Map();
 export function mat(color, opts = {}) {
   const key = color + JSON.stringify(opts);
-  if (!matCache.has(key)) matCache.set(key, new THREE.MeshStandardMaterial({ color, roughness: 0.65, metalness: 0.05, ...opts }));
+  if (!matCache.has(key)) matCache.set(key, new THREE.MeshStandardMaterial({ color, roughness: 0.8, metalness: 0, ...opts }));
   return matCache.get(key);
 }
 
 function part(geo, material, parent, x = 0, y = 0, z = 0) {
   const m = new THREE.Mesh(geo, material);
   m.position.set(x, y, z);
-  m.castShadow = true;
+  m.castShadow = false; // characters use LBA-style blob shadows instead
   m.receiveShadow = true;
   parent.add(m);
   return m;
@@ -45,7 +72,7 @@ export function createHumanoid(opts = {}) {
 
   // torso
   const torso = joint(hips, 0, 0.05, 0);
-  part(new THREE.CapsuleGeometry(0.27, 0.42, 4, 10), tunicMat, torso, 0, 0.32, 0);
+  part(new THREE.CapsuleGeometry(0.27, 0.42, 3, 8), tunicMat, torso, 0, 0.32, 0);
   if (o.pads) {
     part(new THREE.SphereGeometry(0.16, 10, 8), mat(o.pads, { metalness: 0.5, roughness: 0.35 }), torso, 0.3, 0.6, 0);
     part(new THREE.SphereGeometry(0.16, 10, 8), mat(o.pads, { metalness: 0.5, roughness: 0.35 }), torso, -0.3, 0.6, 0);
@@ -56,14 +83,14 @@ export function createHumanoid(opts = {}) {
   // head
   const neck = joint(torso, 0, 0.78, 0);
   const head = joint(neck, 0, 0.18, 0);
-  part(new THREE.SphereGeometry(0.25, 16, 12), skinMat, head, 0, 0, 0);
+  part(new THREE.SphereGeometry(0.25, 10, 8), skinMat, head, 0, 0, 0);
   const eyeMat = mat('#1a1a22', { roughness: 0.2 });
   part(new THREE.SphereGeometry(0.035, 8, 6), eyeMat, head, 0.09, 0.03, 0.22);
   part(new THREE.SphereGeometry(0.035, 8, 6), eyeMat, head, -0.09, 0.03, 0.22);
   part(new THREE.SphereGeometry(0.05, 8, 6), skinMat, head, 0, -0.03, 0.25); // nose
   const hairMat = mat(o.hair);
   if (!o.helmet && !o.hat) {
-    const cap = part(new THREE.SphereGeometry(0.262, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), hairMat, head, 0, 0.02, -0.01);
+    const cap = part(new THREE.SphereGeometry(0.262, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.55), hairMat, head, 0, 0.02, -0.01);
     cap.rotation.x = -0.25;
   }
   let tail = null;
@@ -84,9 +111,26 @@ export function createHumanoid(opts = {}) {
     for (const sx of [-1, 1]) {
       const e = joint(head, sx * 0.1, 0.2, -0.02);
       e.rotation.z = -sx * 0.15;
-      const m = part(new THREE.CapsuleGeometry(0.06, 0.38, 4, 8), earMat, e, 0, 0.22, 0);
+      const m = part(new THREE.CapsuleGeometry(0.06, 0.38, 2, 6), earMat, e, 0, 0.22, 0);
       m.scale.z = 0.5;
     }
+  }
+  if (o.trunk) {
+    // Grobo: elephant-like islander
+    const trunkMat = mat(o.skin);
+    let seg = joint(head, 0, -0.02, 0.22);
+    for (let i = 0; i < 4; i++) {
+      part(new THREE.CylinderGeometry(0.075 - i * 0.012, 0.085 - i * 0.012, 0.16, 6), trunkMat, seg, 0, -0.07, 0);
+      seg.rotation.x = i === 0 ? 0.5 : 0.25;
+      seg = joint(seg, 0, -0.15, 0);
+    }
+    for (const sx of [-1, 1]) {
+      const e = part(new THREE.SphereGeometry(0.22, 8, 6), trunkMat, head, sx * 0.27, 0.02, -0.02);
+      e.scale.set(0.25, 1, 0.9);
+    }
+  }
+  if (o.ears) {
+    part(new THREE.SphereGeometry(0.045, 6, 4), mat('#ff8fb0'), head, 0, -0.01, 0.27); // rabbibunny nose
   }
   if (o.helmet) {
     part(new THREE.SphereGeometry(0.29, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.6), mat(o.helmet, { metalness: 0.6, roughness: 0.35 }), head, 0, 0.02, 0);
@@ -108,9 +152,9 @@ export function createHumanoid(opts = {}) {
   // arms
   const mkArm = (sx) => {
     const sh = joint(torso, sx * 0.36, 0.6, 0);
-    part(new THREE.CapsuleGeometry(0.075, 0.24, 4, 8), tunicMat, sh, 0, -0.16, 0);
+    part(new THREE.CapsuleGeometry(0.075, 0.24, 2, 6), tunicMat, sh, 0, -0.16, 0);
     const el = joint(sh, 0, -0.34, 0);
-    part(new THREE.CapsuleGeometry(0.065, 0.22, 4, 8), skinMat, el, 0, -0.14, 0);
+    part(new THREE.CapsuleGeometry(0.065, 0.22, 2, 6), skinMat, el, 0, -0.14, 0);
     const hand = joint(el, 0, -0.3, 0);
     part(new THREE.SphereGeometry(0.075, 8, 6), skinMat, hand, 0, 0, 0);
     return { sh, el, hand };
@@ -131,9 +175,9 @@ export function createHumanoid(opts = {}) {
   // legs
   const mkLeg = (sx) => {
     const hip = joint(hips, sx * 0.14, 0, 0);
-    part(new THREE.CapsuleGeometry(0.095, 0.3, 4, 8), pantsMat, hip, 0, -0.2, 0);
+    part(new THREE.CapsuleGeometry(0.095, 0.3, 2, 6), pantsMat, hip, 0, -0.2, 0);
     const knee = joint(hip, 0, -0.44, 0);
-    part(new THREE.CapsuleGeometry(0.085, 0.28, 4, 8), pantsMat, knee, 0, -0.18, 0);
+    part(new THREE.CapsuleGeometry(0.085, 0.28, 2, 6), pantsMat, knee, 0, -0.18, 0);
     const foot = part(new THREE.BoxGeometry(0.16, 0.1, 0.3), mat(o.boots), knee, 0, -0.42, 0.06);
     return { hip, knee, foot };
   };

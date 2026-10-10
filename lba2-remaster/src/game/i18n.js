@@ -6,22 +6,25 @@ export const STR = {
     continue: 'המשך משחק', new_game: 'משחק חדש', settings: 'הגדרות', controls: 'מקשים', back: 'חזרה',
     resume: 'חזרה למשחק', save_quit: 'שמירה ויציאה לתפריט', paused: 'הפסקה',
     language: 'שפה', control_scheme: 'שיטת שליטה', ctrl_modern: 'מודרנית (יחסית למצלמה)', ctrl_classic: 'קלאסית 1997 (טנק)',
-    visual: 'מראה', vis_2026: '2026 – תאורה, צללים, Bloom', vis_1997: '1997 – רזולוציה נמוכה, פיקסלים',
+    visual: 'מראה', vis_2026: 'רימאסטר – סגנון LBA2 עם תאורה מודרנית', vis_1997: '1997 – רזולוציה נמוכה, פיקסלים, ערפל קרוב',
     quality: 'איכות גרפית', q_high: 'גבוהה', q_medium: 'בינונית', q_low: 'נמוכה',
-    camera: 'מצלמה', cam_modern: 'חופשית (עכבר / סטיק)', cam_classic: 'איזומטרית קלאסית',
+    camera: 'מצלמה', cam_lba: 'LBA2 – שוט קבוע שמתמרכז מחדש', cam_free: 'חופשית (עכבר / סטיק)',
+    hud: 'ממשק', hud_lba: 'LBA2 – נקי, מופיע רק כשמשהו משתנה', hud_modern: 'מודרני – מפה, משימה וסרגלים קבועים',
     music: 'מוזיקה', sfx: 'אפקטים',
     disclaimer: 'פרויקט מעריצים לא מסחרי. אינו קשור ל־Adeline Software או ל־[2.21]. כל המודלים, הצלילים והמוזיקה נוצרו מחדש בקוד.',
     controls_html: `
       <tr><td>WASD / חצים</td><td>תנועה</td></tr>
-      <tr><td>1 2 3 4 · Tab · Ctrl+←/→</td><td>החלפת התנהגות: רגיל · אתלטי · אגרסיבי · דיסקרטי</td></tr>
+      <tr><td>Ctrl (החזק) + ←/→ · 1 2 3 4 · Tab</td><td>תפריט ההתנהגויות: רגיל · אתלטי · אגרסיבי · דיסקרטי</td></tr>
       <tr><td>רווח</td><td>פעולת ההתנהגות: (אתלטי) קפיצה · (אגרסיבי) אגרוף/בעיטה · (דיסקרטי) הסתתרות · (רגיל) דיבור/חיפוש</td></tr>
-      <tr><td>E / Enter</td><td>דיבור · פתיחה · חיפוש (בכל התנהגות – שיפור 2026)</td></tr>
+      <tr><td>E</td><td>דיבור · פתיחה · חיפוש (בכל התנהגות – שיפור 2026)</td></tr>
+      <tr><td>Enter</td><td>מרכוז המצלמה מאחורי טווינסן (כמו במקור)</td></tr>
+      <tr><td>Q</td><td>מצלמה קרובה / רחוקה</td></tr>
       <tr><td>F / קליק שמאלי</td><td>זריקת הכדור הקסום</td></tr>
-      <tr><td>גרירת עכבר · Z / C</td><td>סיבוב מצלמה</td></tr>
+      <tr><td>גרירת עכבר · Z / C</td><td>סיבוב מצלמה (במצלמה חופשית)</td></tr>
       <tr><td>M</td><td>הולומפה</td></tr>
       <tr><td>V</td><td>מעבר מיידי בין מראה 1997 ל־2026</td></tr>
       <tr><td>Esc / P</td><td>הפסקה</td></tr>
-      <tr><td>גיימפד</td><td>A פעולה · B כדור · X דיבור · Y מפה · LB/RB התנהגות · Start הפסקה</td></tr>`,
+      <tr><td>גיימפד</td><td>A פעולה · B כדור · X דיבור · Y מפה · LB/RB התנהגות · LT תפריט · R3 מרכוז · Start הפסקה</td></tr>`,
     beh_normal: 'רגיל', beh_athletic: 'אתלטי', beh_aggressive: 'אגרסיבי', beh_discreet: 'דיסקרטי',
     p_talk: 'דבר', p_search: 'חפש', p_read: 'קרא', p_open: 'פתח', p_shop: 'קנה', p_gate: 'שער',
     obj_sage: 'מצא את חכם מזג־האוויר במגדלור שבצפון',
@@ -39,7 +42,7 @@ export const STR = {
     hint_jump: 'עבור למצב אתלטי (2) וקפוץ עם רווח',
     boss_name: 'הסוהר קרל',
     map_title: 'הולומפה · האי סולמיר', map_close: 'M / Esc לסגירה',
-    gameover: 'אליו נפל...', gameover_sub: 'אין יותר עלי תלתן.', retry: 'המשך מהשמירה האחרונה',
+    gameover: 'טווינסן נפל...', gameover_sub: 'אין יותר עלי תלתן.', retry: 'המשך מהשמירה האחרונה',
     ending_title: 'השמש חוזרת לסולמיר',
     ending_text: 'עדשת השמש בוערת שוב. הסערה נשברת, ולראשונה מזה ארבעים יום רואה האי את השמש.<br><br>תודה ששיחקת! מחווה ל־<b>Little Big Adventure 2</b> (Adeline Software, 1997).',
     keep_exploring: 'המשך לחקור',
@@ -53,16 +56,16 @@ export const STR = {
     sign_camp: '⚠ מחנה הזקיפים · הכניסה אסורה',
     sign_fort: '→ המבצר העתיק',
     gate_locked: 'השער נעול. המפתח של קרל אמור להיות אי־שם במחנה הזקיפים.',
-    n_sage: 'החכם מורו', n_pippa: 'פיפה הסוחרת', n_doran: 'דורן הדייג', n_nilo: 'נילו', n_hero: 'אליו',
+    n_sage: 'החכם מורו', n_pippa: 'פיפה הסוחרת', n_doran: 'דורן הדייג', n_nilo: 'נילו', n_hero: 'טווינסן',
     d_sage_1: [
-      'אליו! תודה לרוחות שבאת. הזקיפים האפורים ניפצו את עדשת השמש, והסערה ניזונה מהחושך.',
+      'טווינסן! תודה לרוחות שבאת. הזקיפים האפורים ניפצו את עדשת השמש, והסערה ניזונה מהחושך.',
       'שלושה שברי שמש התפזרו: אחד על צוקי הלחישה ביער המזרחי, אחד נעול במחנה הזקיפים בדרום, ואת השלישי נושא הסוהר קרל בתוך המבצר העתיק.',
       'השתמש בהתנהגויות שלך, ילד: אתלטי כדי לקפוץ, דיסקרטי כדי לחמוק מהשומרים, ואגרסיבי כשמילים לא עוזרות. ואל תשכח את הכדור הקסום שלך!',
       'הבא לי את שלושת השברים והמגדלור יבער שוב.',
     ],
-    d_sage_wait: ['יש לך {n} מתוך 3 שברים. הסערה מחכה, אליו.'],
+    d_sage_wait: ['יש לך {n} מתוך 3 שברים. הסערה מחכה, טווינסן.'],
     d_sage_done: ['שלושת השברים! עמוד מאחור, ילד... הגיע הזמן להחזיר את השמש!'],
-    d_sage_after: ['תסתכל על השמיים, אליו. עשית את זה.'],
+    d_sage_after: ['תסתכל על השמיים, טווינסן. עשית את זה.'],
     d_pippa: ['טריים מהיבשת! הסערה גרועה לעסקים, אבל לך תמיד יש לי משהו. רוצה להציץ?'],
     d_doran: [
       'הצוקים במזרח? יש שם מטרה עתיקה מאבן. סבא שלי אמר שפגיעה בה מעירה את אבני המדרך.',
@@ -77,22 +80,25 @@ export const STR = {
     continue: 'Continue', new_game: 'New Game', settings: 'Settings', controls: 'Controls', back: 'Back',
     resume: 'Resume', save_quit: 'Save & quit to title', paused: 'Paused',
     language: 'Language', control_scheme: 'Control scheme', ctrl_modern: 'Modern (camera-relative)', ctrl_classic: 'Classic 1997 (tank)',
-    visual: 'Look', vis_2026: '2026 – lighting, shadows, bloom', vis_1997: '1997 – low-res, pixelated',
+    visual: 'Look', vis_2026: 'Remaster – LBA2 style, modern lighting', vis_1997: '1997 – low-res, pixels, close fog',
     quality: 'Graphics quality', q_high: 'High', q_medium: 'Medium', q_low: 'Low',
-    camera: 'Camera', cam_modern: 'Free (mouse / stick)', cam_classic: 'Classic isometric',
+    camera: 'Camera', cam_lba: 'LBA2 – fixed shot that re-centres', cam_free: 'Free (mouse / stick)',
+    hud: 'Interface', hud_lba: 'LBA2 – clean, appears only when something changes', hud_modern: 'Modern – map, objective and bars always on',
     music: 'Music', sfx: 'Effects',
     disclaimer: 'Non-commercial fan project. Not affiliated with Adeline Software or [2.21]. All models, sounds and music are recreated in code.',
     controls_html: `
       <tr><td>WASD / Arrows</td><td>Move</td></tr>
-      <tr><td>1 2 3 4 · Tab · Ctrl+←/→</td><td>Behaviour: Normal · Athletic · Aggressive · Discreet</td></tr>
+      <tr><td>Hold Ctrl + ←/→ · 1 2 3 4 · Tab</td><td>Behaviour menu: Normal · Athletic · Aggressive · Discreet</td></tr>
       <tr><td>Space</td><td>Behaviour action: jump (Athletic) · punch/kick (Aggressive) · hide (Discreet) · talk/search (Normal)</td></tr>
-      <tr><td>E / Enter</td><td>Talk · open · search (in any behaviour – 2026 QoL)</td></tr>
+      <tr><td>E</td><td>Talk · open · search (in any behaviour – 2026 QoL)</td></tr>
+      <tr><td>Enter</td><td>Re-centre the camera behind Twinsen (as in the original)</td></tr>
+      <tr><td>Q</td><td>Near / far camera</td></tr>
       <tr><td>F / Left click</td><td>Throw the magic ball</td></tr>
-      <tr><td>Mouse drag · Z / C</td><td>Rotate camera</td></tr>
+      <tr><td>Mouse drag · Z / C</td><td>Rotate camera (free camera)</td></tr>
       <tr><td>M</td><td>Holomap</td></tr>
       <tr><td>V</td><td>Instantly toggle 1997 / 2026 look</td></tr>
       <tr><td>Esc / P</td><td>Pause</td></tr>
-      <tr><td>Gamepad</td><td>A action · B ball · X talk · Y map · LB/RB behaviour · Start pause</td></tr>`,
+      <tr><td>Gamepad</td><td>A action · B ball · X talk · Y map · LB/RB behaviour · LT menu · R3 re-centre · Start pause</td></tr>`,
     beh_normal: 'Normal', beh_athletic: 'Athletic', beh_aggressive: 'Aggressive', beh_discreet: 'Discreet',
     p_talk: 'Talk', p_search: 'Search', p_read: 'Read', p_open: 'Open', p_shop: 'Shop', p_gate: 'Gate',
     obj_sage: 'Find the Weather Sage at the northern lighthouse',
@@ -110,7 +116,7 @@ export const STR = {
     hint_jump: 'Switch to Athletic (2) and jump with Space',
     boss_name: 'Warden Krell',
     map_title: 'Holomap · Isle of Solmere', map_close: 'M / Esc to close',
-    gameover: 'Elio has fallen...', gameover_sub: 'No clover leaves left.', retry: 'Continue from last save',
+    gameover: 'Twinsen has fallen...', gameover_sub: 'No clover leaves left.', retry: 'Continue from last save',
     ending_title: 'The sun returns to Solmere',
     ending_text: 'The Sun Lens blazes again. The storm breaks, and for the first time in forty days the island sees the sun.<br><br>Thanks for playing! A tribute to <b>Little Big Adventure 2</b> (Adeline Software, 1997).',
     keep_exploring: 'Keep exploring',
@@ -124,16 +130,16 @@ export const STR = {
     sign_camp: '⚠ Sentinel camp · Keep out',
     sign_fort: '→ Old fort',
     gate_locked: "The gate is locked. Krell's key must be somewhere in the Sentinel camp.",
-    n_sage: 'Moru the Sage', n_pippa: 'Pippa the merchant', n_doran: 'Doran the fisherman', n_nilo: 'Nilo', n_hero: 'Elio',
+    n_sage: 'Moru the Sage', n_pippa: 'Pippa the merchant', n_doran: 'Doran the fisherman', n_nilo: 'Nilo', n_hero: 'Twinsen',
     d_sage_1: [
-      'Elio! Thank the winds you came. The Grey Sentinels shattered the Sun Lens, and the storm feeds on the darkness.',
+      'Twinsen! Thank the winds you came. The Grey Sentinels shattered the Sun Lens, and the storm feeds on the darkness.',
       'Three Sunshards were scattered: one atop the Whispering Cliffs in the eastern woods, one locked in the Sentinel camp to the south, and the third is carried by Warden Krell inside the old fort.',
       'Use your behaviours, boy: Athletic to leap, Discreet to slip past guards, Aggressive when words fail. And never forget your magic ball!',
       'Bring me the three shards and the lighthouse will burn again.',
     ],
-    d_sage_wait: ['You carry {n} of 3 shards. The storm is waiting, Elio.'],
+    d_sage_wait: ['You carry {n} of 3 shards. The storm is waiting, Twinsen.'],
     d_sage_done: ['The three shards! Stand back, boy... it is time to bring back the sun!'],
-    d_sage_after: ['Look at the sky, Elio. You did it.'],
+    d_sage_after: ['Look at the sky, Twinsen. You did it.'],
     d_pippa: ['Fresh from the mainland! The storm is bad for business, but I always have something for you. Take a look?'],
     d_doran: [
       "The cliffs in the east? There's an old stone target there. My grandad said hitting it wakes the stepping stones.",

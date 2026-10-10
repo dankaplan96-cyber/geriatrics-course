@@ -6,7 +6,9 @@ const KEYMAP = {
   left: ['KeyA', 'ArrowLeft'],
   right: ['KeyD', 'ArrowRight'],
   action: ['Space'],
-  interact: ['KeyE', 'Enter'],
+  interact: ['KeyE'],
+  recenter: ['Enter', 'NumpadEnter'],
+  view: ['KeyQ'],
   ball: ['KeyF'],
   b1: ['Digit1', 'F1'], b2: ['Digit2', 'F2'], b3: ['Digit3', 'F3'], b4: ['Digit4', 'F4'],
   cycle: ['Tab'],
@@ -18,7 +20,7 @@ const KEYMAP = {
 };
 
 // Standard gamepad mapping
-const PADMAP = { action: [0], ball: [1], interact: [2], map: [3], prev: [4], next: [5], pause: [9], up: [12], down: [13], left: [14], right: [15] };
+const PADMAP = { action: [0], ball: [1], interact: [2], map: [3], prev: [4], next: [5], wheel: [6], view: [10], recenter: [11], pause: [9], up: [12], down: [13], left: [14], right: [15] };
 
 export class Input {
   constructor(canvas) {

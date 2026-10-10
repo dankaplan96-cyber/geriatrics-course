@@ -33,7 +33,7 @@ export class Renderer {
     r.setSize(innerWidth, innerHeight);
     r.shadowMap.enabled = true;
     r.shadowMap.type = THREE.PCFSoftShadowMap;
-    r.toneMapping = THREE.ACESFilmicToneMapping;
+    r.toneMapping = THREE.NeutralToneMapping; // keeps LBA2's saturated palette (ACES washes it out)
     r.toneMappingExposure = 1.0;
     container.appendChild(r.domElement);
     this.canvas = r.domElement;

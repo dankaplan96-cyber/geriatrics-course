@@ -39,9 +39,22 @@
   </div>
   <div id="vignette"></div>
 
-  <div id="dialog" class="hidden"><div class="name"></div><div class="text"></div><div class="next">▼</div></div>
+  <div id="floats"></div>
+
+  <!-- behaviour menu (hold Ctrl), after LBA2's COMPORTE.CPP -->
+  <div id="behmenu" class="hidden">
+    <div class="bboxes"><div class="bbox lba-frame"></div><div class="bbox lba-frame"></div><div class="bbox lba-frame"></div><div class="bbox lba-frame"></div></div>
+    <div class="blabel lba-frame"></div>
+    <div class="binfo lba-frame">
+      <div class="row"><span class="ico heart"></span><div class="gauge life"><i></i></div><span class="ico kashico"></span><span class="kash"><b>0</b></span></div>
+      <div class="row"><span class="ico flask"></span><div class="gtrack"><div class="gauge magic"><i></i></div></div><span class="ico keyico"></span><span class="keys"><b>0</b></span></div>
+      <div class="row"><span class="clovers"></span><span class="shardrow"></span></div>
+    </div>
+  </div>
+
+  <div id="dialog" class="hidden lba-frame"><div class="name"></div><div class="text"></div><div class="next">▼</div></div>
   <div id="shop" class="hidden"></div>
-  <div id="holomap" class="hidden"><div class="frame"><div class="title"></div><canvas width="720" height="720"></canvas><div class="close"></div></div></div>
+  <div id="holomap" class="hidden"><div class="frame"><div class="title"></div><canvas width="720" height="720"></canvas><div class="objective"></div><div class="close"></div></div></div>
 
   <!-- ===== touch controls ===== -->
   <div id="touch" class="hidden">
@@ -74,6 +87,7 @@
 
   <div id="pause" class="screen hidden">
     <h1 data-i18n="paused"></h1>
+    <div id="pause-objective" class="lba-frame"></div>
     <div class="menu">
       <button data-act="resume" data-i18n="resume"></button>
       <button data-act="settings" data-i18n="settings"></button>
@@ -92,7 +106,9 @@
       <label data-i18n="control_scheme"></label>
       <div class="seg" data-setting="controls"><button data-v="modern" data-i18n="ctrl_modern"></button><button data-v="classic" data-i18n="ctrl_classic"></button></div>
       <label data-i18n="camera"></label>
-      <div class="seg" data-setting="camera"><button data-v="modern" data-i18n="cam_modern"></button><button data-v="classic" data-i18n="cam_classic"></button></div>
+      <div class="seg" data-setting="camera"><button data-v="lba" data-i18n="cam_lba"></button><button data-v="free" data-i18n="cam_free"></button></div>
+      <label data-i18n="hud"></label>
+      <div class="seg" data-setting="hud"><button data-v="lba" data-i18n="hud_lba"></button><button data-v="modern" data-i18n="hud_modern"></button></div>
       <label data-i18n="quality"></label>
       <div class="seg" data-setting="quality"><button data-v="high" data-i18n="q_high"></button><button data-v="medium" data-i18n="q_medium"></button><button data-v="low" data-i18n="q_low"></button></div>
       <label data-i18n="music"></label>

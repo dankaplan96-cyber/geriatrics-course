@@ -3,6 +3,7 @@
 import { t, getLang } from './i18n.js';
 import { BEHAVIOURS } from './actors.js';
 import { PATHS } from './world.js';
+import { Color } from 'three';
 
 const $ = (s) => document.querySelector(s);
 
@@ -49,7 +50,21 @@ export class HUD {
   }
   wheel(on) { $('#behaviour').classList.toggle('wheel', on); }
 
+  setStyle(lba) { this.lba = lba; document.body.classList.toggle('hud-lba', lba); }
+
+  // In the LBA HUD the panel only "incrusts" for a few seconds when a value changes
+  // (InitIncrustDisp(..., timeout) in the original), or while life is low.
+  _incrust(h) {
+    const key = [Math.ceil(h.hp), h.coins, h.clovers, h.hasKey, h.magicLevel, h.shards.join()].join('|');
+    if (this._last !== undefined && key !== this._last) this.incrustT = 3;
+    this._last = key;
+    this.incrustT = Math.max(0, (this.incrustT || 0) - 1 / 60);
+    const show = this.incrustT > 0 || h.hp <= h.maxHp * 0.3 || this.forceStats;
+    $('#stats').classList.toggle('show', !!show);
+  }
+
   stats(h) {
+    this._incrust(h);
     $('#lifebar i').style.width = (100 * h.hp) / h.maxHp + '%';
     $('#magicbar i').style.width = (100 * h.mp) / h.mpMax + '%';
     $('#magicbar').dataset.level = h.magicLevel;
@@ -59,7 +74,35 @@ export class HUD {
     document.querySelectorAll('#shards i').forEach((e, i) => e.classList.toggle('got', h.shards[i]));
   }
 
-  objective(html) { $('#objective').innerHTML = html; }
+  objective(html) {
+    $('#objective').innerHTML = html;
+    $('#pause-objective').innerHTML = html;
+    $('#holomap .objective').innerHTML = html;
+  }
+
+  // Floating numbers at pickups (INCRUST_NUM in the original)
+  float(text, pos, color = '#ffe35a') {
+    const d = document.createElement('div');
+    d.className = 'float';
+    d.textContent = text;
+    d.style.color = color;
+    $('#floats').appendChild(d);
+    (this.floats ??= []).push({ d, p: pos.clone(), t: 0 });
+  }
+  updateFloats(dt, camera) {
+    if (!this.floats) return;
+    const v = this._v ??= new camera.position.constructor();
+    for (let i = this.floats.length - 1; i >= 0; i--) {
+      const f = this.floats[i];
+      f.t += dt;
+      v.copy(f.p); v.y += 0.6 + f.t * 1.2;
+      v.project(camera);
+      f.d.style.left = ((v.x + 1) / 2) * innerWidth + 'px';
+      f.d.style.top = ((1 - v.y) / 2) * innerHeight + 'px';
+      f.d.style.opacity = String(Math.min(1, 2.2 - f.t * 1.8));
+      if (f.t > 1.2 || v.z > 1) { f.d.remove(); this.floats.splice(i, 1); }
+    }
+  }
 
   prompt(text) {
     if (!text) { this.promptEl.classList.remove('show'); return; }
@@ -92,10 +135,15 @@ export class HUD {
   }
 
   // ---------------- dialogue ----------------
-  say(nameKey, lines, done) {
+  say(nameKey, lines, done, color = '#ffffff') {
     const D = this.dialog;
     D.lines = lines; D.i = 0; D.done = done;
     D.name.textContent = t(nameKey);
+    // speaker colour gradient, like LBA2's per-actor dialogue colours
+    const c = new Color(color);
+    D.el.style.setProperty('--spk', '#' + c.getHexString());
+    D.el.style.setProperty('--spk-hi', '#' + c.clone().lerp(new Color('#ffffff'), 0.55).getHexString());
+    D.el.style.setProperty('--spk-lo', '#' + c.clone().multiplyScalar(0.6).getHexString());
     D.el.classList.remove('hidden');
     D.el.dir = getLang() === 'he' ? 'rtl' : 'ltr';
     this._line();
@@ -160,7 +208,7 @@ export class HUD {
     const btns = [...document.querySelectorAll('#shop button')];
     if (input.pressed('down')) { this.shopSel = (this.shopSel + 1) % btns.length; this._shopFocus(); this.game.audio.play('blip'); }
     if (input.pressed('up')) { this.shopSel = (this.shopSel + btns.length - 1) % btns.length; this._shopFocus(); this.game.audio.play('blip'); }
-    if (input.pressed('interact') || input.pressed('action')) btns[this.shopSel]?.click();
+    if (input.pressed('interact') || input.pressed('action') || input.pressed('recenter')) btns[this.shopSel]?.click();
     if (input.pressed('pause') || input.pressed('ball')) this.shopClose();
   }
 
