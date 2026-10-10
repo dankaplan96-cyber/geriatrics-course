@@ -1,20 +1,24 @@
-// Sunshard Odyssey – game orchestration: states, quest logic, saves, UI.
+// LBA3 – The Awakening (fan project): game orchestration.
+// Generic glue lives here (states, rooms, saves, UI, combat hooks);
+// the story itself is in src/game/prologue.js.
 import * as THREE from 'three';
 import { Renderer } from './engine/renderer.js';
 import { Environment } from './engine/environment.js';
 import { AudioEngine } from './engine/audio.js';
 import { Input } from './engine/input.js';
 import { CameraRig } from './engine/camera.js';
-import { lerp, angleDiff, smoothstep } from './engine/math.js';
+import { lerp, angleDiff } from './engine/math.js';
 import { buildWorld, POI } from './game/world.js';
-import { Hero, NPC, Sentinel, MagicBall, Bolts, Pickups, Particles, BEHAVIOURS, HERO_LOOK } from './game/actors.js';
+import { buildInteriors } from './game/interiors.js';
+import { Hero, NPC, Mite, MagicBall, Bolts, Pickups, Particles, BEHAVIOURS, HERO_LOOK } from './game/actors.js';
 import { BehaviourMenu } from './game/behmenu.js';
 import { HUD } from './game/hud.js';
+import { Prologue } from './game/prologue.js';
 import { t, setLang } from './game/i18n.js';
 
-const SAVE_KEY = 'sunshard_save_v1';
+const SAVE_KEY = 'lba3_save_v1';
 const SET_KEY = 'sunshard_settings_v1';
-const BOOT_KEY = 'sunshard_boot';
+const BOOT_KEY = 'lba3_boot';
 const $ = (s) => document.querySelector(s);
 const store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
@@ -22,28 +26,7 @@ const store = {
   del(k) { try { localStorage.removeItem(k); } catch { /* ignore */ } },
 };
 
-// ----------------------------------------------------------- actor defs
-const NPCS = [
-  { id: 'sage', name: 'n_sage', color: '#c9a6ff', x: POI.sage.x, z: POI.sage.z, angle: Math.PI, look: { tunic: '#5b3f8f', robe: '#5b3f8f', beard: '#e8e8e8', hair: '#e8e8e8', staff: true, skin: '#e6b993' } },
-  { id: 'pippa', name: 'n_pippa', color: '#ffb070', x: POI.village.x + 7, z: POI.village.z + 2.7, angle: 0, look: { tunic: '#e58a3a', pants: '#6a4a8a', ears: '#f4e9dc', apron: '#ffffff', skin: '#f4e9dc', hair: '#f4e9dc' } },
-  { id: 'doran', name: 'n_doran', color: '#8fd3ff', x: 0, z: 0, pier: true, angle: -Math.PI / 2, look: { tunic: '#2f8a6a', pants: '#3a4a6a', hat: '#d8b94a', trunk: true, skin: '#8fa3b8', hair: '#8fa3b8', scale: 1.15 } },
-  {
-    id: 'nilo', name: 'n_nilo', color: '#ffe070', x: POI.village.x - 4, z: POI.village.z + 4, look: { tunic: '#e0c03a', pants: '#3a5a9a', scale: 0.72, hair: '#c06a2a' },
-    track: [{ op: 'goto', x: POI.village.x - 4, z: POI.village.z + 4 }, { op: 'wait', t: 2 }, { op: 'goto', x: POI.village.x + 3, z: POI.village.z + 6 }, { op: 'wait', t: 1.5 }, { op: 'goto', x: POI.village.x + 2, z: POI.village.z - 4 }, { op: 'wait', t: 2 }, { op: 'loop' }],
-  },
-];
-
-const C = POI.camp;
-const ENEMIES = [
-  { id: 'camp1', group: 'camp', x: C.x - 9, z: C.z + 1, track: [{ op: 'goto', x: C.x - 9, z: C.z + 1 }, { op: 'wait', t: 2 }, { op: 'goto', x: C.x - 2, z: C.z - 9 }, { op: 'wait', t: 2 }, { op: 'loop' }] },
-  { id: 'camp2', group: 'camp', x: C.x + 9, z: C.z + 1, track: [{ op: 'goto', x: C.x + 9, z: C.z + 1 }, { op: 'wait', t: 1.5 }, { op: 'goto', x: C.x + 3, z: C.z + 10 }, { op: 'wait', t: 2.5 }, { op: 'loop' }] },
-  { id: 'camp3', group: 'camp', x: C.x + 1, z: C.z + 4, angle: Math.PI, track: [{ op: 'face', a: Math.PI }, { op: 'wait', t: 3 }, { op: 'face', a: Math.PI / 2 }, { op: 'wait', t: 2.5 }, { op: 'face', a: -Math.PI / 2 }, { op: 'wait', t: 2.5 }, { op: 'loop' }] },
-  { id: 'road1', group: 'road', x: -6, z: 30, track: [{ op: 'goto', x: -6, z: 30 }, { op: 'wait', t: 2 }, { op: 'goto', x: -24, z: 14 }, { op: 'wait', t: 2 }, { op: 'loop' }] },
-  { id: 'forest1', group: 'forest', x: 22, z: -18, track: [{ op: 'goto', x: 22, z: -18 }, { op: 'wait', t: 2 }, { op: 'goto', x: 22, z: 2 }, { op: 'wait', t: 2 }, { op: 'loop' }] },
-  { id: 'fort1', group: 'fort', x: POI.fort.x - POI.fort.half - 5, z: POI.fort.z - 6, track: [{ op: 'goto', x: POI.fort.x - POI.fort.half - 5, z: POI.fort.z - 6 }, { op: 'wait', t: 2 }, { op: 'goto', x: POI.fort.x - POI.fort.half - 5, z: POI.fort.z + 6 }, { op: 'wait', t: 2 }, { op: 'loop' }] },
-  { id: 'boss', group: 'boss', boss: true, x: POI.fort.x + 4, z: POI.fort.z, angle: -Math.PI / 2 },
-];
-
+// kashes lying around the island
 const COINS = [
   [-36, -8], [-46, 3], [-30, -24], [-20, -45], [-8, -62], [-26, 22], [-14, 34], [6, -8], [18, -8], [26, -14],
   [40, 18], [30, 42], [-58, -20], [-60, 12], [10, -40], [-30, -60], [64, 6], [20, 70], [-40, 40], [44, -36],
@@ -56,7 +39,6 @@ const SHOP = [
   { id: 'clover', key: 'shop_clover', price: 22 },
 ];
 
-// ----------------------------------------------------------- game
 class Game {
   constructor() {
     this.settings = { lang: 'he', controls: 'modern', camera: 'lba', hud: 'lba', visual: '2026', quality: 'high', music: 0.55, sfx: 0.8, ...store.get(SET_KEY) };
@@ -70,9 +52,12 @@ class Game {
     this.world = buildWorld(this.scene);
     this.terrain = this.world.terrain;
     this.physics = this.world.physics;
+    this.rooms = buildInteriors(this.scene, this.physics);
+    this.room = null;
     this.env = new Environment(this.scene, this.terrain);
     this.renderer.setup(this.scene, this.camera);
     this.audio = new AudioEngine();
+    this.audio.setMood('calm');
     this.env.onThunder = () => this.audio.play('thunder');
     this.input = new Input(this.renderer.canvas);
     this.camRig = new CameraRig(this.camera, this.terrain, this.physics);
@@ -82,10 +67,11 @@ class Game {
     this.ball = new MagicBall(this);
     this.hud = new HUD(this);
     this.hud.buildMapImage(this.terrain);
+    this.story = new Prologue(this);
 
     this.state = 'loading';
     this.time = 0;
-    this.storm = 1;
+    this.storm = 0;
     this.flags = {};
     this.killed = [];
     this.collected = [];
@@ -94,6 +80,9 @@ class Game {
     this.lastSafe = { x: POI.start.x, z: POI.start.z };
     this.saveTimer = 0;
     this.combat = 0;
+    this.doorCool = 0;
+    this.trans = null;
+    this.cutscene = null;
 
     this.spawnActors();
     this.behMenu = new BehaviourMenu(this, HERO_LOOK);
@@ -115,16 +104,77 @@ class Game {
   // ------------------------------------------------ spawning
   spawnActors() {
     this.hero = new Hero(this, POI.start.x, POI.start.z);
-    this.hero.angle = Math.PI * 0.6;
-    this.npcs = NPCS.map((d) => {
-      const def = { ...d };
-      if (d.pier) { def.x = this.world.pierEnd.x; def.z = this.world.pierEnd.z; }
-      return new NPC(this, def);
-    });
-    this.enemies = ENEMIES.map((d) => new Sentinel(this, d));
+    this.npcs = this.story.npcDefs().map((d) => new NPC(this, d));
+    this.enemies = this.story.enemyDefs().map((d) => new Mite(this, d));
+    this.story.decorate();
     COINS.forEach(([x, z], i) => this.pickups.spawn('coin', x, this.physics.groundAt(x, z) + 0.5, z, { id: 'c' + i }));
+    // reward on top of the Whispering Cliffs (optional ball + jumping puzzle)
     const s = this.world.shard1Spot;
-    this.pickups.spawn('shard', s.x, s.y, s.z, { id: 'shard0', idx: 0 });
+    this.pickups.spawn('clover', s.x, s.y, s.z, { id: 'cliff-clover' });
+    for (let i = 0; i < 5; i++) this.pickups.spawn('coin', s.x + Math.cos(i * 1.26) * 2.2, s.y - 0.8, s.z + Math.sin(i * 1.26) * 2.2, { id: 'cliff-k' + i });
+  }
+
+  // ------------------------------------------------ rooms (interiors)
+  startTransition(mid) {
+    this.trans = { t: 0, mid, called: false };
+  }
+  updateTransition(dt) {
+    const T = this.trans;
+    if (!T) return;
+    T.t += dt;
+    if (T.t >= 0.35 && !T.called) { T.called = true; T.mid(); }
+    const op = T.t < 0.35 ? T.t / 0.35 : Math.max(0, 1 - (T.t - 0.35) / 0.35);
+    $('#fade').style.opacity = op;
+    if (T.t >= 0.7) { this.trans = null; $('#fade').style.opacity = ''; }
+  }
+
+  enterRoom(id, spawn = null, instant = false) {
+    const go = () => {
+      if (this.room) this.room.group.visible = false;
+      const R = (this.room = this.rooms[id]);
+      R.group.visible = true;
+      R.lights.forEach((l) => { l.intensity = l.userData.base; });
+      this.world.root.visible = false;
+      this.env.setInterior(true);
+      const sp = spawn || R.spawn;
+      const h = this.hero;
+      h.pos.set(sp.x, this.physics.groundAt(sp.x, sp.z), sp.z);
+      h.angle = sp.a ?? 0;
+      h.vy = 0; h.onGround = true;
+      this.lastSafe = { x: sp.x, z: sp.z };
+      this.camRig.setIso(R);
+      this.doorCool = 1;
+      this.story.onEnterRoom(id);
+      if (this.state !== 'title') this.save(false);
+    };
+    if (instant) go(); else this.startTransition(go);
+  }
+
+  exitRoom(to, instant = false) {
+    const go = () => {
+      const R = this.room;
+      if (R) { R.group.visible = false; R.lights.forEach((l) => { l.intensity = 0; }); }
+      this.room = null;
+      this.world.root.visible = true;
+      this.env.setInterior(false);
+      const h = this.hero;
+      h.pos.set(to.x, this.physics.groundAt(to.x, to.z), to.z);
+      h.angle = to.a ?? 0;
+      h.vy = 0; h.onGround = true;
+      this.lastSafe = { x: to.x, z: to.z };
+      this.camRig.setIso(null);
+      this.doorCool = 1;
+      if (R) this.story.onExitRoom(R.id);
+      if (this.state !== 'title') this.save(false);
+    };
+    if (instant) go(); else this.startTransition(go);
+  }
+
+  // where the hero is on the island map (inside a room: where that room is)
+  mapHero() {
+    if (!this.room) return this.hero;
+    const pos = this.room.id === 'house' ? this.world.houses[0] : this.world.well;
+    return { pos: { x: pos.x, z: pos.z }, angle: this.hero.angle };
   }
 
   // ------------------------------------------------ saves
@@ -132,21 +182,20 @@ class Game {
     const h = this.hero;
     return {
       v: 1,
-      hero: { x: this.lastSafe.x, z: this.lastSafe.z, hp: Math.max(h.hp, 4), mp: h.mp, magicLevel: h.magicLevel, clovers: h.clovers, coins: h.coins, hasKey: h.hasKey, shards: h.shards, behaviour: h.behaviour },
+      room: this.room?.id || null,
+      hero: { x: this.room ? h.pos.x : this.lastSafe.x, z: this.room ? h.pos.z : this.lastSafe.z, hp: Math.max(h.hp, 4), mp: h.mp, magicLevel: h.magicLevel, clovers: h.clovers, coins: h.coins, hasBall: h.hasBall, behaviour: h.behaviour },
       flags: this.flags, killed: this.killed, collected: this.collected, searched: this.searched, crates: this.brokenCrates,
     };
   }
   save(toast = true) {
-    if (this.hero.dead) return;
+    if (this.hero.dead || this.state === 'title') return;
     store.set(SAVE_KEY, this.snapshot());
     if (toast) this.hud.toast('toast_saved');
   }
   applySave(s) {
     const h = this.hero;
-    Object.assign(h, { hp: s.hero.hp, mp: s.hero.mp, magicLevel: s.hero.magicLevel, clovers: s.hero.clovers, coins: s.hero.coins, hasKey: s.hero.hasKey, shards: [...s.hero.shards] });
-    h.pos.set(s.hero.x, this.physics.groundAt(s.hero.x, s.hero.z), s.hero.z);
+    Object.assign(h, { hp: s.hero.hp, mp: s.hero.mp, magicLevel: s.hero.magicLevel, clovers: s.hero.clovers, coins: s.hero.coins, hasBall: !!s.hero.hasBall });
     h.behaviour = s.hero.behaviour || 'normal';
-    this.lastSafe = { x: s.hero.x, z: s.hero.z };
     this.flags = s.flags || {};
     this.killed = s.killed || [];
     this.collected = s.collected || [];
@@ -156,21 +205,17 @@ class Game {
     for (const p of [...this.pickups.list]) if (p.id && this.collected.includes(p.id)) { this.scene.remove(p.mesh); this.pickups.list.splice(this.pickups.list.indexOf(p), 1); }
     this.brokenCrates.forEach((i) => this.breakCrate(this.world.crates[i], true));
     if (this.flags.target) this.hitTarget(true);
-    if (this.flags.chest) { this.world.chest.open = true; this.world.chest.openT = 1; }
-    if (this.flags.gate) { this.world.gate.open = true; this.world.gate.t = 1; this.world.gate.c.enabled = false; }
-    if (this.flags.bossDead && !h.shards[2] && !this.collected.includes('shard2')) {
-      const A = this.world.arena;
-      this.pickups.spawn('shard', A.x, this.physics.groundAt(A.x, A.z) + 1.2, A.z, { id: 'shard2', idx: 2 });
-    }
-    if (this.flags.ending) { this.storm = 0; this.world.lighthouse.power = 1; this.audio.setMood('calm'); }
+    this.story.applyFlags();
+    const at = { x: s.hero.x, z: s.hero.z, a: 0 };
+    if (s.room) this.enterRoom(s.room, at, true);
+    else this.exitRoom(at, true);
   }
 
   // ------------------------------------------------ flow
   startNew() {
     store.del(SAVE_KEY);
     this.beginPlay();
-    this.hud.say('', [t('intro')], () => this.setState('play'));
-    this.setState('dialog');
+    this.story.start();
   }
   startContinue() {
     const s = store.get(SAVE_KEY);
@@ -183,8 +228,6 @@ class Game {
     this.hideScreens();
     this.hud.show(true);
     this.hud.behaviour(this.hero.behaviour);
-    this.camRig.yaw = this.hero.angle + Math.PI;
-    this.camRig.target.copy(this.hero.pos);
     this.camRig.override = null;
     $('#touch').classList.toggle('hidden', !this.touch);
     this.updateObjective();
@@ -239,7 +282,11 @@ class Game {
       case 'resume': this.hideScreens(); this.setState('play'); break;
       case 'quit': this.save(false); this.reloadInto('title'); break;
       case 'retry': this.reloadInto(store.get(SAVE_KEY) ? 'continue' : 'new'); break;
-      case 'explore': this.hideScreens(); this.hud.show(true); this.camRig.override = null; this.setState('play'); this.updateObjective(); break;
+      case 'explore':
+        this.hideScreens(); this.hud.show(true); this.camRig.override = null; this.setState('play');
+        this.story.afterEnding();
+        this.updateObjective();
+        break;
     }
   }
 
@@ -278,35 +325,13 @@ class Game {
     store.set(SET_KEY, s);
   }
 
-  // ------------------------------------------------ quest
-  updateObjective() {
-    const h = this.hero, f = this.flags;
-    const n = h.shards.filter(Boolean).length;
-    let html;
-    if (f.ending) html = `<b>${t('obj_done')}</b>`;
-    else if (!f.talkedSage) html = `<b>${t('obj_sage')}</b>`;
-    else if (n === 3) html = `<b>${t('obj_return')}</b>`;
-    else {
-      html = `<b>${t('obj_shards', { n })}</b>` + ['obj_s1', 'obj_s2', 'obj_s3'].map((k, i) => `<span class="s ${h.shards[i] ? 'ok' : ''}">◆ ${t(k)}</span>`).join('');
-    }
-    this.hud.objective(html);
-  }
+  updateObjective() { this.hud.objective(this.story.objective()); }
 
   mapMarkers() {
     const m = [];
-    const f = this.flags, h = this.hero;
-    const label = (k) => t(k);
-    m.push({ x: POI.village.x, z: POI.village.z, color: '#fff', r: 3, label: label('sign_village').split('·')[0].trim() });
-    for (const n of this.npcs) m.push({ x: n.pos.x, z: n.pos.z, color: '#5ab0ff', r: 3.5, label: n.def.id === 'sage' ? t('n_sage') : null });
-    const gold = '#ffcf4a';
-    if (!f.talkedSage || (h.shards.every(Boolean) && !f.ending)) m.push({ x: POI.sage.x, z: POI.sage.z, kind: 'star', color: gold, r: 8, edge: true });
-    if (f.talkedSage) {
-      if (!h.shards[0]) m.push({ x: POI.plateau.x, z: POI.plateau.z, kind: 'star', color: gold, r: 7, edge: true, label: t('obj_s1') });
-      if (!h.shards[1]) m.push({ x: POI.chest.x, z: POI.chest.z, kind: 'star', color: gold, r: 7, edge: true, label: t('obj_s2') });
-      if (!h.shards[2]) m.push({ x: POI.fort.x, z: POI.fort.z, kind: 'star', color: gold, r: 7, edge: true, label: t('obj_s3') });
-    }
-    for (const e of this.enemies) if (e.alive) m.push({ x: e.pos.x, z: e.pos.z, color: e.state === 'chase' ? '#ff3a2a' : '#c0464a', r: e.boss ? 5 : 3, minimapOnly: true });
-    return m;
+    m.push({ x: POI.village.x, z: POI.village.z, color: '#fff', r: 3, label: t('sign_village').split('·')[0].trim() });
+    for (const n of this.npcs) if (Math.abs(n.pos.x) < 200) m.push({ x: n.pos.x, z: n.pos.z, color: '#5ab0ff', r: 3 });
+    return m.concat(this.story.markers());
   }
 
   // ------------------------------------------------ interaction
@@ -316,52 +341,36 @@ class Game {
     const consider = (d, max, o) => { if (d < max && d < bd) { bd = d; best = o; } };
     const dist = (x, z) => Math.hypot(h.pos.x - x, h.pos.z - z);
     for (const n of this.npcs) consider(dist(n.pos.x, n.pos.z), 2.6, { kind: 'npc', npc: n, label: n.def.id === 'pippa' ? 'p_shop' : 'p_talk' });
-    for (const s of W.signs) consider(dist(s.x, s.z), 2.0, { kind: 'sign', sign: s, label: 'p_read' });
-    if (!W.chest.open) consider(dist(W.chest.x, W.chest.z), 2.2, { kind: 'chest', label: 'p_open' });
-    if (!W.gate.open) consider(dist(W.gate.x, W.gate.z), 3.0, { kind: 'gate', label: 'p_gate' });
-    for (const s of W.searchSpots) if (!this.searched.includes(s.id)) consider(dist(s.x, s.z), s.r, { kind: 'search', spot: s, label: 'p_search' });
+    if (!this.room) {
+      for (const s of W.signs) consider(dist(s.x, s.z), 2.0, { kind: 'sign', sign: s, label: 'p_read' });
+      for (const s of W.searchSpots) if (!this.searched.includes(s.id)) consider(dist(s.x, s.z), s.r, { kind: 'search', spot: s, label: 'p_search' });
+    }
+    this.story.interactables(consider, dist);
     return best;
   }
 
   tryInteract() {
     const it = this.findInteractable();
     if (!it) return;
-    const h = this.hero, W = this.world;
-    if (it.kind === 'npc') this.talkTo(it.npc);
-    else if (it.kind === 'sign') this.say('', [t(it.sign.key)]);
-    else if (it.kind === 'chest') {
-      W.chest.open = true;
-      this.flags.chest = true;
-      this.audio.play('chest');
-      this.alertGroup('camp', h.pos, 0.6);
-      const k = W.chest;
-      this.pickups.spawn('shard', k.x, this.physics.groundAt(k.x, k.z) + 1.4, k.z, { id: 'shard1', idx: 1, pop: true });
-      h.hasKey = true;
-      this.hud.toast('toast_key');
-      this.say('n_hero', t('d_shard2'), null, h);
-    } else if (it.kind === 'gate') {
-      if (!h.hasKey) { this.audio.play('deny'); this.say('', [t('gate_locked')]); return; }
-      W.gate.open = true; W.gate.c.enabled = false;
-      this.flags.gate = true;
-      this.audio.play('door');
-      this.camRig.shake(0.5);
-      this.hud.toast('toast_gate_open');
-      this.save(false);
-    } else if (it.kind === 'search') {
+    if (it.kind === 'npc') { this.story.talk(it.npc); return; }
+    if (it.kind === 'sign') { this.say('', [t(it.sign.key)]); return; }
+    if (it.kind === 'search') {
       this.searched.push(it.spot.id);
       const s = it.spot, y = this.physics.groundAt(s.x, s.z) + 1.2;
-      if (s.reward === 'coins5') { for (let i = 0; i < 5; i++) this.pickups.spawn('coin', s.x, y, s.z, { pop: true, delay: 0 }); this.hud.toast('toast_coins', { n: 5 }); }
       if (s.reward === 'flask') { this.pickups.spawn('flask', s.x, y, s.z, { pop: true }); this.hud.toast('toast_flask'); }
       if (s.reward === 'clover') { this.pickups.spawn('clover', s.x, y, s.z, { pop: true }); this.hud.toast('toast_clover_found'); }
       this.audio.play('chest');
+      return;
     }
+    this.story.interact(it);
   }
 
-  say(name, lines, done, speaker = null) {
+  say(name, lines, done, speaker = null, color = null) {
+    if (!Array.isArray(lines)) lines = [lines];
     this.setState('dialog');
     this.hud.prompt(null);
     this.speaker = speaker;
-    const color = speaker?.def?.color || (speaker?.boss ? '#ff7a5a' : speaker === this.hero ? '#8fc2ff' : '#ffffff');
+    color ??= speaker?.def?.color || (speaker === this.hero ? '#8fc2ff' : '#ffffff');
     this.bubbleSide = !this.bubbleSide;
     this.hud.say(name, lines, () => { this.speaker = null; this.setState('play'); done?.(); }, color);
   }
@@ -394,25 +403,9 @@ class Game {
     const top = s.pos.y + 2.1 * (s.rig.root.scale.y || 1);
     const right = new THREE.Vector3().setFromMatrixColumn(this.camera.matrixWorld, 0);
     const side = this.bubbleSide ? 1 : -1;
-    this.bubble.position.set(s.pos.x, top + 0.3, s.pos.z).addScaledVector(right, side * 0.7);
-    this.bubble.material.rotation = 0;
-    this.bubble.scale.x = side * 0.9;
-  }
-
-  talkTo(npc) {
-    const id = npc.def.id, h = this.hero, f = this.flags;
-    npc.talking = true;
-    const end = () => { npc.talking = false; };
-    if (id === 'sage') {
-      const n = h.shards.filter(Boolean).length;
-      if (f.ending) this.say('n_sage', t('d_sage_after'), end, npc);
-      else if (n === 3) this.say('n_sage', t('d_sage_done'), () => { end(); this.startEnding(); }, npc);
-      else if (!f.talkedSage) this.say('n_sage', t('d_sage_1'), () => { end(); f.talkedSage = true; this.updateObjective(); this.save(); }, npc);
-      else this.say('n_sage', t('d_sage_wait').map((l) => l.replace('{n}', n)), end, npc);
-    } else if (id === 'pippa') {
-      this.say('n_pippa', t('d_pippa'), () => { end(); this.openShop(); }, npc);
-    } else if (id === 'doran') this.say('n_doran', t('d_doran'), end, npc);
-    else if (id === 'nilo') this.say('n_nilo', t('d_nilo'), end, npc);
+    const k = this.room ? 0.6 : 1;
+    this.bubble.position.set(s.pos.x, top + 0.3 * k, s.pos.z).addScaledVector(right, side * 0.7 * k);
+    this.bubble.scale.set(side * 0.9 * k, 0.68 * k, 1);
   }
 
   openShop() {
@@ -447,7 +440,7 @@ class Game {
         e.damage(dmg, hero.pos); any = true;
       }
     }
-    for (const c of this.world.crates) {
+    if (!this.room) for (const c of this.world.crates) {
       if (!c.alive) continue;
       const d = Math.hypot(c.x - hero.pos.x, c.z - hero.pos.z);
       const a = Math.atan2(c.x - hero.pos.x, c.z - hero.pos.z);
@@ -459,17 +452,26 @@ class Game {
   ballHitTest(p) {
     for (const e of this.enemies) {
       if (!e.alive) continue;
-      const s = e.boss ? 1.45 : 1;
-      if (Math.hypot(p.x - e.pos.x, p.z - e.pos.z) < 0.75 * s && p.y > e.pos.y && p.y < e.pos.y + 2 * s) {
-        if (e.state === 'dormant') return true;
+      if (Math.hypot(p.x - e.pos.x, p.z - e.pos.z) < 0.75 && p.y > e.pos.y - 0.2 && p.y < e.pos.y + 2) {
         e.damage(this.ball.damage, p);
         return true;
       }
     }
+    if (this.story.ballHit(p)) return true;
+    if (this.room) return false;
     for (const c of this.world.crates) if (c.alive && p.distanceTo(new THREE.Vector3(c.x, c.y, c.z)) < 0.9) { this.breakCrate(c); return true; }
     const T = this.world.target;
     if (!T.hit && Math.hypot(p.x - T.x, p.y - T.y, p.z - T.z) < 1.25) { this.hitTarget(); return true; }
     return false;
+  }
+
+  // things the magic ball may curve toward
+  ballAimTargets() {
+    const out = [];
+    for (const e of this.enemies) if (e.alive) out.push({ x: e.pos.x, y: e.pos.y + (e instanceof Mite ? 0.45 : 1.1), z: e.pos.z });
+    if (this.room) { for (const t2 of this.room.ballTargets) if (!t2.node?.lit) out.push(t2); }
+    else if (!this.world.target.hit) out.push(this.world.target);
+    return out;
   }
 
   hitTarget(silent = false) {
@@ -491,7 +493,7 @@ class Game {
     if (!c || !c.alive) return;
     c.alive = false;
     c.c.enabled = false;
-    this.scene.remove(c.mesh);
+    c.mesh.parent?.remove(c.mesh);
     const i = this.world.crates.indexOf(c);
     if (!this.brokenCrates.includes(i)) this.brokenCrates.push(i);
     if (silent) return;
@@ -508,16 +510,8 @@ class Game {
 
   onEnemyKilled(e) {
     this.killed.push(e.id);
-    const n = e.boss ? 6 : 2 + Math.floor(Math.random() * 2);
-    for (let i = 0; i < n; i++) this.pickups.spawn('coin', e.pos.x, e.pos.y + 1, e.pos.z, { pop: true });
-    if (Math.random() < 0.35 || e.boss) this.pickups.spawn('heart', e.pos.x, e.pos.y + 1, e.pos.z, { pop: true });
-    if (e.boss) {
-      this.flags.bossDead = true;
-      this.hud.boss(null);
-      this.pickups.spawn('shard', e.pos.x, e.pos.y + 1.5, e.pos.z, { id: 'shard2', idx: 2, pop: true });
-      this.camRig.shake(0.8);
-      this.audio.play('victory');
-    }
+    this.pickups.spawn('coin', e.pos.x, e.pos.y + 0.8, e.pos.z, { pop: true });
+    if (Math.random() < 0.4) this.pickups.spawn('heart', e.pos.x, e.pos.y + 0.8, e.pos.z, { pop: true });
     this.save(false);
   }
 
@@ -530,17 +524,9 @@ class Game {
       case 'coin': h.coins++; this.audio.play('coin'); break;
       case 'heart': h.hp = Math.min(h.maxHp, h.hp + 3); this.audio.play('heal'); break;
       case 'flask': h.mp = h.mpMax; this.audio.play('heal'); break;
-      case 'clover': h.clovers = Math.min(9, h.clovers + 1); this.audio.play('heal'); break;
-      case 'shard':
-        h.shards[p.idx] = true;
-        this.audio.play('shard');
-        this.hud.toast('toast_shard');
-        this.camRig.shake(0.2);
-        this.updateObjective();
-        this.save(false);
-        break;
+      case 'clover': h.clovers = Math.min(9, h.clovers + 1); this.audio.play('heal'); this.hud.toast('toast_clover_found'); break;
     }
-    this.particles.burst(p.pos.x, p.pos.y, p.pos.z, p.type === 'coin' ? '#ffd23a' : p.type === 'shard' ? '#fff0a0' : '#ffffff', p.type === 'shard' ? 40 : 10, p.type === 'shard' ? 5 : 2.5);
+    this.particles.burst(p.pos.x, p.pos.y, p.pos.z, p.type === 'coin' ? '#ffd23a' : '#ffffff', 10, 2.5);
   }
 
   // ------------------------------------------------ zones
@@ -549,43 +535,26 @@ class Game {
     if (z.type === 'checkpoint') {
       this.lastSafe = { x: h.pos.x, z: h.pos.z };
       if (this.saveTimer <= 0) { this.save(true); this.saveTimer = 20; }
-    } else if (z.type === 'arena') {
-      const boss = this.enemies.find((e) => e.boss);
-      if (boss && boss.state === 'dormant') {
-        this.say('boss_name', t('d_boss'), () => {
-          boss.state = 'chase';
-          boss.alert(h.pos);
-          this.hud.boss(boss.hp / boss.maxHp);
-        }, boss);
-      }
     } else if (z.type === 'hint' && !this.flags.target) this.hud.toast('hint_target');
   }
 
-  // ------------------------------------------------ ending
-  startEnding() {
-    this.setState('cutscene');
-    this.hud.show(false);
-    this.flags.ending = true;
-    this.cut = 0;
-    const L = POI.lighthouse;
-    const g = this.terrain.heightAt(L.x, L.z);
-    this.camRig.override = { pos: new THREE.Vector3(L.x - 26, g + 14, L.z + 30), look: new THREE.Vector3(L.x, g + 12, L.z) };
-    this.audio.play('rumble');
-    this.save(false);
-  }
-  updateCutscene(dt) {
-    this.cut += dt;
-    const L = POI.lighthouse;
-    const g = this.terrain.heightAt(L.x, L.z);
-    const a = 2.2 + this.cut * 0.12;
-    this.camRig.override.pos.set(L.x + Math.cos(a) * 34, g + 12 + this.cut * 0.5, L.z + Math.sin(a) * 34);
-    this.world.lighthouse.power = smoothstep(1.5, 4, this.cut);
-    this.storm = 1 - smoothstep(3.5, 11, this.cut);
-    if (this.cut > 4 && this.audio.mood !== 'calm') { this.audio.setMood('calm'); this.audio.play('victory'); }
-    for (const n of this.npcs) n.forceAnim = this.cut > 5 ? 'cheer' : null;
-    this.hero.rig.play(this.cut > 5 ? 'cheer' : 'idle');
-    this.hero.rig.update(dt, 0);
-    if (this.cut > 12.5 && this.state === 'cutscene') { this.setState('ending'); this.showScreen('ending'); for (const n of this.npcs) n.forceAnim = null; }
+  // doors outside, exits inside
+  checkDoors() {
+    if (this.doorCool > 0 || this.trans) return;
+    const h = this.hero;
+    if (this.room) {
+      for (const e of this.room.exits) {
+        if (Math.hypot(h.pos.x - e.x, h.pos.z - e.z) < e.r) {
+          if (this.story.canExit(this.room)) { this.audio.play('door'); this.exitRoom(this.story.exitTo(e.to)); }
+          this.doorCool = 1.5;
+          return;
+        }
+      }
+    } else {
+      for (const d of this.story.doors()) {
+        if (Math.hypot(h.pos.x - d.x, h.pos.z - d.z) < d.r) { this.audio.play('door'); this.enterRoom(d.room); return; }
+      }
+    }
   }
 
   // ------------------------------------------------ main loop
@@ -607,8 +576,12 @@ class Game {
     input.update();
 
     if (input.pressed('retro')) { this.settings.visual = this.settings.visual === '1997' ? '2026' : '1997'; this.applySettings(); }
+    this.updateTransition(dt);
 
-    switch (this.state) {
+    if (this.trans && this.state === 'play') {
+      // frozen while the screen fades
+      this.camRig.update(dt, this.hero.pos, this.hero.angle, false, null);
+    } else switch (this.state) {
       case 'title': case 'loading': this.titleCamera(dt); this.menuNav(); break;
       case 'play': this.updatePlay(dt); break;
       case 'dialog':
@@ -627,9 +600,12 @@ class Game {
       case 'pause': case 'gameover': case 'ending':
         this.menuNav();
         if (this.state === 'pause' && input.pressed('pause')) this.act('resume');
-        if (this.state === 'ending') this.camRig.update(dt, this.hero.pos, 0, false, null);
         break;
-      case 'cutscene': this.updateCutscene(dt); this.camRig.update(dt, this.hero.pos, 0, false, null); for (const n of this.npcs) n.update(dt); break;
+      case 'cutscene':
+        this.cutscene?.(dt);
+        this.camRig.update(dt, this.hero.pos, this.hero.angle, false, null);
+        for (const n of this.npcs) n.update(dt);
+        break;
     }
 
     this.world.storm = this.storm;
@@ -637,6 +613,7 @@ class Game {
     this.audio.setStorm(this.storm);
     this.env.update(dt, this.camera, this.state === 'title' ? new THREE.Vector3(0, 0, 0) : this.hero.pos);
     this.world.update(dt, this.time);
+    if (this.room) for (const u of this.room.updaters) u(dt, this.time);
     this.particles.update(dt);
     if (this.state !== 'title') this.pickups.update(this.state === 'play' ? dt : 0);
     if (this.state !== 'play') this.behMenu.show(false);
@@ -659,7 +636,7 @@ class Game {
 
   titleCamera(dt) {
     const a = this.time * 0.05 + 2.2;
-    this.camRig.override = { pos: new THREE.Vector3(Math.cos(a) * 120, 45, Math.sin(a) * 120), look: new THREE.Vector3(0, 4, 0) };
+    this.camRig.override = { pos: new THREE.Vector3(Math.cos(a) * 110, 42, Math.sin(a) * 110), look: new THREE.Vector3(0, 4, 0) };
     if (!this._titleInit) { this._titleInit = true; this.camera.position.copy(this.camRig.override.pos); }
     this.camRig.update(dt, this.hero.pos, 0, false, null);
     for (const n of this.npcs) n.update(dt);
@@ -669,7 +646,7 @@ class Game {
     const input = this.input, h = this.hero;
     this.dirty = true;
     if (input.pressed('pause')) { this.pause(); return; }
-    if (input.pressed('map')) { this.setState('map'); $('#holomap').classList.remove('hidden'); return; }
+    if (input.pressed('map') && h.hasBall) { this.setState('map'); $('#holomap').classList.remove('hidden'); return; }
     if (input.down('wheel')) {
       // hold Ctrl: behaviour menu, world frozen
       const i = BEHAVIOURS.indexOf(h.behaviour);
@@ -685,6 +662,7 @@ class Game {
     if (input.pressed('recenter')) this.camRig.recenter();
     if (input.pressed('view')) this.camRig.toggleView();
     this.saveTimer -= dt;
+    this.doorCool -= dt;
 
     h.update(dt, input);
     if (this.state !== 'play') return;
@@ -692,11 +670,14 @@ class Game {
     for (const e of this.enemies) e.update(dt);
     this.ball.update(dt);
     this.bolts.update(dt);
-    this.world.zones.update(h.pos, { enter: (z) => this.onZoneEnter(z) });
+    if (!this.room) this.world.zones.update(h.pos, { enter: (z) => this.onZoneEnter(z) });
+    this.checkDoors();
+    this.story.update(dt);
+    if (this.state !== 'play') return;
 
     // remember a safe spot to return to after a fall
     this.safeT = (this.safeT || 0) - dt;
-    if (this.safeT <= 0 && h.onGround && h.pos.y > 0.4) { this.safeT = 1; this.lastSafe = { x: h.pos.x, z: h.pos.z }; }
+    if (!this.room && this.safeT <= 0 && h.onGround && h.pos.y > 0.4) { this.safeT = 1; this.lastSafe = { x: h.pos.x, z: h.pos.z }; }
 
     // adaptive combat music
     const chasing = this.enemies.some((e) => e.alive && e.state === 'chase');
@@ -706,7 +687,7 @@ class Game {
     const it = this.findInteractable();
     this.hud.prompt(it ? t(it.label) : null);
     this.hud.stats(h);
-    this.hud.drawMinimap();
+    if (!this.room) this.hud.drawMinimap();
     this.camRig.update(dt, h.pos, h.angle, h.speed > 0.5, input);
   }
 }

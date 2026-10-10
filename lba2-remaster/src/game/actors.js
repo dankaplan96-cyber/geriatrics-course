@@ -50,6 +50,7 @@ export class Hero extends Actor {
     this.magicLevel = 1; this.mp = 8;
     this.clovers = 2; this.coins = 0;
     this.hasKey = false;
+    this.hasBall = false; // still in the cupboard at home
     this.shards = [false, false, false];
     this.invuln = 0; this.attackT = 0; this.combo = 0; this.comboWindow = 0; this.hitDone = true;
     this.throwT = 0; this.hurtT = 0; this.hiding = false; this.dead = false;
@@ -189,7 +190,7 @@ export class Hero extends Actor {
 
   throwBall() {
     const g = this.game;
-    if (g.ball.state !== 'idle' || this.throwT > 0 || this.hiding) return;
+    if (!this.hasBall || g.ball.state !== 'idle' || this.throwT > 0 || this.hiding) return;
     let strong = true;
     if (this.mp >= 1) this.mp -= 1; else { strong = false; g.hud.toast('toast_nomp'); }
     this.throwT = 0.3;
@@ -237,6 +238,7 @@ export class NPC extends Actor {
     this.track = def.track ? new TrackRunner(def.track) : null;
     this.angle = def.angle ?? 0;
     this.talking = false;
+    this.forceAnim = def.anim || null;
   }
   update(dt) {
     const hero = this.game.hero;
@@ -539,12 +541,13 @@ export class MagicBall {
   }
 
   update(dt) {
-    this.shadow.visible = this.state !== 'idle';
-    if (this.state === 'idle') { this.trail.forEach((m) => (m.visible = false)); return; }
+    this.shadow.visible = this.state !== 'idle' && this.state !== 'held';
+    if (this.state === 'idle' || this.state === 'held') { this.trail.forEach((m) => (m.visible = false)); return; }
     const g = this.game, P = g.physics;
     this.life += dt;
     if (this.state === 'fly') {
       this.vel.y -= 22 * dt;
+      this.assist(dt);
       // hits first, so targets mounted on posts register before the post deflects the ball
       if (g.ballHitTest(this.pos)) {
         g.particles.burst(this.pos.x, this.pos.y, this.pos.z, '#ffe27a', 16, 5);
@@ -587,6 +590,31 @@ export class MagicBall {
       m.visible = !!h && !g.renderer.retro;
       if (h) m.position.copy(h);
     });
+  }
+
+  // 2026 aim assist: during the first second the ball bends gently toward
+  // an enemy or target that is roughly ahead (mites are small and low).
+  assist(dt) {
+    if (this.life > 1.1) return;
+    const sp = Math.hypot(this.vel.x, this.vel.z);
+    if (sp < 1) return;
+    const hx = this.vel.x / sp, hz = this.vel.z / sp;
+    let best = null, bd = 9;
+    for (const t of this.game.ballAimTargets()) {
+      const dx = t.x - this.pos.x, dz = t.z - this.pos.z;
+      const d = Math.hypot(dx, dz);
+      if (d < 0.3 || d > bd) continue;
+      if ((dx * hx + dz * hz) / d < 0.82) continue; // within ~35°
+      best = t; bd = d;
+    }
+    if (!best) return;
+    const dx = best.x - this.pos.x, dz = best.z - this.pos.z, d = Math.hypot(dx, dz);
+    const k = Math.min(1, dt * 5);
+    const nx = hx + (dx / d - hx) * k, nz = hz + (dz / d - hz) * k, nl = Math.hypot(nx, nz);
+    this.vel.x = (nx / nl) * sp; this.vel.z = (nz / nl) * sp;
+    const tFly = d / sp;
+    const wantVy = (best.y - this.pos.y) / Math.max(tFly, 0.12) + 11 * tFly;
+    this.vel.y += (wantVy - this.vel.y) * Math.min(1, dt * 6);
   }
 
   bounce() {
@@ -765,5 +793,100 @@ export class Particles {
     }
     this.points.geometry.attributes.position.needsUpdate = true;
     this.points.geometry.attributes.color.needsUpdate = true;
+  }
+}
+
+// ------------------------------------------------------------------ crystal mites (the well)
+// Small creatures grown from the new crystals: they skitter, lunge and bite.
+function createMiteRig() {
+  const root = new THREE.Group();
+  const body = new THREE.Group();
+  root.add(body);
+  const shell = new THREE.MeshStandardMaterial({ color: '#7fe8ff', emissive: '#1aa0d0', emissiveIntensity: 1.2, roughness: 0.2 });
+  const dark = new THREE.MeshStandardMaterial({ color: '#2a3340', roughness: 0.6 });
+  const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.32, 0), dark);
+  core.position.y = 0.4; core.scale.set(1.2, 0.8, 1.4); body.add(core);
+  for (let i = 0; i < 4; i++) {
+    const c = new THREE.Mesh(new THREE.OctahedronGeometry(0.14, 0), shell);
+    c.position.set((i % 2 ? 1 : -1) * 0.12, 0.62, -0.15 + Math.floor(i / 2) * 0.2); c.scale.y = 2; c.rotation.z = (i % 2 ? -1 : 1) * 0.4;
+    body.add(c);
+  }
+  const eye = new THREE.MeshStandardMaterial({ color: '#ff5a3a', emissive: '#ff3a1a', emissiveIntensity: 2 });
+  for (const sx of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 4), eye); e.position.set(sx * 0.1, 0.45, 0.42); body.add(e); }
+  const legs = [];
+  for (let i = 0; i < 6; i++) {
+    const side = i < 3 ? -1 : 1;
+    const g = new THREE.Group();
+    g.position.set(side * 0.25, 0.4, -0.2 + (i % 3) * 0.2);
+    const l = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.02, 0.5, 4), dark);
+    l.position.set(side * 0.2, -0.15, 0); l.rotation.z = side * 0.9;
+    g.add(l); body.add(g); legs.push(g);
+  }
+  const rig = { root, anim: 'idle', t: 0, flash: 0, mats: [shell],
+    play(a) { this.anim = a; }, hitFlash() { this.flash = 1; },
+    update(dt, speed = 0) {
+      this.t += dt * (2 + speed * 4);
+      legs.forEach((g, i) => { g.rotation.x = Math.sin(this.t * 3 + i * 1.7) * 0.5 * Math.min(1, speed + 0.1); });
+      body.position.y = Math.abs(Math.sin(this.t * 3)) * 0.04;
+      if (this.anim === 'dead') { body.rotation.z = Math.min(Math.PI, body.rotation.z + dt * 8); }
+      this.flash = Math.max(0, this.flash - dt * 4);
+      shell.emissiveIntensity = 1.2 + this.flash * 3;
+    } };
+  rig.j = {};
+  return rig;
+}
+
+export class Mite extends Actor {
+  constructor(game, def) {
+    super(game, createMiteRig(), def.x, def.z, 0.4);
+    this.id = def.id;
+    this.group = 'well';
+    this.boss = false;
+    this.hp = this.maxHp = 2;
+    this.state = 'idle';
+    this.home = { x: def.x, z: def.z };
+    this.biteT = 0; this.wanderT = Math.random() * 3; this.deadT = 0; this.hurtT = 0;
+    this.angle = Math.random() * 6;
+  }
+  get alive() { return this.state !== 'dead'; }
+  alert() { if (this.alive) this.state = 'chase'; }
+  damage(n, from) {
+    if (!this.alive) return;
+    const g = this.game;
+    this.hp -= n; this.rig.hitFlash(); this.hurtT = 0.3;
+    g.audio.play('hit');
+    g.particles.burst(this.pos.x, this.pos.y + 0.5, this.pos.z, '#9ff4ff', 14, 4);
+    if (from) { const a = Math.atan2(this.pos.x - from.x, this.pos.z - from.z); this.kb.set(Math.sin(a) * 9, Math.cos(a) * 9); }
+    this.state = 'chase';
+    if (this.hp <= 0) { this.state = 'dead'; g.audio.play('break'); g.particles.burst(this.pos.x, this.pos.y + 0.4, this.pos.z, '#bff8ff', 30, 5); g.onEnemyKilled(this); }
+  }
+  update(dt) {
+    const g = this.game, hero = g.hero;
+    this.hurtT = Math.max(0, this.hurtT - dt);
+    if (!this.alive) {
+      this.deadT += dt; this.rig.play('dead'); this.rig.update(dt, 0);
+      if (this.deadT > 1.2) this.rig.root.visible = false;
+      this.sync(); return;
+    }
+    const d = this.distTo(hero);
+    let sp = 0, dir = this.angle;
+    if (this.state === 'idle') {
+      this.wanderT -= dt;
+      if (this.wanderT < 0) { this.wanderT = 1.5 + Math.random() * 2; this.angle = Math.atan2(this.home.x - this.pos.x + (Math.random() - 0.5) * 4, this.home.z - this.pos.z + (Math.random() - 0.5) * 4); }
+      sp = this.wanderT > 1 ? 1.2 : 0;
+      if (d < 6 && !hero.dead) { this.state = 'chase'; g.audio.play('alert'); }
+    } else if (this.state === 'chase') {
+      dir = this.angleTo(hero);
+      this.angle = dampAngle(this.angle, dir, 8, dt);
+      sp = d > 1.0 ? 3.4 : 0;
+      this.biteT -= dt;
+      if (d < 1.1 && this.biteT <= 0 && this.hurtT <= 0) { this.biteT = 1.2; hero.damage(1, this.pos); }
+      if (d > 14) this.state = 'idle';
+    }
+    if (sp > 0 && this.hurtT <= 0) g.physics.move(this, Math.sin(this.angle) * sp * dt, Math.cos(this.angle) * sp * dt);
+    this.applyKnockback(dt);
+    g.physics.fall(this, dt);
+    this.rig.update(dt, sp / 3);
+    this.sync();
   }
 }

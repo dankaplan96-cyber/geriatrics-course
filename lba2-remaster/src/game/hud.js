@@ -246,7 +246,7 @@ export class HUD {
 
   drawMinimap() {
     const ctx = this.miniCtx, W = this.mini.width;
-    const hero = this.game.hero;
+    const hero = this.game.mapHero();
     const view = 70;
     const s = this.mapSize, half = this.mapHalf;
     const k = 256 / s;
@@ -312,7 +312,7 @@ export class HUD {
         ctx.strokeText(m.label, x, y - 14); ctx.fillText(m.label, x, y - 14);
       }
     }
-    const hero = this.game.hero;
+    const hero = this.game.mapHero();
     const [hx, hy] = toPx(hero.pos.x, hero.pos.z);
     const pulse = 8 + Math.sin(time * 5) * 3;
     ctx.strokeStyle = '#7ff'; ctx.lineWidth = 2;

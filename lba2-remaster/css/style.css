@@ -100,9 +100,11 @@ kbd { display: inline-block; min-width: 24px; padding: 1px 7px; border-radius: 6
 .screen h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); font-weight: 900; color: var(--accent); text-shadow: 0 4px 20px rgba(0, 0, 0, 0.6); }
 .screen p { max-width: 640px; font-size: 18px; line-height: 1.6; margin: 0; }
 .logo { text-align: center; filter: drop-shadow(0 8px 30px rgba(0, 0, 0, 0.6)); }
-.logo-top, .logo-bottom { font-weight: 900; letter-spacing: 0.08em; line-height: 0.9; direction: ltr; }
+.logo-top, .logo-bottom { font-weight: 900; letter-spacing: 0.08em; line-height: 0.9; }
+.logo-top { direction: ltr; }
 .logo-top { font-size: clamp(44px, 10vw, 104px); background: linear-gradient(180deg, #fff7d0, #ffcf4a 55%, #e07a10); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.logo-bottom { font-size: clamp(30px, 6.5vw, 66px); color: #e9f3ff; letter-spacing: 0.3em; margin-top: 4px; }
+.logo-bottom { font-size: clamp(30px, 6.5vw, 66px); color: #e9f3ff; letter-spacing: 0.2em; margin-top: 4px; }
+:root[dir=rtl] .logo-bottom { letter-spacing: 0.02em; }
 .logo .sub { margin-top: 14px; color: var(--ink); font-size: clamp(13px, 2vw, 17px); opacity: 0.9; }
 .menu { display: flex; flex-direction: column; gap: 10px; min-width: min(320px, 100%); }
 .menu button, .langs button { padding: 13px 22px; font-size: 18px; font-weight: 700; border-radius: 12px; border: 2px solid rgba(255, 255, 255, 0.18); background: rgba(12, 24, 36, 0.8); color: var(--ink); cursor: pointer; transition: all 0.15s; }
@@ -234,3 +236,6 @@ body.hud-lba .toast { border-radius: 0; background: rgba(0, 0, 0, 0.6); border: 
 #holomap .objective b { color: #ffe35a; }
 #holomap .objective .s { margin: 0 8px; }
 #holomap .objective .s.ok { text-decoration: line-through; opacity: 0.6; }
+
+/* LBA3 prologue: no shards */
+#shards, .binfo .shardrow { display: none !important; }

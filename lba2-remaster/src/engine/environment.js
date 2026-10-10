@@ -146,6 +146,12 @@ export class Environment {
   }
 
   setStorm(s) { this.storm = s; }
+  // indoors: no sky, sea, rain or fog; black around the room like LBA2's interiors
+  setInterior(on) {
+    this.interior = on;
+    this.water.visible = this.clouds.visible = !on;
+    this.scene.background = on ? (this._black ??= new THREE.Color('#000000')) : this.fog.color;
+  }
   // [near, far] fog distances; the classic look uses the original's short range
   setFogRange(near, far) { this.fogRange = [near, far]; }
 
@@ -175,8 +181,8 @@ export class Environment {
 
     this.fog.color.copy(mix('fog')).lerp(C('#e8eeff'), f * 0.6);
     const k = lerp(1, 0.75, s);
-    this.fog.near = this.fogRange[0] * k;
-    this.fog.far = this.fogRange[1] * k;
+    this.fog.near = this.interior ? 400 : this.fogRange[0] * k;
+    this.fog.far = this.interior ? 900 : this.fogRange[1] * k;
     this.clouds.material.color.copy(mix('clouds')).lerp(C('#ffffff'), f * 0.5);
     this.cloudTex.offset.x = this.time * (0.004 + s * 0.01);
     this.cloudTex.offset.y = this.time * 0.002;
@@ -191,7 +197,7 @@ export class Environment {
     this.sun.target.position.copy(focus);
 
     const op = s * 0.5;
-    this.rain.visible = op > 0.02;
+    this.rain.visible = op > 0.02 && !this.interior;
     if (this.rain.visible) {
       this.rain.material.opacity = op;
       const pos = this.rain.geometry.attributes.position.array;

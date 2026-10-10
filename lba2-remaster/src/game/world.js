@@ -105,7 +105,10 @@ function add(scene, geo, material, x, y, z, { rx = 0, ry = 0, rz = 0, cast = tru
   return m;
 }
 
-export function buildWorld(scene) {
+export function buildWorld(parentScene) {
+  // everything outdoors lives in one group so interiors can hide it
+  const scene = new THREE.Group();
+  parentScene.add(scene);
   const TX = textures();
   const terrain = new Terrain({ size: 260, segs: 200, heightFn: islandHeight, colorFn: islandColor, splatFn: islandSplat, textures: TX });
   scene.add(terrain.mesh);
@@ -114,7 +117,7 @@ export function buildWorld(scene) {
   const H = (x, z) => terrain.heightAt(x, z);
   const W = {
     terrain, physics, zones, H, POI,
-    interactables: [], ballTargets: [], crates: [], updaters: [], lights: [], swayMats: [], TX,
+    interactables: [], ballTargets: [], crates: [], updaters: [], lights: [], swayMats: [], TX, root: scene,
   };
   const rand = rng(42);
 
@@ -350,6 +353,7 @@ export function buildWorld(scene) {
     for (let i = 0; i < 7; i++) for (const s of [-1, 1]) add(scene, new THREE.CylinderGeometry(0.14, 0.14, 4, 6), mat('#5b4028'), px - i * 2.8, top - 2, V.z + s * 1.2);
     physics.add({ type: 'box', x: cx, z: V.z, hw: len / 2, hd: 1.3, rot: 0, top, seeThrough: true });
     W.pierEnd = { x: px - len + 2.5, z: V.z, y: top };
+    W.pierStart = { x: px + 1.5, z: V.z };
     // little boat
     const bx = px - len + 1, bz = V.z + 3.2;
     const boat = new THREE.Group();
@@ -626,7 +630,6 @@ export function buildWorld(scene) {
 
   // hidden-object search spots
   W.searchSpots = [
-    { id: 'well', x: W.well.x, z: W.well.z, r: 2.3, reward: 'coins5' },
     { id: 'barrels', x: W.barrels.x, z: W.barrels.z, r: 2.0, reward: 'flask' },
     { id: 'stump', x: 46, z: -2, r: 2.0, reward: 'clover' },
   ];

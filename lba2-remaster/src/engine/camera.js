@@ -45,6 +45,8 @@ export class CameraRig {
   }
 
   setMode(m) { this.mode = m === 'free' ? 'free' : 'lba'; this.lba.init = false; }
+  // Interiors: fixed isometric view rotated 45°, like LBA2's indoor scenes.
+  setIso(room) { this.iso = room; this.lba.init = false; if (room) this.isoFocus = null; }
   toggleView() { this.view = 1 - this.view; }
   recenter() { this.lba.behind = true; }
   shake(s = 0.35) { this.shakeT = Math.max(this.shakeT, s); }
@@ -75,7 +77,8 @@ export class CameraRig {
       this.lba.init = false;
       return;
     }
-    if (this.mode === 'lba') this._lba(dt, focus, heroAngle);
+    if (this.iso) this._iso(dt, focus);
+    else if (this.mode === 'lba') this._lba(dt, focus, heroAngle);
     else this._free(dt, focus, heroAngle, moving, input);
     if (this.shakeT > 0) {
       this.shakeT -= dt;
@@ -130,6 +133,24 @@ export class CameraRig {
     cam.position.set(x, y, z);
     this.look.set(f.x, f.y + 1, f.z);
     cam.lookAt(this.look);
+    this.target.copy(hero);
+  }
+
+  _iso(dt, hero) {
+    const cam = this.cam, R = this.iso;
+    const dist = 90;
+    cam.fov = (2 * Math.atan((R.view / 2) / dist) * 180) / Math.PI;
+    cam.updateProjectionMatrix();
+    const goal = R.center.clone().lerp(hero, R.follow ?? 0.3);
+    goal.y = 0.8;
+    if (!this.isoFocus || this.cut) this.isoFocus = goal.clone();
+    else this.isoFocus.lerp(goal, 1 - Math.exp(-dt * 3));
+    this.yaw = Math.PI / 4;
+    const pitch = 0.58;
+    const f = this.isoFocus;
+    cam.position.set(f.x + Math.sin(this.yaw) * Math.cos(pitch) * dist, f.y + Math.sin(pitch) * dist, f.z + Math.cos(this.yaw) * Math.cos(pitch) * dist);
+    this.look.copy(f);
+    cam.lookAt(f);
     this.target.copy(hero);
   }
 
